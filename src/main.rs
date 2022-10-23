@@ -18,6 +18,9 @@ pub mod error;
 pub mod bsp;
 pub mod bitset;
 
+#[macro_use]
+extern crate error_chain;
+
 use std::time::{Instant, Duration};
 use std::rc::Rc;
 use std::io::Cursor;
@@ -436,6 +439,8 @@ fn main() {
     let start = bsp::BspFile::parse(
         &mut Cursor::new(pak.file("maps/start.bsp").unwrap())
     ).unwrap();
+
+    println!("Loaded pak");
 
     /*
     let mut renderer = render::Renderer::new(

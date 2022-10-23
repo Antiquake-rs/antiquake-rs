@@ -2032,6 +2032,7 @@ dependencies = [
  "async-executor",
  "bitflags",
  "bytemuck",
+ "byteorder",
  "cfg-if",
  "cgmath",
  "console_error_panic_hook",

@@ -1,5 +1,5 @@
 
-use std::io::{self, Read};
+use std::io::{ self,Read};
 use std::str;
 use byteorder::{ReadBytesExt, LittleEndian};
 
@@ -21,6 +21,8 @@ pub trait CRead {
     fn read_float(&mut self) -> io::Result<f32>;
 }
 
+// https://doc.rust-lang.org/reference/types/impl-trait.html
+//https://stackoverflow.com/questions/64564170/whats-the-difference-between-implt-trait-for-t-where-t-trait2-and-impl-tr
 impl <T> CRead for T where T: Read {
     fn read_char(&mut self) -> io::Result<i8> {
         self.read_i8()
