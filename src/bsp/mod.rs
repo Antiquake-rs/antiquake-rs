@@ -337,7 +337,8 @@ impl Texture {
             };
 
             for (i, o) in offsets.into_iter().enumerate() {
-                r.seek(SeekFrom::Start(base_offset + offset as u64 + *o as u64))?;
+                //  r.seek(SeekFrom::Start(base_offset + offset as u64 + *o as u64))?;
+                r.seek(SeekFrom::Start(base_offset + offset as u64 + o as u64))?;
                 let w = width >> i;
                 let h = height >> i;
                 let mut data = vec![0; (w * h) as usize];
@@ -376,6 +377,6 @@ impl Entry {
         Ok(Entry {
             offset: r.read_long()?,
             size: r.read_long()?,
-        })
+        }) 
     }
 }
