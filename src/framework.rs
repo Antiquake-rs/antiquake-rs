@@ -1,4 +1,8 @@
+/*
 
+WGPU framework for building a window and rendering surface 
+
+*/
 
 use wgpu;
 use winit;
@@ -41,7 +45,7 @@ pub enum ShaderStage {
     Compute,
 }
 
-pub trait Example: 'static + Sized {
+pub trait FrameworkInstance: 'static + Sized {
     fn optional_features() -> wgpu::Features {
         wgpu::Features::empty()
     }
@@ -99,7 +103,7 @@ struct OffscreenCanvasSetup {
     bitmap_renderer: ImageBitmapRenderingContext,
 }
 
-async fn setup<E: Example>(title: &str) -> Setup {
+async fn setup<E: FrameworkInstance>(title: &str) -> Setup {
     #[cfg(not(target_arch = "wasm32"))]
     {
         env_logger::init();
@@ -207,7 +211,7 @@ async fn setup<E: Example>(title: &str) -> Setup {
     let adapter_features = adapter.features();
     assert!(
         adapter_features.contains(required_features),
-        "Adapter does not support required features for this example: {:?}",
+        "Adapter does not support required features for this framework instance: {:?}",
         required_features - adapter_features
     );
 
@@ -215,14 +219,14 @@ async fn setup<E: Example>(title: &str) -> Setup {
     let downlevel_capabilities = adapter.get_downlevel_capabilities();
     assert!(
         downlevel_capabilities.shader_model >= required_downlevel_capabilities.shader_model,
-        "Adapter does not support the minimum shader model required to run this example: {:?}",
+        "Adapter does not support the minimum shader model required to run this framework instance: {:?}",
         required_downlevel_capabilities.shader_model
     );
     assert!(
         downlevel_capabilities
             .flags
             .contains(required_downlevel_capabilities.flags),
-        "Adapter does not support the downlevel capabilities required to run this example: {:?}",
+        "Adapter does not support the downlevel capabilities required to run this framework instance: {:?}",
         required_downlevel_capabilities.flags - downlevel_capabilities.flags
     );
 
@@ -256,7 +260,7 @@ async fn setup<E: Example>(title: &str) -> Setup {
     }
 }
 
-fn start<E: Example>(
+fn start<E: FrameworkInstance>(
     #[cfg(not(target_arch = "wasm32"))] Setup {
         window,
         event_loop,
@@ -290,8 +294,8 @@ fn start<E: Example>(
     };
     surface.configure(&device, &config);
 
-    log::info!("Initializing the example...");
-    let mut example = E::init(&config, &adapter, &device, &queue);
+    log::info!("Initializing the framework instance...");
+    let mut frameworkInstance = E::init(&config, &adapter, &device, &queue);
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut last_frame_inst = Instant::now();
@@ -325,7 +329,7 @@ fn start<E: Example>(
                 log::info!("Resizing to {:?}", size);
                 config.width = size.width.max(1);
                 config.height = size.height.max(1);
-                example.resize(&config, &device, &queue);
+                frameworkInstance.resize(&config, &device, &queue);
                 surface.configure(&device, &config);
             }
             event::Event::WindowEvent { event, .. } => match event {
@@ -354,7 +358,7 @@ fn start<E: Example>(
                     println!("{:#?}", instance.generate_report());
                 }
                 _ => {
-                    example.update(event);
+                    frameworkInstance.update(event);
                 }
             },
             event::Event::RedrawRequested(_) => {
@@ -386,7 +390,7 @@ fn start<E: Example>(
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
 
-                example.render(&view, &device, &queue, &spawner);
+                    frameworkInstance.render(&view, &device, &queue, &spawner);
 
                 frame.present();
 
@@ -449,13 +453,13 @@ impl Spawner {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn run<E: Example>(title: &str) {
+pub fn run<E: FrameworkInstance>(title: &str) {
     let setup = pollster::block_on(setup::<E>(title));
     start::<E>(setup);
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn run<E: Example>(title: &str) {
+pub fn run<E: FrameworkInstance>(title: &str) {
     use wasm_bindgen::{prelude::*, JsCast};
 
     let title = title.to_owned();
@@ -516,7 +520,7 @@ pub struct FrameworkRefTest {
 
 #[cfg(test)]
 #[allow(dead_code)]
-pub fn test<E: Example>(mut params: FrameworkRefTest) {
+pub fn test<E: FrameworkInstance>(mut params: FrameworkRefTest) {
     use std::{mem, num::NonZeroU32};
 
     assert_eq!(params.width % 64, 0, "width needs to be aligned 64");
@@ -551,7 +555,7 @@ pub fn test<E: Example>(mut params: FrameworkRefTest) {
                 mapped_at_creation: false,
             });
 
-            let mut example = E::init(
+            let mut frameworkInstance = E::init(
                 &wgpu::SurfaceConfiguration {
                     usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
                     format: wgpu::TextureFormat::Rgba8UnormSrgb,
@@ -565,13 +569,13 @@ pub fn test<E: Example>(mut params: FrameworkRefTest) {
                 &ctx.queue,
             );
 
-            example.render(&dst_view, &ctx.device, &ctx.queue, &spawner);
+            frameworkInstance.render(&dst_view, &ctx.device, &ctx.queue, &spawner);
 
             // Handle specific case for bunnymark
             #[allow(deprecated)]
-            if params.image_path == "/examples/bunnymark/screenshot.png" {
+           /* if params.image_path == "/examples/bunnymark/screenshot.png" {
                 // Press spacebar to spawn bunnies
-                example.update(winit::event::WindowEvent::KeyboardInput {
+                frameworkInstance.update(winit::event::WindowEvent::KeyboardInput {
                     input: winit::event::KeyboardInput {
                         scancode: 0,
                         state: winit::event::ElementState::Pressed,
@@ -584,9 +588,11 @@ pub fn test<E: Example>(mut params: FrameworkRefTest) {
 
                 // Step 3 extra frames
                 for _ in 0..3 {
-                    example.render(&dst_view, &ctx.device, &ctx.queue, &spawner);
+                    frameworkInstance.render(&dst_view, &ctx.device, &ctx.queue, &spawner);
                 }
             }
+            */
+
 
             let mut cmd_buf = ctx
                 .device

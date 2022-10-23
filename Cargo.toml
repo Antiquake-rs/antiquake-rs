@@ -15,6 +15,7 @@ rust-version = "1.64"
 [target.'cfg(any(not(target_arch = "wasm32"), target_os = "emscripten"))'.dependencies.hal]
 
 [dependencies]
+# These are all for wpgu 
 arrayvec = "0.7"
 log = "0.4"
 parking_lot = ">=0.11,<0.13"
@@ -29,6 +30,10 @@ env_logger = "0.9"
 pollster = "0.2"
 bytemuck = { version = "1.4", features = ["derive"] }
 glam = "0.21.3" 
+
+##these are all for quake-render 
+cgmath = "0.17.0"
+error-chain = "0.12.1"
 
 [dev-dependencies]
 bitflags = "1"

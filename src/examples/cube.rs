@@ -9,24 +9,6 @@ use bytemuck::{Pod, Zeroable};
 use std::{borrow::Cow, f32::consts, future::Future, mem, pin::Pin, task};
 use wgpu::util::DeviceExt;
 
-
-#[macro_use]
-mod parse;
-pub mod pak;
-pub mod error;
-//pub mod render;
-pub mod bsp;
-pub mod bitset;
-
-use std::time::{Instant, Duration};
-use std::rc::Rc;
-use std::io::Cursor;
-
-
-
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct Vertex {
@@ -127,7 +109,7 @@ impl<F: Future<Output = Option<wgpu::Error>>> Future for ErrorFuture<F> {
     }
 }
 
-struct FrameworkInstance {
+struct Example {
     vertex_buf: wgpu::Buffer,
     index_buf: wgpu::Buffer,
     index_count: usize,
@@ -137,7 +119,7 @@ struct FrameworkInstance {
     pipeline_wire: Option<wgpu::RenderPipeline>,
 }
 
-impl FrameworkInstance {
+impl Example {
     fn generate_matrix(aspect_ratio: f32) -> glam::Mat4 {
         let projection = glam::Mat4::perspective_rh(consts::FRAC_PI_4, aspect_ratio, 1.0, 10.0);
         let view = glam::Mat4::look_at_rh(
@@ -149,7 +131,7 @@ impl FrameworkInstance {
     }
 }
 
-impl framework::FrameworkInstance for FrameworkInstance {
+impl framework::Example for Example {
     fn optional_features() -> wgt::Features {
         wgt::Features::POLYGON_MODE_LINE
     }
@@ -347,7 +329,7 @@ impl framework::FrameworkInstance for FrameworkInstance {
         };
 
         // Done
-        FrameworkInstance {
+        Example {
             vertex_buf,
             index_buf,
             index_count: index_data.len(),
@@ -424,36 +406,13 @@ impl framework::FrameworkInstance for FrameworkInstance {
     }
 }
 
-//Execution begins here 
 fn main() {
-
-    //load the pak file 
-    let filename:&str = "id1/pak0.pak";
-   // let pakRc = Rc::new(pak::PackFile::new(filename).expect("Unable to load pak0"));
-
-    let pak =pak::PackFile::new(filename).expect("Unable to load pak0");
-
-    let start = bsp::BspFile::parse(
-        &mut Cursor::new(pak.file("maps/start.bsp").unwrap())
-    ).unwrap();
-
-    /*
-    let mut renderer = render::Renderer::new(
-        pak.clone(), start,
-        adapter, surface,
-        size,
-    ).unwrap();
-    */
-
-
-
-
-    framework::run::<FrameworkInstance>("cube");
+    framework::run::<Example>("cube");
 }
 
 #[test]
 fn cube() {
-    framework::test::<FrameworkInstance>(framework::FrameworkRefTest {
+    framework::test::<Example>(framework::FrameworkRefTest {
         image_path: "/examples/cube/screenshot.png",
         width: 1024,
         height: 768,
@@ -466,7 +425,7 @@ fn cube() {
 
 #[test]
 fn cube_lines() {
-    framework::test::<FrameworkInstance>(framework::FrameworkRefTest {
+    framework::test::<Example>(framework::FrameworkRefTest {
         image_path: "/examples/cube/screenshot-lines.png",
         width: 1024,
         height: 768,
