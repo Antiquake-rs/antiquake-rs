@@ -168,7 +168,7 @@ pub trait Pipeline {
     /// `RenderPipeline`. This permits the reuse of `BindGroupLayout`s between pipelines.
     fn create(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        shader: &mut wgpu::ShaderModule, 
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
@@ -204,14 +204,14 @@ pub trait Pipeline {
 
         let vertex_shader = create_shader(
             device,
-            compiler,
+            shader,
             format!("{}.vert", Self::name()).as_str(),
             shaderc::ShaderKind::Vertex,
             Self::vertex_shader(),
         );
         let fragment_shader = create_shader(
             device,
-            compiler,
+            shader,
             format!("{}.frag", Self::name()).as_str(),
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),

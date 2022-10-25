@@ -23,12 +23,12 @@ pub struct AliasPipeline {
 impl AliasPipeline {
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        shader: &mut wgpu::ShaderModule,
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> AliasPipeline {
         let (pipeline, bind_group_layouts) =
-            AliasPipeline::create(device, compiler, world_bind_group_layouts, sample_count);
+            AliasPipeline::create(device, shader, world_bind_group_layouts, sample_count);
 
         AliasPipeline {
             pipeline,
@@ -39,7 +39,7 @@ impl AliasPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        shader: &mut wgpu::ShaderModule,
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) {
@@ -47,7 +47,7 @@ impl AliasPipeline {
             .iter()
             .chain(self.bind_group_layouts.iter())
             .collect();
-        self.pipeline = AliasPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = AliasPipeline::recreate(device, shader, &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
