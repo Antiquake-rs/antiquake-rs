@@ -4,7 +4,7 @@ WGPU framework for building a window and rendering surface
 
 */
 
-use wgpu;
+use wgpu::{self, SurfaceConfiguration};
 use winit;
 use env_logger;
 use pollster;
@@ -27,9 +27,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
-#[cfg(test)]
-#[path = "../tests/common/mod.rs"]
-pub mod test_common;
 
 #[allow(dead_code)]
 pub fn cast_slice<T>(data: &[T]) -> &[u8] {
@@ -44,6 +41,14 @@ pub enum ShaderStage {
     Fragment,
     Compute,
 }
+
+
+struct LoadInstance<E> {
+    spawner:Spawner,
+    config:SurfaceConfiguration,
+    frameworkInstance: E
+}
+ 
 
 pub trait FrameworkInstance: 'static + Sized {
     fn optional_features() -> wgpu::Features {
@@ -260,7 +265,11 @@ async fn setup<E: FrameworkInstance>(title: &str) -> Setup {
     }
 }
 
-fn start<E: FrameworkInstance>(
+
+
+//load the level , textures , etc 
+fn load<E: FrameworkInstance>(
+
     #[cfg(not(target_arch = "wasm32"))] Setup {
         window,
         event_loop,
@@ -282,7 +291,9 @@ fn start<E: FrameworkInstance>(
         queue,
         offscreen_canvas_setup,
     }: Setup,
-) {
+
+) -> LoadInstance<E>{
+
     let spawner = Spawner::new();
     let mut config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -296,6 +307,39 @@ fn start<E: FrameworkInstance>(
 
     log::info!("Initializing the framework instance...");
     let mut frameworkInstance = E::init(&config, &adapter, &device, &queue);
+
+
+    return LoadInstance { spawner , config , frameworkInstance  };
+
+}
+
+
+
+fn start<E: FrameworkInstance >(
+    #[cfg(not(target_arch = "wasm32"))] Setup {
+        window,
+        event_loop,
+        instance,
+        size,
+        surface,
+        adapter,
+        device,
+        queue,
+    }: Setup,
+    #[cfg(target_arch = "wasm32")] Setup {
+        window,
+        event_loop,
+        instance,
+        size,
+        surface,
+        adapter,
+        device,
+        queue,
+        offscreen_canvas_setup,
+    }: Setup, LoadInstance{spawner,config,frameworkInstance}:LoadInstance<E>
+) {
+   
+
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut last_frame_inst = Instant::now();
@@ -454,8 +498,10 @@ impl Spawner {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run<E: FrameworkInstance>(title: &str) {
-    let setup = pollster::block_on(setup::<E>(title));
-    start::<E>(setup);
+    let setup = pollster::block_on(setup::<E>(title));     
+    
+    let loadInstance = load::<E>(setup);
+    start::<E>(setup,loadInstance);
 }
 
 #[cfg(target_arch = "wasm32")]

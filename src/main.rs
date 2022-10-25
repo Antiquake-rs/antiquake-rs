@@ -16,7 +16,7 @@ pub mod error;
 //pub mod render;
 pub mod bsp;
 pub mod bitset;
-pub mod soulrender;
+pub mod render;
 
 #[macro_use]
 extern crate error_chain;
@@ -25,9 +25,9 @@ use std::time::{Instant, Duration};
 use std::rc::Rc;
 use std::io::Cursor;
  
-use soulrender::GameFrameworkInstance;
-use soulrender::framework; //have to get it through there 
-use soulrender::FrameworkInstance;
+use render::RenderFrameworkInstance;
+use render::framework; //have to get it through there 
+use render::FrameworkInstance;
 
 
 //Execution begins here 
@@ -52,9 +52,17 @@ fn main() {
         size,
     ).unwrap();
     */
+
+
+
+    //run is framework  453 
+
+    //start is framework 26 0
+
  
 
-    framework::run::<GameFrameworkInstance>("Soulgate");
+    framework::run::<RenderFrameworkInstance>("Soulgate");
+    framework::run::<RenderFrameworkInstance>("Soulgate2");
 }
 
 
