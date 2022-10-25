@@ -260,7 +260,7 @@ async fn setup<E: FrameworkInstance>(title: &str) -> Setup {
 }
 
 
-fn configure(   #[cfg(not(target_arch = "wasm32"))] Setup {
+fn configure(   #[cfg(not(target_arch = "wasm32"))] &mut Setup {
     window,
     event_loop,
     instance,
@@ -269,8 +269,8 @@ fn configure(   #[cfg(not(target_arch = "wasm32"))] Setup {
     adapter,
     device,
     queue,
-}: Setup,
-#[cfg(target_arch = "wasm32")] Setup {
+}: &mut Setup,
+#[cfg(target_arch = "wasm32")] &mut  Setup {
     window,
     event_loop,
     instance,
@@ -280,7 +280,7 @@ fn configure(   #[cfg(not(target_arch = "wasm32"))] Setup {
     device,
     queue,
     offscreen_canvas_setup,
-}: Setup,
+}: &mut  Setup,
 
 ) -> SurfaceConfiguration{
 
@@ -303,35 +303,18 @@ fn configure(   #[cfg(not(target_arch = "wasm32"))] Setup {
 //load the level , textures , etc 
 fn load<E: FrameworkInstance>(
  
+    config: &SurfaceConfiguration,
+    adapter : &wgpu::Adapter ,
+     device : &wgpu::Device,
+      queue : &wgpu::Queue
+ 
 
-    #[cfg(not(target_arch = "wasm32"))] Setup {
-        window,
-        event_loop,
-        instance,
-        size,
-        surface,
-        adapter,
-        device,
-        queue,
-    }: Setup,
-    #[cfg(target_arch = "wasm32")] Setup {
-        window,
-        event_loop,
-        instance,
-        size,
-        surface,
-        adapter,
-        device,
-        queue,
-        offscreen_canvas_setup,
-    }: Setup,
-    config:SurfaceConfiguration
 
 ) -> E {
 
 
     log::info!("Initializing the framework instance...");
-    let mut frameworkInstance = E::init(&config, &adapter, &device, &queue);
+    let frameworkInstance = E::init(&config, &adapter, &device, &queue);
 
 
     return frameworkInstance;
@@ -341,7 +324,7 @@ fn load<E: FrameworkInstance>(
 
 
 fn start<E: FrameworkInstance >(
-    #[cfg(not(target_arch = "wasm32"))] Setup {
+    #[cfg(not(target_arch = "wasm32"))] &Setup {
         window,
         event_loop,
         instance,
@@ -350,8 +333,8 @@ fn start<E: FrameworkInstance >(
         adapter,
         device,
         queue,
-    }: Setup,
-    #[cfg(target_arch = "wasm32")] Setup {
+    }: &Setup,
+    #[cfg(target_arch = "wasm32")] &Setup {
         window,
         event_loop,
         instance,
@@ -361,7 +344,7 @@ fn start<E: FrameworkInstance >(
         device,
         queue,
         offscreen_canvas_setup,
-    }: Setup,  config:&mut SurfaceConfiguration, frameworkInstance: &mut E 
+    }: &Setup,  config:&mut SurfaceConfiguration, frameworkInstance: &mut E 
 ) {
    
     let spawner = Spawner::new();
@@ -525,9 +508,9 @@ impl Spawner {
 pub fn run<E: FrameworkInstance>(title: &str) {
     let setup = pollster::block_on(setup::<E>(title));     
 
-    let config = configure(setup);
-    let loadInstance = load::<E>(setup,config.clone());
-    start::<E>(setup,&mut config,&mut loadInstance);
+    let mut config = configure(&mut  setup);
+    let mut loadInstance = load::<E>(&config,&setup.adapter,&setup.device,&setup.queue);
+    start::<E>(&setup , &mut config,  &mut loadInstance);
 }
 
 #[cfg(target_arch = "wasm32")]
