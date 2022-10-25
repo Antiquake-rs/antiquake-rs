@@ -40,7 +40,7 @@ impl<F: Future<Output = Option<wgpu::Error>>> Future for ErrorFuture<F> {
 }
 
 
-pub struct RenderFrameworkInstance {
+pub struct LevelRenderspace {
     vertex_buf: wgpu::Buffer,
     index_buf: wgpu::Buffer,
     index_count: usize,
@@ -50,7 +50,7 @@ pub struct RenderFrameworkInstance {
     pipeline_wire: Option<wgpu::RenderPipeline>,
 }
 
-impl RenderFrameworkInstance {
+impl LevelRenderspace {
     fn generate_matrix(aspect_ratio: f32) -> glam::Mat4 {
         let projection = glam::Mat4::perspective_rh(consts::FRAC_PI_4, aspect_ratio, 1.0, 10.0);
         let view = glam::Mat4::look_at_rh(
@@ -62,7 +62,7 @@ impl RenderFrameworkInstance {
     }
 }
 
-impl FrameworkInstance for RenderFrameworkInstance {
+impl FrameworkInstance for LevelRenderspace {
     fn optional_features() -> wgt::Features {
         wgt::Features::POLYGON_MODE_LINE
     }
@@ -263,7 +263,7 @@ impl FrameworkInstance for RenderFrameworkInstance {
         };
 
         // Done
-        RenderFrameworkInstance {
+        LevelRenderspace {
             vertex_buf,
             index_buf,
             index_count: index_data.len(),

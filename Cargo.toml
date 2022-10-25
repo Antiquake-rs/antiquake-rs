@@ -33,6 +33,7 @@ glam = "0.21.3"
 cgmath = "0.17.0"
 error-chain = "0.12.1"
 byteorder = "1.3.2"
+structopt = "0.3.26"
 
 [dev-dependencies]
 bitflags = "1"
