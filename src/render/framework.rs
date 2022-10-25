@@ -42,12 +42,6 @@ pub enum ShaderStage {
     Compute,
 }
 
-
-struct LoadInstance<E> {
-    spawner:Spawner,
-    config:SurfaceConfiguration,
-    frameworkInstance: E
-}
  
 
 pub trait FrameworkInstance: 'static + Sized {
@@ -266,9 +260,49 @@ async fn setup<E: FrameworkInstance>(title: &str) -> Setup {
 }
 
 
+fn configure(   #[cfg(not(target_arch = "wasm32"))] Setup {
+    window,
+    event_loop,
+    instance,
+    size,
+    surface,
+    adapter,
+    device,
+    queue,
+}: Setup,
+#[cfg(target_arch = "wasm32")] Setup {
+    window,
+    event_loop,
+    instance,
+    size,
+    surface,
+    adapter,
+    device,
+    queue,
+    offscreen_canvas_setup,
+}: Setup,
+
+) -> SurfaceConfiguration{
+
+    let mut config = wgpu::SurfaceConfiguration {
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        format: surface.get_supported_formats(&adapter)[0],
+        width: size.width,
+        height: size.height,
+        present_mode: wgpu::PresentMode::Fifo,
+        alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
+    };
+    surface.configure(&device, &config);
+
+    return config
+}
+
+
+
 
 //load the level , textures , etc 
 fn load<E: FrameworkInstance>(
+ 
 
     #[cfg(not(target_arch = "wasm32"))] Setup {
         window,
@@ -291,25 +325,16 @@ fn load<E: FrameworkInstance>(
         queue,
         offscreen_canvas_setup,
     }: Setup,
+    config:SurfaceConfiguration
 
-) -> LoadInstance<E>{
+) -> E {
 
-    let spawner = Spawner::new();
-    let mut config = wgpu::SurfaceConfiguration {
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format: surface.get_supported_formats(&adapter)[0],
-        width: size.width,
-        height: size.height,
-        present_mode: wgpu::PresentMode::Fifo,
-        alpha_mode: surface.get_supported_alpha_modes(&adapter)[0],
-    };
-    surface.configure(&device, &config);
 
     log::info!("Initializing the framework instance...");
     let mut frameworkInstance = E::init(&config, &adapter, &device, &queue);
 
 
-    return LoadInstance { spawner , config , frameworkInstance  };
+    return frameworkInstance;
 
 }
 
@@ -336,10 +361,10 @@ fn start<E: FrameworkInstance >(
         device,
         queue,
         offscreen_canvas_setup,
-    }: Setup, LoadInstance{spawner,config,frameworkInstance}:LoadInstance<E>
+    }: Setup,  config:&mut SurfaceConfiguration, frameworkInstance: &mut E 
 ) {
    
-
+    let spawner = Spawner::new();
 
     #[cfg(not(target_arch = "wasm32"))]
     let mut last_frame_inst = Instant::now();
@@ -499,9 +524,10 @@ impl Spawner {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn run<E: FrameworkInstance>(title: &str) {
     let setup = pollster::block_on(setup::<E>(title));     
-    
-    let loadInstance = load::<E>(setup);
-    start::<E>(setup,loadInstance);
+
+    let config = configure(setup);
+    let loadInstance = load::<E>(setup,config.clone());
+    start::<E>(setup,&mut config,&mut loadInstance);
 }
 
 #[cfg(target_arch = "wasm32")]
