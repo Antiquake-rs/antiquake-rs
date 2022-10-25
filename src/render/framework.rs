@@ -260,7 +260,7 @@ async fn setup<E: FrameworkInstance>(title: &str) -> Setup {
 }
 
 
-fn configure(   #[cfg(not(target_arch = "wasm32"))] &mut Setup {
+fn configure_surface(   #[cfg(not(target_arch = "wasm32"))] Setup {
     window,
     event_loop,
     instance,
@@ -269,8 +269,8 @@ fn configure(   #[cfg(not(target_arch = "wasm32"))] &mut Setup {
     adapter,
     device,
     queue,
-}: &mut Setup,
-#[cfg(target_arch = "wasm32")] &mut  Setup {
+}: &Setup,
+#[cfg(target_arch = "wasm32")] Setup {
     window,
     event_loop,
     instance,
@@ -280,7 +280,7 @@ fn configure(   #[cfg(not(target_arch = "wasm32"))] &mut Setup {
     device,
     queue,
     offscreen_canvas_setup,
-}: &mut  Setup,
+}: &Setup,
 
 ) -> SurfaceConfiguration{
 
@@ -324,7 +324,7 @@ fn load<E: FrameworkInstance>(
 
 
 fn start<E: FrameworkInstance >(
-    #[cfg(not(target_arch = "wasm32"))] &Setup {
+    #[cfg(not(target_arch = "wasm32"))] Setup {
         window,
         event_loop,
         instance,
@@ -333,8 +333,8 @@ fn start<E: FrameworkInstance >(
         adapter,
         device,
         queue,
-    }: &Setup,
-    #[cfg(target_arch = "wasm32")] &Setup {
+    }: Setup,
+    #[cfg(target_arch = "wasm32")] Setup {
         window,
         event_loop,
         instance,
@@ -344,7 +344,7 @@ fn start<E: FrameworkInstance >(
         device,
         queue,
         offscreen_canvas_setup,
-    }: &Setup,  config:&mut SurfaceConfiguration, frameworkInstance: &mut E 
+    }: Setup, mut config: SurfaceConfiguration, mut frameworkInstance: E 
 ) {
    
     let spawner = Spawner::new();
@@ -508,9 +508,9 @@ impl Spawner {
 pub fn run<E: FrameworkInstance>(title: &str) {
     let setup = pollster::block_on(setup::<E>(title));     
 
-    let mut config = configure(&mut  setup);
-    let mut loadInstance = load::<E>(&config,&setup.adapter,&setup.device,&setup.queue);
-    start::<E>(&setup , &mut config,  &mut loadInstance);
+    let config = configure_surface(&setup);
+    let loaded_instance = load::<E>(&config,&setup.adapter,&setup.device,&setup.queue);
+    start::<E>(setup ,  config,    loaded_instance);
 }
 
 #[cfg(target_arch = "wasm32")]

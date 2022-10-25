@@ -25,9 +25,9 @@ use std::time::{Instant, Duration};
 use std::rc::Rc;
 use std::io::Cursor;
  
-use render::RenderFrameworkInstance;
-use render::framework; //have to get it through there 
-use render::FrameworkInstance;
+use render::renderspace::cube::CubeRenderspace;
+use render::renderspace::cube::framework; //have to get it through there 
+//use render::framework::FrameworkInstance;
 
 
 //Execution begins here 
@@ -61,8 +61,8 @@ fn main() {
 
  
 
-    framework::run::<RenderFrameworkInstance>("Soulgate");
-    framework::run::<RenderFrameworkInstance>("Soulgate2");
+    framework::run::<CubeRenderspace>("Soulgate");
+    framework::run::<CubeRenderspace>("Soulgate2");
 }
 
 
