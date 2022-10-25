@@ -10,7 +10,7 @@ Levels can be designed using Trenchbroom editor.
 
 
 
-
+cargo run --debug --bin quake-client
 
 
 ### Credits 
