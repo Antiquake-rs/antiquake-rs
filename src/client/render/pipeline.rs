@@ -258,10 +258,11 @@ pub trait Pipeline {
             let desc = wgpu::PipelineLayoutDescriptor {
                 label: Some(&label),
                 bind_group_layouts: &layouts,
-                push_constant_ranges: &ranges,
+                push_constant_ranges: &[]//&ranges,
             };
             device.create_pipeline_layout(&desc)
         };
+ 
 
         let wgsl_shader = create_shader(          
             format!("{}.wgsl", Self::name()).as_str(),
@@ -288,19 +289,20 @@ pub trait Pipeline {
 //how do other modern engines do this ?
 //see https://github.com/kvark/vange-rs/blob/master/src/render/object.rs line 140 
 
+
         info!("create_render_pipeline");
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &wgsl_shader,
-                entry_point: "color_vs",
+                entry_point: "main_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
                 module: &wgsl_shader,
-                entry_point: "color_fs",
+                entry_point: "main_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {

@@ -80,3 +80,6 @@ wgpu examples mipmap
 
 ## TODO 
 fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tests/in/push-constants.wgsl
+
+
+float is not provided by the pipeline !! 
