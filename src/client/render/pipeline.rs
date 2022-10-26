@@ -233,15 +233,21 @@ pub trait Pipeline {
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
        
         //dont use push constants anymore ? 
-       // Self::validate_push_constant_types(device.limits());
+       //Self::validate_push_constant_types(device.limits());
+
+       let max_pc_size = device.limits().max_push_constant_size;
 
         info!("Creating {} pipeline", Self::name());
         let bind_group_layouts = Self::bind_group_layout_descriptors()
             .iter()
-            .map(|desc| device.create_bind_group_layout(desc))
+            .map(|desc| {
+                info!( "creating bind group {}", desc.label.unwrap() );
+                return device.create_bind_group_layout(desc);
+                
+            })
             .collect::<Vec<_>>();
         info!(
-            "{} layouts in prefix | {} specific to pipeline",
+            "{} bind group layouts in prefix | {} specific to pipeline",
             bind_group_layout_prefix.len(),
             bind_group_layouts.len(),
         );
@@ -252,7 +258,7 @@ pub trait Pipeline {
                 .iter()
                 .chain(bind_group_layouts.iter())
                 .collect();
-            info!("{} layouts total", layouts.len());
+            info!("{} biggrouplayouts total", layouts.len());
             let ranges = Self::push_constant_ranges();
             let label = format!("{} pipeline layout", Self::name());
             let desc = wgpu::PipelineLayoutDescriptor {

@@ -5,16 +5,13 @@ struct VertexOutput {
 };
 
 struct FragmentOutput {
-    @location(0) diffuse_attachment: vec4<f32>,
+    @location(0) diffuse_attachment: vec4<u32>,
     @location(1) normal_attachment: vec4<f32>, 
     @location(2) light_attachment: vec4<f32>, 
 };
 
-@group(0)
-@binding(0)
-var<uniform> transform: mat4x4<f32>;
-
-
+//@group(0) @binding(0) var<uniform> transform: mat4x4<f32>;
+ // model_view
 
 
 fn convert_from(in1: vec3<f32>) -> vec3<f32> {
@@ -36,10 +33,12 @@ fn main_vs(
     return result;
 }
  
+ // shader global ResourceBinding { group: 0, binding: 1 } is not available in the layout pipeline layout
 
-@group(0)
-@binding(1)
-var u_diffuse_texture: texture_2d<u32>;
+
+@group(0) @binding(0) var u_diffuse_texture: texture_2d<u32>;
+
+//@group(2) @binding(1) var u_diffuse_sampler: sampler;
 
 @fragment
 fn main_fs(vertex: VertexOutput) -> FragmentOutput {
@@ -52,11 +51,12 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
   result.diffuse_attachment = textureLoad(
    u_diffuse_texture, vec2<i32>(vertex.f_diffuse * 256.0), 0
   );
-
+ 
   // TODO: get ambient light from uniform
   result.light_attachment = vec4(0.25);
 
   // rescale normal to [0, 1]
   result.normal_attachment = vec4(vertex.f_normal / 2.0 + 0.5, 1.0);
+  return result;
 }
  
