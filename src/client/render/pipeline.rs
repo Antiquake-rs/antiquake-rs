@@ -24,7 +24,7 @@ use crate::common::util::{any_as_bytes, Pod};
 
 use std::{
    
-    io::{BufReader},
+    io::{BufReader, Error as IoError, Read},
     fs::{File},
     path::{PathBuf}
 };
@@ -51,8 +51,12 @@ where
     })
 }*/
 
-
-pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
+/*
+    From vange-rs
+    src/render/mod.rs
+    https://github.com/kvark/vange-rs/blob/master/src/render/mod.rs
+*/
+pub fn make_shader_code(name: &str) -> Result<String, IoError> {
     let base_path = PathBuf::from("shaders");//.join("shader");
     let path = base_path.join(name).with_extension("wgsl");
     if !path.is_file() {
@@ -60,7 +64,8 @@ pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
     }
 
     let mut source = String::new();
-    BufReader::new(File::open(&path)?).read_to_string(&mut source)?;
+    let mut file = File::open(&path).expect("Could not open shader file");
+    BufReader::new(&file).read_to_string(&mut source)?;
     let mut buf = String::new();
     // parse meta-data
     {
@@ -137,7 +142,7 @@ pub trait Pipeline {
     fn primitive_state() -> wgpu::PrimitiveState;
 
     /// The color state used for the pipeline.
-    fn color_target_states() -> Vec<wgpu::ColorTargetState>;
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>>;
 
     /// The depth-stencil state used for the pipeline, if any.
     fn depth_stencil_state() -> Option<wgpu::DepthStencilState>;
@@ -301,6 +306,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
+            multiview: core::num::NonZeroU32::new(2)   //??
         });
 
         (pipeline, bind_group_layouts)
@@ -370,6 +376,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
+            multiview: core::num::NonZeroU32::new(2)  //??
         });
 
         pipeline

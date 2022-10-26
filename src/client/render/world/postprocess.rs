@@ -133,7 +133,7 @@ impl Pipeline for PostProcessPipeline {
         QuadPipeline::primitive_state()
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         QuadPipeline::color_target_states()
     }
 

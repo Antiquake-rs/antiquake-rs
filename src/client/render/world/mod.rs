@@ -133,26 +133,26 @@ impl Pipeline for WorldPipelineBase {
         }
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         vec![
             // diffuse attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: DIFFUSE_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
                 write_mask: wgpu::ColorWrites::ALL,
-            },
+            }),
             // normal attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: NORMAL_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
                 write_mask: wgpu::ColorWrites::ALL,
-            },
+            }),
             // light attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: LIGHT_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
                 write_mask: wgpu::ColorWrites::ALL,
-            },
+            }),
         ]
     }
 

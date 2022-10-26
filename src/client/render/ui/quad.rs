@@ -238,12 +238,12 @@ impl Pipeline for QuadPipeline {
         }
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
-        vec![wgpu::ColorTargetState {
+    fn color_target_states() ->Vec<Option<wgpu::ColorTargetState>> {
+        vec![Some(wgpu::ColorTargetState {
             format: DIFFUSE_ATTACHMENT_FORMAT,
             blend: Some(wgpu::BlendState::REPLACE),
             write_mask: wgpu::ColorWrites::ALL,
-        }]
+        })]
     }
 
     fn depth_stencil_state() -> Option<wgpu::DepthStencilState> {

@@ -142,7 +142,7 @@ pub fn texture_descriptor<'a>(
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format,
-        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::SAMPLED,
+        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
     }
 }
 

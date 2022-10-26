@@ -139,7 +139,7 @@ impl Pipeline for GlyphPipeline {
         }]
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         QuadPipeline::color_target_states()
     }
 

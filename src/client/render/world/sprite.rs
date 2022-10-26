@@ -127,7 +127,7 @@ impl Pipeline for SpritePipeline {
         WorldPipelineBase::primitive_state()
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         WorldPipelineBase::color_target_states()
     }
 
