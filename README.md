@@ -51,11 +51,14 @@ https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
 wgpu examples mipmap 
 
 
+ 
+READ THIS ABT SHADER S 
+https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/#how-do-we-use-the-shaders
+https://www.w3.org/TR/WGSL/
 
- def refernce vange-rs to figure out how to implement shader pipeline ! 
 
-
-
+## inspiration 
+jpiolho/QuakePlugins -- cool system w lua hooks 
 
  ### Shader files to rewrite !!
  -sprite.wgsl
@@ -83,3 +86,5 @@ fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tes
 
 
 float is not provided by the pipeline !! 
+
+
