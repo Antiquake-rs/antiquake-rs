@@ -175,13 +175,13 @@ impl Game {
             cap
         });
 
-        // blit to swap chain
-        {
+        // blit to swap chain  -- swap chain is gone now you use surface ?? i dont understand 
+      /*  {
             let swap_chain_target = SwapChainTarget::with_swap_chain_view(color_attachment_view);
             let blit_pass_builder = swap_chain_target.render_pass_builder();
             let mut blit_pass = encoder.begin_render_pass(&blit_pass_builder.descriptor());
             gfx_state.blit_pipeline().blit(gfx_state, &mut blit_pass);
-        }
+        } */  
 
         let command_buffer = encoder.finish();
         {

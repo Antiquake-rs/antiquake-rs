@@ -81,6 +81,7 @@ struct ClientProgram {
     window_dimensions_changed: bool,
 
     surface: wgpu::Surface,
+    texture_view: wgpu::TextureView,
    // swap_chain: RefCell<wgpu::SwapChain>,
     gfx_state: RefCell<GraphicsState>,
     ui_renderer: Rc<UiRenderer>,
@@ -90,6 +91,30 @@ struct ClientProgram {
 }
 
 impl ClientProgram {
+
+
+    //could be wrong ?
+        fn create_texels(width:u32,height:u32) -> Vec<u8> {
+           
+            (0..width * height)
+                .map(|id| {
+                    // get high five for recognizing this ;)
+                    let cx = 3.0 * (id % width) as f32 / (height - 1) as f32 - 2.0;
+                    let cy = 2.0 * (id / width) as f32 / (height - 1) as f32 - 1.0;
+                    let (mut x, mut y, mut count) = (cx, cy, 0);
+                    while count < 0xFF && x * x + y * y < 4.0 {
+                        let old_x = x;
+                        x = x * x - y * y + cx;
+                        y = 2.0 * old_x * y + cy;
+                        count += 1;
+                    }
+                    count
+                })
+                .collect()
+        }
+
+
+
     pub async fn new(window: Window, base_dir: Option<PathBuf>, trace: bool) -> ClientProgram {
         let vfs = Vfs::with_base_dir(base_dir.unwrap_or( default_base_dir()));
 
@@ -157,6 +182,30 @@ impl ClientProgram {
             },
         ));*/
 
+
+ 
+
+         // Create the texture
+        
+         let winit::dpi::PhysicalSize { width, height } = window.inner_size();
+
+         let texels = ClientProgram::create_texels(width,height);
+         let texture_extent = wgpu::Extent3d {
+             width: size.width,
+             height: size.height,
+             depth_or_array_layers: 1,
+         };
+         let texture = device.create_texture(&wgpu::TextureDescriptor {
+             label: None,
+             size: texture_extent,
+             mip_level_count: 1,
+             sample_count: 1,
+             dimension: wgpu::TextureDimension::D2,
+             format: wgpu::TextureFormat::R8Uint,
+             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+         });
+        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
         let vfs = Rc::new(vfs);
 
         // TODO: warn user if r_msaa_samples is invalid
@@ -221,7 +270,8 @@ impl ClientProgram {
             window,
             window_dimensions_changed: false,
             surface,
-           // swap_chain,
+            texture_view,
+          //  texture_view,
             gfx_state: RefCell::new(gfx_state),
             ui_renderer,
             game,
@@ -229,8 +279,19 @@ impl ClientProgram {
         }
     }
 
+
+    fn recreate_texture_view(&self, present_mode: wgpu::PresentMode){
+
+
+      //  self.texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+     
+      
+      // ??
+    }
+
+
     /// Builds a new swap chain with the specified present mode and the window's current dimensions.
-    fn recreate_swap_chain(&self, present_mode: wgpu::PresentMode) {
+   /* fn recreate_swap_chain(&self, present_mode: wgpu::PresentMode) {
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
         let swap_chain = self.gfx_state.borrow().device().create_swap_chain(
             &self.surface,
@@ -243,14 +304,30 @@ impl ClientProgram {
             },
         );
         let _ = self.swap_chain.replace(swap_chain);
-    }
+    }*/
+
+
+/*
+ Swapchain output view   is used for the color attachment view
+
+ what do modern engines use for a color attachment view !? for winit 
+
+ The swapchain has been merged into the surface. Where you once made a new swapchain, you now call surface.configure() and your acquire_next_frame calls also go on the surface.
+
+*/
 
     fn render(&mut self) {
-        let swap_chain_output = self.swap_chain.borrow_mut().get_current_frame().unwrap();
+
+       // let color_attachment_texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        //self.surface.configure(device, config)
+
+        //let swap_chain_output = self.surface.borrow_mut().get_current_frame().unwrap();
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
         self.game.render(
             &self.gfx_state.borrow(),
-            &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
+            &self.texture_view,
+         //   &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
             width,
             height,
             &self.console.borrow(),
@@ -282,7 +359,8 @@ impl Program for ClientProgram {
         // recreate swapchain if needed
         if self.window_dimensions_changed {
             self.window_dimensions_changed = false;
-            self.recreate_swap_chain(wgpu::PresentMode::Immediate);
+       //     self.recreate_swap_chain(wgpu::PresentMode::Immediate);
+            self.recreate_texture_view(wgpu::PresentMode::Immediate);
         }
 
         let size: Extent2d = self.window.inner_size().into();
