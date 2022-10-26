@@ -231,7 +231,9 @@ pub trait Pipeline {
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
-        Self::validate_push_constant_types(device.limits());
+       
+        //dont use push constants anymore ? 
+       // Self::validate_push_constant_types(device.limits());
 
         info!("Creating {} pipeline", Self::name());
         let bind_group_layouts = Self::bind_group_layout_descriptors()
