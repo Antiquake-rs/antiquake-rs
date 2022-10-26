@@ -123,7 +123,12 @@ use std::{collections::HashSet, error::Error, fmt, iter::Iterator, rc::Rc};
 use crate::common::math::{Hyperplane, HyperplaneSide, LinePlaneIntersect};
 
 // TODO: Either Trace should be moved into common or the functions requiring it should be moved into server
-use crate::server::world::{Trace, TraceEnd, TraceStart};
+//use crate::server::world::{Trace, TraceEnd, TraceStart};
+
+
+use crate::common::phys::{MoveKind, Trace, TraceEnd, TraceEndKind, TraceStart};
+ 
+
 
 use cgmath::Vector3;
 use chrono::Duration;

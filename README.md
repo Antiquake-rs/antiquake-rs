@@ -31,6 +31,9 @@ wgsl shaders dont need to be compiled like vert-frag ones do !
 
 
 
+- need to change pipeline  L267  -- the way shaders are created.  
+
+
 ## shaders project ref !
  https://github.com/kvark/baryon
  https://github.com/kvark/vange-rs/tree/master/res/shader/terrain

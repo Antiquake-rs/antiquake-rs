@@ -248,7 +248,7 @@ pub trait Pipeline {
     /// Pipelines must be reconstructed when the MSAA sample count is changed.
     fn recreate(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+     //   compiler: &mut shaderc::Compiler,
         bind_group_layouts: &[&wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> wgpu::RenderPipeline {
@@ -262,6 +262,9 @@ pub trait Pipeline {
                 Self::fragment_push_constant_range(),
             ],
         });
+     
+     
+            //need to change the way this works !!! 
         let vertex_shader = create_shader(
             device,
             compiler,
@@ -276,6 +279,10 @@ pub trait Pipeline {
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),
         );
+      
+      
+      
+      
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),

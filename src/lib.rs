@@ -18,8 +18,10 @@ extern crate rand;
 extern crate regex;
 extern crate rodio;
 extern crate winit;
+extern crate serde; 
+extern crate strum;
  
-
+extern crate nom; 
 
 pub mod client;
 pub mod common;

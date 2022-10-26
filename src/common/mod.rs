@@ -34,6 +34,7 @@ pub mod sprite;
 pub mod util;
 pub mod vfs;
 pub mod wad;
+pub mod phys;
 
 use std::path::PathBuf;
 

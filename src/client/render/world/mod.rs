@@ -42,7 +42,7 @@ lazy_static! {
         vec![
             wgpu::BindGroupLayoutEntry {
                 binding:0,
-                visibility:wgpu::ShaderStage::all(),
+                visibility:wgpu::ShaderStages::all(),
                 ty:wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -57,7 +57,7 @@ lazy_static! {
             // TODO: move this to push constants once they're exposed in wgpu
             wgpu::BindGroupLayoutEntry {
                 binding:0,
-                visibility:wgpu::ShaderStage::VERTEX,
+                visibility:wgpu::ShaderStages::VERTEX,
                 ty:wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: true,
@@ -69,14 +69,14 @@ lazy_static! {
             // diffuse and fullbright sampler
             wgpu::BindGroupLayoutEntry {
                 binding:1,
-                visibility:wgpu::ShaderStage::FRAGMENT,
+                visibility:wgpu::ShaderStages::FRAGMENT,
                 ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
                 count:None,
             },
             // lightmap sampler
             wgpu::BindGroupLayoutEntry {
                 binding:2,
-                visibility:wgpu::ShaderStage::FRAGMENT,
+                visibility:wgpu::ShaderStages::FRAGMENT,
                 ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
                 count:None,
             },
@@ -139,19 +139,19 @@ impl Pipeline for WorldPipelineBase {
             wgpu::ColorTargetState {
                 format: DIFFUSE_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
+                write_mask: wgpu::ColorWrites::ALL,
             },
             // normal attachment
             wgpu::ColorTargetState {
                 format: NORMAL_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
+                write_mask: wgpu::ColorWrites::ALL,
             },
             // light attachment
             wgpu::ColorTargetState {
                 format: LIGHT_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
+                write_mask: wgpu::ColorWrites::ALL,
             },
         ]
     }

@@ -56,7 +56,7 @@ impl ParticlePipeline {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        compiler: &mut shaderc::Compiler,
+     //   compiler: &mut shaderc::Compiler,
         sample_count: u32,
         palette: &Palette,
     ) -> ParticlePipeline {
@@ -67,7 +67,7 @@ impl ParticlePipeline {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: unsafe { any_slice_as_bytes(&VERTICES) },
-            usage: wgpu::BufferUsage::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -145,7 +145,7 @@ impl ParticlePipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+      //  compiler: &mut shaderc::Compiler,
         sample_count: u32,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
@@ -221,7 +221,7 @@ pub struct FragmentPushConstants {
 const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
     wgpu::BindGroupLayoutEntry {
         binding: 0,
-        visibility: wgpu::ShaderStage::FRAGMENT,
+        visibility: wgpu::ShaderStages::FRAGMENT,
         ty: wgpu::BindingType::Sampler {
             filtering: true,
             comparison: false,
@@ -231,7 +231,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
     // per-index texture array
     wgpu::BindGroupLayoutEntry {
         binding: 1,
-        visibility: wgpu::ShaderStage::FRAGMENT,
+        visibility: wgpu::ShaderStages::FRAGMENT,
         ty: wgpu::BindingType::Texture {
             view_dimension: wgpu::TextureViewDimension::D2,
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -311,7 +311,7 @@ impl Pipeline for ParticlePipeline {
     fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
         vec![wgpu::VertexBufferLayout {
             array_stride: size_of::<ParticleVertex>() as u64,
-            step_mode: wgpu::InputStepMode::Vertex,
+            step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &VERTEX_ATTRIBUTES[0],
         }]
     }

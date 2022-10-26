@@ -73,6 +73,9 @@ use std::{
     mem::size_of,
     num::{NonZeroU32, NonZeroU64, NonZeroU8},
     rc::Rc,
+    io::{BufReader},
+    fs::{File},
+    path::{PathBuf}
 };
 
 use crate::{
@@ -389,11 +392,12 @@ impl GraphicsState {
             }),
         ];  
 
-        
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl").expect("Failed to load shader");
+       
+        /* let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../../shaders/shader.wgsl"))),
-        });
+        });*/
 
         let alias_pipeline = AliasPipeline::new(
             &device,
@@ -468,6 +472,51 @@ impl GraphicsState {
             gfx_wad 
         })
     }
+
+    pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
+        let base_path = PathBuf::from("shaders");//.join("shader");
+        let path = base_path.join(name).with_extension("wgsl");
+        if !path.is_file() {
+            panic!("Shader not found: {:?}", path);
+        }
+    
+        let mut source = String::new();
+        BufReader::new(File::open(&path)?).read_to_string(&mut source)?;
+        let mut buf = String::new();
+        // parse meta-data
+        {
+            let mut lines = source.lines();
+            let first = lines.next().unwrap();
+            if first.starts_with("//!include") {
+                for include in first.split_whitespace().skip(1) {
+                    let inc_path = base_path.join(include).with_extension("inc.wgsl");
+                    match File::open(&inc_path) {
+                        Ok(include) => BufReader::new(include).read_to_string(&mut buf)?,
+                        Err(e) => panic!("Unable to include {:?}: {:?}", inc_path, e),
+                    };
+                }
+            }
+        }
+    
+        buf.push_str(&source);
+        Ok(buf)
+    }
+    
+    pub fn load_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, IoError> {
+       // profiling::scope!("Load Shaders", name);
+    
+        let code = Self::make_shader_code(name)?;
+        debug!("shader '{}':\n{}", name, code);
+        if cfg!(debug_assertions) {
+            std::fs::write("last-shader.wgsl", &code).unwrap();
+        }
+    
+        Ok(device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some(name),
+            source: wgpu::ShaderSource::Wgsl(code.into()),
+        }))
+    }
+
 
     pub fn create_texture<'a>(
         &self,

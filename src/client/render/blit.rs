@@ -32,7 +32,7 @@ impl BlitPipeline {
 
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+       // compiler: &mut shaderc::Compiler,
         input: &wgpu::TextureView,
     ) -> BlitPipeline {
         let (pipeline, bind_group_layouts) = BlitPipeline::create(device, compiler, &[], 1);
@@ -65,7 +65,7 @@ impl BlitPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+      //  compiler: &mut shaderc::Compiler,
         input: &wgpu::TextureView,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
@@ -107,7 +107,7 @@ impl Pipeline for BlitPipeline {
                 // sampler
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Sampler {
                         filtering: true,
                         comparison: false,
@@ -117,7 +117,7 @@ impl Pipeline for BlitPipeline {
                 // blit texture
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         view_dimension: wgpu::TextureViewDimension::D2,
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
