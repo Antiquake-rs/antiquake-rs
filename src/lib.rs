@@ -21,9 +21,11 @@ extern crate regex;
 extern crate rodio;
 extern crate winit;
 extern crate serde; 
+extern crate serde_json; 
 extern crate strum;
  
 extern crate nom; 
+extern crate png;
 
 pub mod client;
 pub mod common;

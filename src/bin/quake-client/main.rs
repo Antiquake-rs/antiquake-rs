@@ -1,5 +1,10 @@
 
 
+mod game;
+mod menu;
+pub mod capture;
+pub mod trace;
+
 use glam;
 use wgpu;
 use winit;
@@ -21,11 +26,22 @@ use std::{
 
 use structopt::StructOpt;
  
+use game::Game;
+
+use soulgateengine::client; 
+ 
+use soulgateengine::client::input::{Input,InputFocus};
+use soulgateengine::common::console::{CvarRegistry,CmdRegistry,Console};
+use soulgateengine::common::vfs::Vfs;
+use soulgateengine::common::host::{Host, Program};
+//use soulgateengine::client::input::InputFocus::{Game};
+use soulgateengine::client::render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT};
 
 
 
-
-
+use soulgateengine::client::menu::Menu;
+use soulgateengine::client::Client;
+use soulgateengine::common::default_base_dir;
 
 
 #[macro_use]
@@ -34,8 +50,8 @@ extern crate error_chain;
 use std::time::{Instant, Duration};
  
  
-use render::renderspace::level::LevelRenderspace;
-use render::renderspace::level::framework; //have to get it through there 
+//use soulgateengine::render::renderspace::level::LevelRenderspace;
+//use soulgateengine::render::renderspace::level::framework; //have to get it through there 
 
 use winit::{
     event::{Event, WindowEvent},
@@ -73,7 +89,7 @@ struct ClientProgram {
 
 impl ClientProgram {
     pub async fn new(window: Window, base_dir: Option<PathBuf>, trace: bool) -> ClientProgram {
-        let vfs = Vfs::with_base_dir(base_dir.unwrap_or(common::default_base_dir()));
+        let vfs = Vfs::with_base_dir(base_dir.unwrap_or( default_base_dir()));
 
         let con_names = Rc::new(RefCell::new(Vec::new()));
 
@@ -94,7 +110,7 @@ impl ClientProgram {
         )));
         input.borrow_mut().bind_defaults();
 
-        let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
+        let instance = wgpu::Instance::new(wgpu::Backends::PRIMARY);
         let surface = unsafe { instance.create_surface(&window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {

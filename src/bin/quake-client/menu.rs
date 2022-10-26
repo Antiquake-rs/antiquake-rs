@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use richter::client::menu::{Menu, MenuBodyView, MenuBuilder, MenuView};
+use soulgateengine::client::menu::{Menu, MenuBodyView, MenuBuilder, MenuView};
 
 use failure::Error;
 
