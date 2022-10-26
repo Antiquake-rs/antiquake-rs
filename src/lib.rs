@@ -1,3 +1,5 @@
+//allow for experimental drain_filter
+#![feature(drain_filter)]
 
 #[macro_use]
 extern crate bitflags;
