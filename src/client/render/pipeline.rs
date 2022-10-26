@@ -264,7 +264,7 @@ pub trait Pipeline {
         let wgsl_shader = create_shader(          
             format!("{}.wgsl", Self::name()).as_str(),
             device
-        );
+        ).expect("Could not create wgsl shader");
 
 
         /*let vertex_shader = create_shader(
@@ -284,20 +284,21 @@ pub trait Pipeline {
 
 //need to update this so it accepted the new unified shader !
 //how do other modern engines do this ?
+//see https://github.com/kvark/vange-rs/blob/master/src/render/object.rs line 140 
 
         info!("create_render_pipeline");
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vertex_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
-                module: &fragment_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {
@@ -332,10 +333,11 @@ pub trait Pipeline {
             ],
         });
         
-        let wgsl_shader = create_shader( 
+        let wgsl_shader = create_shader(          
             format!("{}.wgsl", Self::name()).as_str(),
             device
-        );
+        ).expect("Could not create wgsl shader");
+
      /* 
           
         let vertex_shader = create_shader(
@@ -360,14 +362,14 @@ pub trait Pipeline {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vertex_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
-                module: &fragment_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {
