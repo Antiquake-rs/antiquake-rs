@@ -22,6 +22,14 @@ use std::mem::size_of;
 
 use crate::common::util::{any_as_bytes, Pod};
 
+use std::{
+   
+    io::{BufReader},
+    fs::{File},
+    path::{PathBuf}
+};
+
+
 /// The `Pipeline` trait, which allows render pipelines to be defined more-or-less declaratively.
 
 /*fn create_shader<S>(
@@ -77,7 +85,7 @@ pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
 pub fn create_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, std::io::Error> {
    // profiling::scope!("Load Shaders", name);
 
-    let code = Self::make_shader_code(name)?;
+    let code =  make_shader_code(name)?;
     debug!("shader '{}':\n{}", name, code);
     if cfg!(debug_assertions) {
         std::fs::write("last-shader.wgsl", &code).unwrap();
@@ -214,8 +222,7 @@ pub trait Pipeline {
     /// created from this pipeline's `bind_group_layout_descriptors()` method when creating the
     /// `RenderPipeline`. This permits the reuse of `BindGroupLayout`s between pipelines.
     fn create(
-        device: &wgpu::Device,
-      ///  shader: &mut wgpu::ShaderModule,  
+        device: &wgpu::Device, 
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
@@ -254,7 +261,7 @@ pub trait Pipeline {
             device
         );
 
-        
+
         /*let vertex_shader = create_shader(
             device, 
              shader,
@@ -271,6 +278,7 @@ pub trait Pipeline {
         );*/
 
 //need to update this so it accepted the new unified shader !
+//how do other modern engines do this ?
 
         info!("create_render_pipeline");
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -318,10 +326,9 @@ pub trait Pipeline {
             ],
         });
         
-        let wgsl_shader = create_shader(
-            device, 
+        let wgsl_shader = create_shader( 
             format!("{}.wgsl", Self::name()).as_str(),
-            
+            device
         );
      /* 
           

@@ -84,7 +84,7 @@ impl BrushPipeline {
             .iter()
             .chain(self.bind_group_layouts.iter())
             .collect();
-        self.pipeline = BrushPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = BrushPipeline::recreate(device,  &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {

@@ -70,14 +70,14 @@ lazy_static! {
             wgpu::BindGroupLayoutEntry {
                 binding:1,
                 visibility:wgpu::ShaderStages::FRAGMENT,
-                ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                ty:wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count:None,
             },
             // lightmap sampler
             wgpu::BindGroupLayoutEntry {
                 binding:2,
                 visibility:wgpu::ShaderStages::FRAGMENT,
-                ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                ty:wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count:None,
             },
         ],
@@ -127,7 +127,7 @@ impl Pipeline for WorldPipelineBase {
             strip_index_format: None,
             front_face: wgpu::FrontFace::Cw,
             cull_mode: None,
-            clamp_depth: false,
+            unclipped_depth: false,
             polygon_mode: wgpu::PolygonMode::Fill,
             conservative: false,
         }

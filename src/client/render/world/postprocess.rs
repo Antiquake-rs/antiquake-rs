@@ -72,10 +72,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
     wgpu::BindGroupLayoutEntry {
         binding: 0,
         visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Sampler {
-            filtering: true,
-            comparison: false,
-        },
+        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
         count: None,
     },
     // color buffer

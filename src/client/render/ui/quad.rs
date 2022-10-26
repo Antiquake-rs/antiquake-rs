@@ -156,10 +156,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
         wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Sampler {
-                filtering: true,
-                comparison: false,
-            },
+            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
             count: None,
         },
     ],
@@ -235,7 +232,7 @@ impl Pipeline for QuadPipeline {
             strip_index_format: None,
             front_face: wgpu::FrontFace::Cw,
             cull_mode: Some(wgpu::Face::Back),
-            clamp_depth: false,
+            unclipped_depth: false,
             polygon_mode: wgpu::PolygonMode::Fill,
             conservative: false,
         }
