@@ -110,7 +110,7 @@ pub fn create_depth_attachment(
 
 /// Intermediate object that can generate `RenderPassDescriptor`s.
 pub struct RenderPassBuilder<'a> {
-    color_attachments: Vec<wgpu::RenderPassColorAttachment<'a>>,
+    color_attachments: Vec<Option<wgpu::RenderPassColorAttachment<'a>>>,
     depth_attachment: Option<wgpu::RenderPassDepthStencilAttachment<'a>>,
 }
 
@@ -230,30 +230,30 @@ impl RenderTarget for InitialPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
             color_attachments: vec![
-                wgpu::RenderPassColorAttachment {
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.diffuse_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
-                wgpu::RenderPassColorAttachment {
+                }),
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.normal_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
-                wgpu::RenderPassColorAttachment {
+                }),
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.light_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
+                }),
             ],
             depth_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: self.depth_view(),
@@ -308,14 +308,15 @@ impl DeferredPassTarget {
 impl RenderTarget for DeferredPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: self.color_view(),
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
@@ -367,14 +368,15 @@ impl FinalPassTarget {
 impl RenderTarget for FinalPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: &self.color_view,
                 resolve_target: Some(self.resolve_view()),
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
@@ -403,14 +405,15 @@ impl<'a> SwapChainTarget<'a> {
 impl<'a> RenderTarget for SwapChainTarget<'a> {
     fn render_pass_builder(&self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: self.swap_chain_view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
