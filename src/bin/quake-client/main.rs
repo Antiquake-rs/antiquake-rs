@@ -147,11 +147,32 @@ impl ClientProgram {
             })
             .await
             .unwrap();
+            
+
+            //from wgpu cube example framework
+        let required_limits = wgpu::Limits::downlevel_webgl2_defaults();
+        let optional_features= wgpu::Features::default();
+        let required_features= wgpu::Features::empty();
+        let adapter_features = adapter.features();
+
+        assert!(
+            adapter_features.contains(required_features),
+            "Adapter does not support required features for this example: {:?}",
+            required_features - adapter_features
+        );
+
+              // Make sure we use the texture resolution limits from the adapter, so we can support images the size of the surface.
+         let needed_limits = required_limits.using_resolution(adapter.limits());
+
+
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: wgpu::Features::PUSH_CONSTANTS
+                    features: (optional_features & adapter_features) | required_features,
+                    limits: needed_limits,
+
+                  /*  features: wgpu::Features::PUSH_CONSTANTS
                         | wgpu::Features::TEXTURE_BINDING_ARRAY
                       //  | wgpu::Features::TEXTURE_ARRAY_DYNAMIC_INDEXING
                         | wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,//TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
@@ -160,7 +181,7 @@ impl ClientProgram {
                         max_uniform_buffer_binding_size: 65536,
                         max_push_constant_size: 256,
                         ..Default::default()
-                    },
+                    },*/
                 },
                 if trace {
                     Some(Path::new("./trace/"))
@@ -169,7 +190,7 @@ impl ClientProgram {
                 },
             )
             .await
-            .unwrap();
+            .expect("Failed to request_device");
         let size: Extent2d = window.inner_size().into();
       /*  let swap_chain = RefCell::new(device.create_swap_chain(
             &surface,

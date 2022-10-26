@@ -45,8 +45,12 @@ https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
  https://github.com/kvark/baryon
  https://github.com/kvark/vange-rs/tree/master/res/shader/terrain
 
+wgpu examples mipmap 
+
+
 
  def refernce vange-rs to figure out how to implement shader pipeline ! 
+
 
 
 
@@ -66,3 +70,5 @@ https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
  client/input/game -> line 354 -> mousewheels 
 
 
+
+-swapchain became texture view. i think that is what the pipeline writes to.  its totally jacked up .
