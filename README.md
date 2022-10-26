@@ -40,3 +40,16 @@ wgsl shaders dont need to be compiled like vert-frag ones do !
 
 
  def refernce vange-rs to figure out how to implement shader pipeline ! 
+
+
+
+ ### Shader files to rewrite !!
+ -sprite.wgsl
+ -quad.wgsl
+ -postprocess.wgsl
+ -particle.wgsl
+ -glyph.wgsl
+ -deferred.wgsl 
+ -brush.wgsl
+ -blit.wgsl 
+ -alias.wgsl 

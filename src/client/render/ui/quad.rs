@@ -84,11 +84,11 @@ pub struct QuadPipeline {
 impl QuadPipeline {
     pub fn new(
         device: &wgpu::Device,
-       // compiler: &mut shaderc::Compiler,
+        
         sample_count: u32,
     ) -> QuadPipeline {
         let (pipeline, bind_group_layouts) =
-            QuadPipeline::create(device, compiler, &[], sample_count);
+            QuadPipeline::create(device,  &[], sample_count);
 
         use wgpu::util::DeviceExt as _;
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -112,11 +112,11 @@ impl QuadPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+    
         sample_count: u32,
     ) {
         let layout_refs = self.bind_group_layouts.iter().collect::<Vec<_>>();
-        self.pipeline = QuadPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = QuadPipeline::recreate(device,   &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {

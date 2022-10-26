@@ -20,11 +20,11 @@ pub struct PostProcessPipeline {
 impl PostProcessPipeline {
     pub fn new(
         device: &wgpu::Device,
-       // compiler: &mut shaderc::Compiler,
+      
         sample_count: u32,
     ) -> PostProcessPipeline {
         let (pipeline, bind_group_layouts) =
-            PostProcessPipeline::create(device, compiler, &[], sample_count);
+            PostProcessPipeline::create(device,  &[], sample_count);
         use wgpu::util::DeviceExt as _;
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -46,11 +46,11 @@ impl PostProcessPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+     
         sample_count: u32,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        let pipeline = PostProcessPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        let pipeline = PostProcessPipeline::recreate(device, &layout_refs, sample_count);
         self.pipeline = pipeline;
     }
 

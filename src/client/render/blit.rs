@@ -32,10 +32,10 @@ impl BlitPipeline {
 
     pub fn new(
         device: &wgpu::Device,
-       // compiler: &mut shaderc::Compiler,
+      
         input: &wgpu::TextureView,
     ) -> BlitPipeline {
-        let (pipeline, bind_group_layouts) = BlitPipeline::create(device, compiler, &[], 1);
+        let (pipeline, bind_group_layouts) = BlitPipeline::create(device,   &[], 1);
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: None,
@@ -65,11 +65,11 @@ impl BlitPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+    
         input: &wgpu::TextureView,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        let pipeline = BlitPipeline::recreate(device, compiler, &layout_refs, 1);
+        let pipeline = BlitPipeline::recreate(device,  &layout_refs, 1);
         self.pipeline = pipeline;
         self.bind_group =
             Self::create_bind_group(device, self.bind_group_layouts(), &self.sampler, input);

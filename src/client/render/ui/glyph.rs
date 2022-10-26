@@ -47,11 +47,11 @@ pub struct GlyphPipeline {
 impl GlyphPipeline {
     pub fn new(
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+       
         sample_count: u32,
     ) -> GlyphPipeline {
         let (pipeline, bind_group_layouts) =
-            GlyphPipeline::create(device, compiler, &[], sample_count);
+            GlyphPipeline::create(device,   &[], sample_count);
 
         let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("quad instance buffer"),
@@ -70,11 +70,11 @@ impl GlyphPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+      
         sample_count: u32,
     ) {
         let layout_refs = self.bind_group_layouts.iter().collect::<Vec<_>>();
-        self.pipeline = GlyphPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = GlyphPipeline::recreate(device,  &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {

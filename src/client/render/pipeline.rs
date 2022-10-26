@@ -24,7 +24,7 @@ use crate::common::util::{any_as_bytes, Pod};
 
 /// The `Pipeline` trait, which allows render pipelines to be defined more-or-less declaratively.
 
-fn create_shader<S>(
+/*fn create_shader<S>(
     device: &wgpu::Device,
     shade_source: wgpu::ShaderSource,
     name: S,
@@ -41,7 +41,54 @@ where
         label: Some(name.as_ref()),
         source: shade_source 
     })
+}*/
+
+
+pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
+    let base_path = PathBuf::from("shaders");//.join("shader");
+    let path = base_path.join(name).with_extension("wgsl");
+    if !path.is_file() {
+        panic!("Shader not found: {:?}", path);
+    }
+
+    let mut source = String::new();
+    BufReader::new(File::open(&path)?).read_to_string(&mut source)?;
+    let mut buf = String::new();
+    // parse meta-data
+    {
+        let mut lines = source.lines();
+        let first = lines.next().unwrap();
+        if first.starts_with("//!include") {
+            for include in first.split_whitespace().skip(1) {
+                let inc_path = base_path.join(include).with_extension("inc.wgsl");
+                match File::open(&inc_path) {
+                    Ok(include) => BufReader::new(include).read_to_string(&mut buf)?,
+                    Err(e) => panic!("Unable to include {:?}: {:?}", inc_path, e),
+                };
+            }
+        }
+    }
+
+    buf.push_str(&source);
+    Ok(buf)
 }
+
+//this updated way to create a shader requires no compiler since it uses wgsl format
+pub fn create_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, std::io::Error> {
+   // profiling::scope!("Load Shaders", name);
+
+    let code = Self::make_shader_code(name)?;
+    debug!("shader '{}':\n{}", name, code);
+    if cfg!(debug_assertions) {
+        std::fs::write("last-shader.wgsl", &code).unwrap();
+    }
+
+    Ok(device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(name),
+        source: wgpu::ShaderSource::Wgsl(code.into()),
+    }))
+}
+
 
 pub enum PushConstantUpdate<T> {
     /// Update the push constant to a new value.
@@ -168,7 +215,7 @@ pub trait Pipeline {
     /// `RenderPipeline`. This permits the reuse of `BindGroupLayout`s between pipelines.
     fn create(
         device: &wgpu::Device,
-        shader: &mut wgpu::ShaderModule, 
+      ///  shader: &mut wgpu::ShaderModule,  
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
@@ -202,11 +249,17 @@ pub trait Pipeline {
             device.create_pipeline_layout(&desc)
         };
 
-        let vertex_shader = create_shader(
-            device,
-            shader,
+        let wgsl_shader = create_shader(          
+            format!("{}.wgsl", Self::name()).as_str(),
+            device
+        );
+
+        
+        /*let vertex_shader = create_shader(
+            device, 
+             shader,
             format!("{}.vert", Self::name()).as_str(),
-            shaderc::ShaderKind::Vertex,
+            shaderc::ShaderKind::Vert,
             Self::vertex_shader(),
         );
         let fragment_shader = create_shader(
@@ -215,7 +268,9 @@ pub trait Pipeline {
             format!("{}.frag", Self::name()).as_str(),
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),
-        );
+        );*/
+
+//need to update this so it accepted the new unified shader !
 
         info!("create_render_pipeline");
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -262,9 +317,14 @@ pub trait Pipeline {
                 Self::fragment_push_constant_range(),
             ],
         });
-     
-     
-            //need to change the way this works !!! 
+        
+        let wgsl_shader = create_shader(
+            device, 
+            format!("{}.wgsl", Self::name()).as_str(),
+            
+        );
+     /* 
+          
         let vertex_shader = create_shader(
             device,
             compiler,
@@ -279,7 +339,7 @@ pub trait Pipeline {
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),
         );
-      
+      */
       
       
       

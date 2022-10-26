@@ -59,12 +59,12 @@ impl BrushPipeline {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-     //   compiler: &mut shaderc::Compiler,
+   
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> BrushPipeline {
         let (pipeline, bind_group_layouts) =
-            BrushPipeline::create(device, compiler, world_bind_group_layouts, sample_count);
+            BrushPipeline::create(device,  world_bind_group_layouts, sample_count);
 
         BrushPipeline {
             pipeline,
@@ -76,7 +76,7 @@ impl BrushPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-     //   compiler: &mut shaderc::Compiler,
+    
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) {

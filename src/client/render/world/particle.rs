@@ -56,12 +56,12 @@ impl ParticlePipeline {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-     //   compiler: &mut shaderc::Compiler,
+   
         sample_count: u32,
         palette: &Palette,
     ) -> ParticlePipeline {
         let (pipeline, bind_group_layouts) =
-            ParticlePipeline::create(device, compiler, &[], sample_count);
+            ParticlePipeline::create(device,   &[], sample_count);
 
         use wgpu::util::DeviceExt as _;
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -145,11 +145,11 @@ impl ParticlePipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+     
         sample_count: u32,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        self.pipeline = ParticlePipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = ParticlePipeline::recreate(device, &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {

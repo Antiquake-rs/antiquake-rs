@@ -35,11 +35,11 @@ pub struct DeferredPipeline {
 impl DeferredPipeline {
     pub fn new(
         device: &wgpu::Device,
-       // compiler: &mut shaderc::Compiler,
+     
         sample_count: u32,
     ) -> DeferredPipeline {
         let (pipeline, bind_group_layouts) =
-            DeferredPipeline::create(device, compiler, &[], sample_count);
+            DeferredPipeline::create(device,  &[], sample_count);
 
         use wgpu::util::DeviceExt as _;
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -68,11 +68,11 @@ impl DeferredPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-      //  compiler: &mut shaderc::Compiler,
+    
         sample_count: u32,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        let pipeline = DeferredPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        let pipeline = DeferredPipeline::recreate(device,  &layout_refs, sample_count);
         self.pipeline = pipeline;
     }
 

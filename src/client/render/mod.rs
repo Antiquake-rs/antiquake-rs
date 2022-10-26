@@ -302,7 +302,7 @@ impl GraphicsState {
     ) -> Result<GraphicsState, Error> {
         let palette = Palette::load(&vfs, "gfx/palette.lmp");
         let gfx_wad = Wad::load(vfs.open("gfx.wad")?).unwrap();
-       // let mut compiler = shaderc::Compiler::new().unwrap();
+      
 
         let initial_pass_target = InitialPassTarget::new(&device, size, sample_count);
         let deferred_pass_target = DeferredPassTarget::new(&device, size, sample_count);
@@ -392,7 +392,7 @@ impl GraphicsState {
             }),
         ];  
 
-        let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl",&device).expect("Failed to load shader");
+       // let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl",&device).expect("Failed to load shader");
        
         /* let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
@@ -401,31 +401,31 @@ impl GraphicsState {
 
         let alias_pipeline = AliasPipeline::new(
             &device,
-            &shader,
+          
             &world_bind_group_layouts,
             sample_count,
         );
         let brush_pipeline = BrushPipeline::new(
             &device,
             &queue,
-            &shader,
+           
             &world_bind_group_layouts,
             sample_count,
         );
         let sprite_pipeline = SpritePipeline::new(
             &device,
-            &shader,
+            
             &world_bind_group_layouts,
             sample_count,
         );
-        let deferred_pipeline = DeferredPipeline::new(&device, &shader, sample_count);
+        let deferred_pipeline = DeferredPipeline::new(&device,  sample_count);
         let particle_pipeline =
-            ParticlePipeline::new(&device, &queue, &shader, sample_count, &palette);
-        let postprocess_pipeline = PostProcessPipeline::new(&device, &shader, sample_count);
-        let quad_pipeline = QuadPipeline::new(&device, &shader, sample_count);
-        let glyph_pipeline = GlyphPipeline::new(&device, &shader, sample_count);
+            ParticlePipeline::new(&device, &queue,   sample_count, &palette);
+        let postprocess_pipeline = PostProcessPipeline::new(&device,  sample_count);
+        let quad_pipeline = QuadPipeline::new(&device,  sample_count);
+        let glyph_pipeline = GlyphPipeline::new(&device,   sample_count);
         let blit_pipeline =
-            BlitPipeline::new(&device, &shader, final_pass_target.resolve_view());
+            BlitPipeline::new(&device,  final_pass_target.resolve_view());
 
         let default_lightmap = create_texture(
             &device,
@@ -473,49 +473,7 @@ impl GraphicsState {
         })
     }
 
-    pub fn make_shader_code(name: &str) -> Result<String, std::io::Error> {
-        let base_path = PathBuf::from("shaders");//.join("shader");
-        let path = base_path.join(name).with_extension("wgsl");
-        if !path.is_file() {
-            panic!("Shader not found: {:?}", path);
-        }
-    
-        let mut source = String::new();
-        BufReader::new(File::open(&path)?).read_to_string(&mut source)?;
-        let mut buf = String::new();
-        // parse meta-data
-        {
-            let mut lines = source.lines();
-            let first = lines.next().unwrap();
-            if first.starts_with("//!include") {
-                for include in first.split_whitespace().skip(1) {
-                    let inc_path = base_path.join(include).with_extension("inc.wgsl");
-                    match File::open(&inc_path) {
-                        Ok(include) => BufReader::new(include).read_to_string(&mut buf)?,
-                        Err(e) => panic!("Unable to include {:?}: {:?}", inc_path, e),
-                    };
-                }
-            }
-        }
-    
-        buf.push_str(&source);
-        Ok(buf)
-    }
-    
-    pub fn load_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, std::io::Error> {
-       // profiling::scope!("Load Shaders", name);
-    
-        let code = Self::make_shader_code(name)?;
-        debug!("shader '{}':\n{}", name, code);
-        if cfg!(debug_assertions) {
-            std::fs::write("last-shader.wgsl", &code).unwrap();
-        }
-    
-        Ok(device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(name),
-            source: wgpu::ShaderSource::Wgsl(code.into()),
-        }))
-    }
+  
 
 
     pub fn create_texture<'a>(
@@ -558,7 +516,7 @@ impl GraphicsState {
             self.final_pass_target = FinalPassTarget::new(self.device(), size, sample_count);
             self.blit_pipeline.rebuild(
                 &self.device,
-                &mut *self.compiler.borrow_mut(),
+              
                 self.final_pass_target.resolve_view(),
             )
         }
@@ -571,36 +529,36 @@ impl GraphicsState {
     fn recreate_pipelines(&mut self, sample_count: u32) {
         self.alias_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+        
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.brush_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+          
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.sprite_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+            
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.deferred_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.postprocess_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+           
             sample_count,
         );
         self.glyph_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.quad_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.blit_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+             
             self.final_pass_target.resolve_view(),
         );
     }

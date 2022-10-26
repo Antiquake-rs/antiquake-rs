@@ -22,12 +22,12 @@ pub struct SpritePipeline {
 impl SpritePipeline {
     pub fn new(
         device: &wgpu::Device,
-        //compiler: &mut shaderc::Compiler,
+        
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> SpritePipeline {
         let (pipeline, bind_group_layouts) =
-            SpritePipeline::create(device, compiler, world_bind_group_layouts, sample_count);
+            SpritePipeline::create(device,  world_bind_group_layouts, sample_count);
 
         use wgpu::util::DeviceExt as _;
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -46,7 +46,7 @@ impl SpritePipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        //compiler: &mut shaderc::Compiler,
+        
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) {
@@ -54,7 +54,7 @@ impl SpritePipeline {
             .iter()
             .chain(self.bind_group_layouts.iter())
             .collect();
-        self.pipeline = SpritePipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = SpritePipeline::recreate(device,   &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
