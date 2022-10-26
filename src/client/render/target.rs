@@ -158,13 +158,13 @@ pub struct InitialPassTarget {
 impl InitialPassTarget {
     pub fn new(device: &wgpu::Device, size: Extent2d, sample_count: u32) -> InitialPassTarget {
         let diffuse_attachment =
-            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::SAMPLED);
+            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);  //was SAMPLED
         let normal_attachment =
-            create_normal_attachment(device, size, sample_count, wgpu::TextureUsages::SAMPLED);
+            create_normal_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let light_attachment =
-            create_light_attachment(device, size, sample_count, wgpu::TextureUsages::SAMPLED);
+            create_light_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let depth_attachment =
-            create_depth_attachment(device, size, sample_count, wgpu::TextureUsages::SAMPLED);
+            create_depth_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
 
         let diffuse_view = diffuse_attachment.create_view(&Default::default());
         let normal_view = normal_attachment.create_view(&Default::default());
@@ -277,7 +277,7 @@ pub struct DeferredPassTarget {
 impl DeferredPassTarget {
     pub fn new(device: &wgpu::Device, size: Extent2d, sample_count: u32) -> DeferredPassTarget {
         let color_attachment =
-            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::SAMPLED);
+            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let color_view = color_attachment.create_view(&Default::default());
 
         DeferredPassTarget {
@@ -341,7 +341,7 @@ impl FinalPassTarget {
             device,
             size,
             1,
-            wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::SAMPLED,
+            wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::TEXTURE_BINDING,
         );
         let resolve_view = resolve_attachment.create_view(&Default::default());
 

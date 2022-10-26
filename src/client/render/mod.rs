@@ -166,7 +166,7 @@ pub fn create_texture<'a>(
             texture: &texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
-            aspect:  "all"
+            aspect: wgpu::TextureAspect::All
         },
         data.data(),
         wgpu::ImageDataLayout {
@@ -392,7 +392,7 @@ impl GraphicsState {
             }),
         ];  
 
-        let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl").expect("Failed to load shader");
+        let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl",&device).expect("Failed to load shader");
        
         /* let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
@@ -502,7 +502,7 @@ impl GraphicsState {
         Ok(buf)
     }
     
-    pub fn load_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, IoError> {
+    pub fn load_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, std::io::Error> {
        // profiling::scope!("Load Shaders", name);
     
         let code = Self::make_shader_code(name)?;
