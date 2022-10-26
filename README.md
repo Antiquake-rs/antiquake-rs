@@ -6,6 +6,8 @@ A game engine written in Rust that leverages quake mod tools such as the PAK fil
 Levels can be designed using Trenchbroom editor. 
 
 
+## HOW TO RUN 
+RUST_LOG=debug cargo +nightly run
 
 
 
@@ -32,6 +34,7 @@ wgsl shaders dont need to be compiled like vert-frag ones do !
 
 
 
+ 
 
 ## resources 
 https://www.models-resource.com/pc_computer/quake/model/33486/
@@ -72,3 +75,8 @@ wgpu examples mipmap
 
 
 -swapchain became texture view. i think that is what the pipeline writes to.  its totally jacked up .
+
+
+
+## TODO 
+fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tests/in/push-constants.wgsl

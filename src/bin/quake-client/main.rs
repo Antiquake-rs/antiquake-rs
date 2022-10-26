@@ -51,6 +51,9 @@ use std::time::{Instant};
 
 use chrono::Duration;
  
+use log::{debug, error, log_enabled, info, Level};
+
+
  
 //use soulgateengine::render::renderspace::level::LevelRenderspace;
 //use soulgateengine::render::renderspace::level::framework; //have to get it through there 
@@ -152,7 +155,7 @@ impl ClientProgram {
             //from wgpu cube example framework
         let required_limits = wgpu::Limits::downlevel_webgl2_defaults();
         let optional_features= wgpu::Features::default();
-        let required_features= wgpu::Features::empty();
+        let required_features= wgpu::Features::PUSH_CONSTANTS;
         let adapter_features = adapter.features();
 
         assert!(
@@ -471,6 +474,7 @@ struct Opt {
 //Execution begins here 
 fn main() {
 
+    env_logger::init();
     let opt = Opt::from_args(); //input args 
 
 
