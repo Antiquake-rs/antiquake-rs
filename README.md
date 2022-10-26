@@ -31,7 +31,14 @@ wgsl shaders dont need to be compiled like vert-frag ones do !
 
 
 
-- need to change pipeline  L267  -- the way shaders are created.  
+
+
+## resources 
+https://www.models-resource.com/pc_computer/quake/model/33486/
+
+
+## use this for ecs 
+https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
 
 
 ## shaders project ref !
@@ -57,3 +64,5 @@ wgsl shaders dont need to be compiled like vert-frag ones do !
 
  ## probable bugs 
  client/input/game -> line 354 -> mousewheels 
+
+

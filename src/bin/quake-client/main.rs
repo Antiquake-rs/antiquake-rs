@@ -37,7 +37,7 @@ use soulgateengine::common::host::{Host, Program};
 //use soulgateengine::client::input::InputFocus::{Game};
 use soulgateengine::client::render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT};
 
-
+use winit::window::CursorGrabMode;
 
 use soulgateengine::client::menu::Menu;
 use soulgateengine::client::Client;
@@ -47,7 +47,9 @@ use soulgateengine::common::default_base_dir;
 #[macro_use]
 extern crate error_chain;
 
-use std::time::{Instant, Duration};
+use std::time::{Instant};
+
+use chrono::Duration;
  
  
 //use soulgateengine::render::renderspace::level::LevelRenderspace;
@@ -79,7 +81,7 @@ struct ClientProgram {
     window_dimensions_changed: bool,
 
     surface: wgpu::Surface,
-    swap_chain: RefCell<wgpu::SwapChain>,
+   // swap_chain: RefCell<wgpu::SwapChain>,
     gfx_state: RefCell<GraphicsState>,
     ui_renderer: Rc<UiRenderer>,
 
@@ -116,6 +118,7 @@ impl ClientProgram {
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
+                force_fallback_adapter: false
             })
             .await
             .unwrap();
@@ -124,9 +127,9 @@ impl ClientProgram {
                 &wgpu::DeviceDescriptor {
                     label: None,
                     features: wgpu::Features::PUSH_CONSTANTS
-                        | wgpu::Features::SAMPLED_TEXTURE_BINDING_ARRAY
-                        | wgpu::Features::SAMPLED_TEXTURE_ARRAY_DYNAMIC_INDEXING
-                        | wgpu::Features::SAMPLED_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
+                        | wgpu::Features::TEXTURE_BINDING_ARRAY
+                      //  | wgpu::Features::TEXTURE_ARRAY_DYNAMIC_INDEXING
+                        | wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,//TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
                     limits: wgpu::Limits {
                         max_sampled_textures_per_shader_stage: 256,
                         max_uniform_buffer_binding_size: 65536,
@@ -143,7 +146,7 @@ impl ClientProgram {
             .await
             .unwrap();
         let size: Extent2d = window.inner_size().into();
-        let swap_chain = RefCell::new(device.create_swap_chain(
+      /*  let swap_chain = RefCell::new(device.create_swap_chain(
             &surface,
             &wgpu::SwapChainDescriptor {
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -152,7 +155,7 @@ impl ClientProgram {
                 height: size.height,
                 present_mode: wgpu::PresentMode::Immediate,
             },
-        ));
+        ));*/
 
         let vfs = Rc::new(vfs);
 
@@ -218,7 +221,7 @@ impl ClientProgram {
             window,
             window_dimensions_changed: false,
             surface,
-            swap_chain,
+           // swap_chain,
             gfx_state: RefCell::new(gfx_state),
             ui_renderer,
             game,
@@ -247,7 +250,7 @@ impl ClientProgram {
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
         self.game.render(
             &self.gfx_state.borrow(),
-            &swap_chain_output.output.view,
+            &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
             width,
             height,
             &self.console.borrow(),
@@ -300,7 +303,7 @@ impl Program for ClientProgram {
 
         match self.input.borrow().focus() {
             InputFocus::Game => {
-                if let Err(e) = self.window.set_cursor_grab(true) {
+                if let Err(e) = self.window.set_cursor_grab(CursorGrabMode::Locked) {
                     // This can happen if the window is running in another
                     // workspace. It shouldn't be considered an error.
                     log::debug!("Couldn't grab cursor: {}", e);
@@ -310,7 +313,7 @@ impl Program for ClientProgram {
             }
 
             _ => {
-                if let Err(e) = self.window.set_cursor_grab(false) {
+                if let Err(e) = self.window.set_cursor_grab(CursorGrabMode::None) {
                     log::debug!("Couldn't release cursor: {}", e);
                 };
                 self.window.set_cursor_visible(true);

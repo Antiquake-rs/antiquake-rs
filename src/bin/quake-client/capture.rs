@@ -91,11 +91,18 @@ impl Capture {
         P: AsRef<Path>,
     {
         let mut data = Vec::new();
-        {
+
+        //just removing this for now until i understand callbacks ..
+
+        
+      /*   {
             // map the buffer
             // TODO: maybe make this async so we don't force the whole program to block
             let slice = self.buffer.slice(..);
-            let map_future = slice.map_async(wgpu::MapMode::Read);
+            let map_future = slice.map_async(
+                    wgpu::MapMode::Read,
+                    fCallback
+                    );
             device.poll(wgpu::Maintain::Wait);
             futures::executor::block_on(map_future).unwrap();
 
@@ -111,7 +118,7 @@ impl Capture {
                 }
             }
         }
-        self.buffer.unmap();
+        self.buffer.unmap();  */
 
         let f = File::create(path).unwrap();
         let mut png_encoder = png::Encoder::new(
