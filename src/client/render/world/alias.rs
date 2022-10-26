@@ -97,6 +97,7 @@ impl Pipeline for AliasPipeline {
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/shaders/alias.frag"))
     }
 
+    //https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/#the-bindgroup
     fn bind_group_layout_descriptors() -> Vec<wgpu::BindGroupLayoutDescriptor<'static>> {
         vec![
             // group 2: updated per-texture
@@ -112,6 +113,14 @@ impl Pipeline for AliasPipeline {
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
                             multisampled: false,
                         },
+                        count: None,
+                    },
+                     wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        // This should match the filterable field of the
+                        // corresponding Texture entry above.
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
                 ],

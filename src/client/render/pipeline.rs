@@ -236,6 +236,8 @@ pub trait Pipeline {
        //Self::validate_push_constant_types(device.limits());
 
        let max_pc_size = device.limits().max_push_constant_size;
+       let max_bind_groups = device.limits().max_bind_groups;
+        info!("Your device supports {} max bind groups.",max_bind_groups);
 
         info!("Creating {} pipeline", Self::name());
         let bind_group_layouts = Self::bind_group_layout_descriptors()
@@ -258,7 +260,7 @@ pub trait Pipeline {
                 .iter()
                 .chain(bind_group_layouts.iter())
                 .collect();
-            info!("{} biggrouplayouts total", layouts.len());
+            info!("{} bindgrouplayouts total", layouts.len());
             let ranges = Self::push_constant_ranges();
             let label = format!("{} pipeline layout", Self::name());
             let desc = wgpu::PipelineLayoutDescriptor {
@@ -317,7 +319,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
-            multiview: core::num::NonZeroU32::new(2)   //??
+            multiview: None   //??
         });
 
         (pipeline, bind_group_layouts)
@@ -388,7 +390,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
-            multiview: core::num::NonZeroU32::new(2)  //??
+            multiview: None  //??
         });
 
         pipeline

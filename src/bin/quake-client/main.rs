@@ -155,7 +155,7 @@ impl ClientProgram {
             //from wgpu cube example framework
         let required_limits = wgpu::Limits::downlevel_webgl2_defaults();
         let optional_features= wgpu::Features::default();
-        let required_features= wgpu::Features::PUSH_CONSTANTS;
+        let required_features= wgpu::Features::PUSH_CONSTANTS | wgpu::Features::TEXTURE_BINDING_ARRAY;
         let adapter_features = adapter.features();
 
         assert!(
@@ -172,7 +172,7 @@ impl ClientProgram {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: (optional_features & adapter_features) | required_features,
+                    features: (optional_features & adapter_features) & required_features,
                     limits: needed_limits,
 
                   /*  features: wgpu::Features::PUSH_CONSTANTS
