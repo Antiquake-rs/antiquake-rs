@@ -85,7 +85,7 @@ struct ClientProgram {
     window_dimensions_changed: bool,
 
     surface: wgpu::Surface,
-    frame: wgpu::SurfaceTexture,
+    surface_texture: wgpu::SurfaceTexture,
     texture_view:  wgpu::TextureView ,
    // swap_chain: RefCell<wgpu::SwapChain>,
     gfx_state: RefCell<GraphicsState>,
@@ -231,10 +231,10 @@ impl ClientProgram {
         };
         surface.configure(&device, &config); 
 
-         let frame =   surface.get_current_texture().unwrap() ;
+         let surface_texture =   surface.get_current_texture().unwrap() ;
 
          //needs to be refcell  ?
-        let texture_view =    frame
+        let texture_view =    surface_texture
         .texture
         .create_view(&wgpu::TextureViewDescriptor::default()) ; 
 
@@ -308,7 +308,7 @@ impl ClientProgram {
             window,
             window_dimensions_changed: false,
             surface, 
-            frame,  //need to keep this around and not drop it from memory
+            surface_texture,  //need to keep this around and not drop it from memory
             texture_view, 
             gfx_state: RefCell::new(gfx_state),
             ui_renderer,
@@ -440,6 +440,8 @@ impl Program for ClientProgram {
         self.console.borrow().execute();
 
         self.render();
+
+        self.surface_texture.borrow().present();
     }
 
     fn shutdown(&mut self) {
