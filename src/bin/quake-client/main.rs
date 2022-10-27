@@ -172,7 +172,7 @@ impl ClientProgram {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: None,
-                    features: (optional_features & adapter_features) & required_features,
+                    features: (optional_features & adapter_features) | required_features,
                     limits: needed_limits,
 
                   /*  features: wgpu::Features::PUSH_CONSTANTS

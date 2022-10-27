@@ -22,6 +22,11 @@ Rendering libraries taken from  Thinkofname/rust-quake [github]
 
 
 
+#### pipelines 
+refactor pipelines in client.render/mod so they are more like ... components that share a single 'interface' and are in an array (registered) that just gets looped through .         
+
+
+
 ## Shaders 
 
 https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/#writing-the-shaders
@@ -88,3 +93,14 @@ fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tes
 float is not provided by the pipeline !! 
 
 
+
+
+
+## Spells System
+
+10:00 time 
+https://www.youtube.com/watch?v=Lv6WEFGzqNQ
+
+
+## stat system
+game_stat  (by tantan)
