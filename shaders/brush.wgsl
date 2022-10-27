@@ -14,7 +14,7 @@ struct VertexOutput {
     @location(0) f_normal: vec3<f32>,
     @location(1) f_diffuse: vec2<f32>,
     @location(2) f_lightmap: vec2<f32>,
-    @location(3) f_lightmap_anim: vec2<f32>,
+    @location(3) f_lightmap_anim: vec4<f32>,
     @builtin(position) pos: vec4<f32>, 
 };
 
@@ -24,10 +24,12 @@ struct FragmentOutput {
     @location(2) light_attachment: vec4<f32>, 
 };
 
+//see struct at render/world/mod 275 
 struct FrameUniforms {
-  //  light_anim_frames: array<f32,64>,
+     //light_anim_frames: array<f32,64>,
     camera_pos: vec4<f32>,
-    time:f32
+    time:f32,
+      r_lightmap:  u32
 }
 
 struct TextureUniforms { 
@@ -44,20 +46,20 @@ var<push_constant> push_constants: PushConstants;
 
 
 
-// set 0: per-frame
-@group(0) @binding(0) var<uniform> frame_uniforms: FrameUniforms;
+// set 0: per-frame - inside render/world/mod 
+@group(0) @binding(0) var<uniform>  frameuniforms: FrameUniforms;
 
 
 // set 1: per-entity
-@group(1) @binding(1) var<uniform> u_diffuse_sampler: sampler;
-@group(1) @binding(2) var<uniform> u_lightmap_sampler: sampler;
+@group(1) @binding(1) var u_diffuse_sampler: sampler;
+@group(1) @binding(2) var u_lightmap_sampler: sampler;
 
 // set 2: per-texture
-@group(2) @binding(0) var<uniform> u_diffuse_texture: texture_2d<f32>;  //texture2D -> texture_2d
-@group(2) @binding(1) var<uniform> u_fullbright_texture: texture_2d<f32>;
-@group(2) @binding(2) var<uniform> texture_uniforms: TextureUniforms;
+@group(2) @binding(0) var u_diffuse_texture: texture_2d<f32>;  //texture2D -> texture_2d
+@group(2) @binding(1) var u_fullbright_texture: texture_2d<f32>;
+//@group(2) @binding(2) var texture_uniforms: TextureUniforms;
 
-//@group(3) @binding(0) var<uniform> u_lightmap_texture:  texture_2d_array<f32>;
+//@group(3) @binding(0) var u_lightmap_texture:  texture_2d_array<f32>;
 
  
 
@@ -74,27 +76,27 @@ fn main_vs(
     @location(1) a_normal: vec3<f32>,
     @location(2) a_diffuse: vec2<f32>,
     @location(3) a_lightmap: vec2<f32>,
-    @location(4) a_lightmap_anim: vec4<f32>,
+ //   @location(4) a_lightmap_anim: vec4<f32>,
 ) -> VertexOutput {
     
     var result: VertexOutput;
   
   
      if (push_constants.texture_kind == TEXTURE_KIND_SKY) {
-        var dir:vec3<f32> = a_position - frame_uniforms.camera_pos.xyz;
+        var dir:vec3<f32> = a_position - frameuniforms.camera_pos.xyz;
         dir = vec3(dir.x,dir.y,dir.z * 3.0);
 
         // the coefficients here are magic taken from the Quake source
         let len:f32 = 6.0 * 63.0 / length(dir);
         dir = vec3(dir.xy * len, dir.z);
-        result.f_diffuse = (modf(8.0 * frame_uniforms.time, 128.0) + dir.xy) / 128.0;
+        result.f_diffuse = ( (8.0 * frameuniforms.time % 128.0) + dir.xy) / 128.0;     //instead of modf just use %
     } else {
         result.f_diffuse = a_diffuse;
     }
 
     result.f_normal = a_normal; //mat3x3(transpose(inverse(push_constants.model_view))) * convert(a_normal);
     result.f_lightmap = a_lightmap;
-    result.f_lightmap_anim = a_lightmap_anim;
+  //  result.f_lightmap_anim = a_lightmap_anim;
     result.pos = push_constants.transform * vec4(convert_from_quake(a_position), 1.0);
 
 
@@ -120,7 +122,7 @@ fn main_vs(
         ).r;
 
         // range [0, 4]
-        let style:f32 = frame_uniforms.light_anim_frames[vertex.f_lightmap_anim[i]];
+        let style:f32 = frameuniforms.light_anim_frames[vertex.f_lightmap_anim[i]];
         light[i] = map * style;
     }
 
@@ -155,7 +157,7 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
             // note the texcoord transpose here
           /*  let wave1:vec2<f32> = 3.14159265359
                 * (WARP_SCALE * vertex.f_diffuse.ts
-                    + WARP_FREQUENCY * frame_uniforms.time);
+                    + WARP_FREQUENCY * frameuniforms.time);
 
             let warp_texcoord:vec2<f32> = vertex.f_diffuse.st + WARP_AMPLITUDE
                 * vec2(sin(wave1.s), sin(wave1.t));  */
@@ -172,9 +174,9 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
 
             //swizzling is  x, y, z, w  instead of  stpq (for texture coordinates)
         case 2: { //TEXTURE_KIND_SKY
-            let base:vec2<f32> = modf(vertex.f_diffuse + frame_uniforms.time, 1.0);
-            let cloud_texcoord:vec2<f32> = vec2(0 * 0.5, 1); //vec2(base.s * 0.5, base.t);
-            let sky_texcoord:vec2<f32> = vec2(0 * 0.5 + 0.5, 1); //vec2(base.s * 0.5 + 0.5, base.t);
+            let base:vec2<f32> =  (vertex.f_diffuse + frameuniforms.time % 1.0);  //just use % instead of modf 
+            let cloud_texcoord:vec2<f32> = vec2(0.0, 1.0); //vec2(base.s * 0.5, base.t);
+            let sky_texcoord:vec2<f32> = vec2( 0.5, 1.0); //vec2(base.s * 0.5 + 0.5, base.t);
 
             let sky_color:vec4<f32> = textureSample(
                 u_diffuse_texture, u_diffuse_sampler,

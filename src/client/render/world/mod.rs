@@ -278,7 +278,7 @@ impl Camera {
 // TODO: derive Debug once const generics are stable
 pub struct FrameUniforms {
     // TODO: pack frame values into a [Vector4<f32>; 16],
-    lightmap_anim_frames: [UniformArrayFloat; 64],
+   // lightmap_anim_frames: [UniformArrayFloat; 64],
     camera_pos: Vector4<f32>,
     time: f32,
 
@@ -385,13 +385,13 @@ impl WorldRenderer {
             .queue()
             .write_buffer(state.frame_uniform_buffer(), 0, unsafe {
                 any_as_bytes(&FrameUniforms {
-                    lightmap_anim_frames: {
+                    /*lightmap_anim_frames: {
                         let mut frames = [UniformArrayFloat::new(0.0); 64];
                         for i in 0..64 {
                             frames[i] = UniformArrayFloat::new(lightstyle_values[i]);
                         }
                         frames
-                    },
+                    },*/
                     camera_pos: camera.origin.extend(1.0),
                     time: engine::duration_to_f32(time),
                     r_lightmap: UniformBool::new(cvars.get_value("r_lightmap").unwrap() != 0.0),

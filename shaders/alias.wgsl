@@ -42,15 +42,14 @@ fn main_vs(
  // shader global ResourceBinding { group: 0, binding: 1 } is not available in the layout pipeline layout
 
 
+//are these groups right ?
 
 // set 1: per-entity 
-@group(1)@binding(1) var<uniform> u_diffuse_sampler:sampler;
+@group(1)@binding(1) var u_diffuse_sampler:sampler;
 
 // set 2: per-texture chain 
-@group(2)@binding(0) var<uniform> u_diffuse_texture:texture_2d<f32>;
- 
- 
- 
+@group(2)@binding(0) var u_diffuse_texture:texture_2d<f32>;
+  
 
 @fragment
 fn main_fs(vertex: VertexOutput) -> FragmentOutput {
