@@ -104,3 +104,10 @@ https://www.youtube.com/watch?v=Lv6WEFGzqNQ
 
 ## stat system
 game_stat  (by tantan)
+
+
+## entity comp arch
+
+https://www.youtube.com/watch?v=oHYs-UqS458&list=PL0rDS3s8z_DBdjxl0GK87p1rFZ5c2Fz1e&index=12
+-build an ECS registry like at end of video 
+-load stuff from config files 

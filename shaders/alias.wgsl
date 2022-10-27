@@ -42,7 +42,7 @@ fn main_vs(
  // shader global ResourceBinding { group: 0, binding: 1 } is not available in the layout pipeline layout
 
 
-//are these groups right ?
+//these groups are right 
 
 // set 1: per-entity 
 @group(1)@binding(1) var u_diffuse_sampler:sampler;
