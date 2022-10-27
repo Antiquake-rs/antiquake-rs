@@ -16,7 +16,7 @@ struct PostProcessUniforms {
 
 
 @group(0) @binding(0) var u_sampler: sampler;
-@group(0) @binding(1) var u_color: texture_2d<f32>;   // was texture2DMS
+@group(0) @binding(1) var u_color: texture_multisampled_2d<f32>;   // was texture2DMS
 @group(0) @binding(2) var<uniform> postprocess_uniforms: PostProcessUniforms ; 
   
 
@@ -44,7 +44,7 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
     let texcoord:vec2<f32> =  vec2<f32>( f32(dims.x) * vertex.f_texcoord.x, f32(dims.y) * vertex.f_texcoord.y );
    
    
-    let in_color:vec4<f32> = textureSample( u_color, u_sampler , vec2<f32>(texcoord) ); //was texel fetch 
+    let in_color:vec4<f32> = textureLoad( u_color, vec2<i32>(texcoord) , 0 ); 
 
 
     let src_factor:f32 = postprocess_uniforms.color_shift.a;
