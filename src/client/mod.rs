@@ -830,13 +830,18 @@ impl Client {
         gfx_state: &GraphicsState,
         menu: &Menu,
     ) -> Client {
+
+
+        info!("client new 1");
+
         let conn = Rc::new(RefCell::new(None));
 
-        let (stream, handle) = match OutputStream::try_default() {
-            Ok(o) => o,
-            // TODO: proceed without sound and allow configuration in menu
-            Err(_) => Err(ClientError::OutputStream).unwrap(),
-        };
+        info!("client new 1.1");
+
+        let (stream,handle) = OutputStream::try_default().unwrap();
+
+     
+        info!("client new 2");
 
         // set up overlay/ui toggles
         cmds.borrow_mut()
@@ -863,6 +868,9 @@ impl Client {
             .insert_or_replace("disconnect", cmd_disconnect(conn.clone(), input.clone()))
             .unwrap();
 
+
+            info!("client new 3");
+
         // set up demo playback
         cmds.borrow_mut()
             .insert_or_replace(
@@ -884,6 +892,8 @@ impl Client {
                 ),
             )
             .unwrap();
+
+            info!("client new 4");
 
         let music_player = Rc::new(RefCell::new(MusicPlayer::new(vfs.clone(), handle.clone())));
         cmds.borrow_mut()

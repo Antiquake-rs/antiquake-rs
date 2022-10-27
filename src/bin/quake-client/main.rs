@@ -8,6 +8,7 @@ pub mod trace;
 use glam;
 use wgpu;
 use winit;
+use rodio::{OutputStream, OutputStreamHandle};
 
 use bytemuck::{Pod, Zeroable};
 use std::{borrow::Cow, f32::consts, future::Future, mem, pin::Pin, task};
@@ -209,7 +210,7 @@ impl ClientProgram {
 
  
 
-         // Create the texture
+         // Create the texture for the main window  (is this correct?)
         
          let winit::dpi::PhysicalSize { width, height } = window.inner_size();
 
@@ -230,6 +231,11 @@ impl ClientProgram {
          });
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
+
+
+
+
+        
         let vfs = Rc::new(vfs);
 
         // TODO: warn user if r_msaa_samples is invalid
@@ -271,8 +277,9 @@ impl ClientProgram {
         ).unwrap();
 
         // this will also execute config.cfg and autoexec.cfg (assuming an unmodified quake.rc)
-        console.borrow().stuff_text("exec quake.rc\n");
+    //    console.borrow().stuff_text("exec quake.rc\n");
 
+        info!(" starting client ");
         let client = Client::new(
             vfs.clone(),
             cvars.clone(),
@@ -282,6 +289,8 @@ impl ClientProgram {
             &gfx_state,
             &menu.borrow(),
         );
+
+        info!(" starting game ");
 
         let game = Game::new(cvars.clone(), cmds.clone(), input.clone(), client).unwrap();
 
@@ -480,12 +489,21 @@ fn main() {
 
     let event_loop = EventLoop::new();
 
+    
+        //init rodio audio before other multithreaded libs -- see https://github.com/RustAudio/rodio/issues/214
+        OutputStream::try_default().unwrap();
+
+
+
+
+
+
     let window = {
         #[cfg(target_os = "windows")]
         {
             use winit::platform::windows::WindowBuilderExtWindows as _;
             winit::window::WindowBuilder::new()
-                // disable file drag-and-drop so cpal and winit play nice
+                // disable file drag-and-drop so cpal and winit play nice --doesnt rly work 
                 .with_drag_and_drop(false)
                 .with_title("Soulgate")
                 .with_inner_size(winit::dpi::PhysicalSize::<u32>::from((1366u32, 768)))
