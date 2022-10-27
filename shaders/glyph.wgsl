@@ -1,28 +1,57 @@
-//!include globals.inc
+ 
 
-struct Debug {
-    color: vec4<f32>,
+struct VertexOutput {
+    @location(0) f_texcoord: vec2<f32>, 
+    @location(1) f_layer: u32,
+    @builtin(position) pos: vec4<f32>, 
 };
 
-@group(1) @binding(0) var<uniform> c_Debug: Debug;
-
-layout(location = 0) in vec4 a_Pos;
-layout(location = 1) in vec4 a_Color;
-
-struct Varyings {
-    @builtin(position) pos: vec4<f32>,
-    @location(0) color: vec4<f32>,
+ 
+struct FragmentOutput {
+    @location(0) output_attachment: vec4<f32> , 
 };
+ 
+ 
 
+
+@group(0) @binding(0) var u_sampler: sampler;
+@group(0) @binding(1) var u_texture: texture_2d<f32>;    ///used to be tex array -- why ?
+  
+
+  
 @vertex
-fn main_vs(@location(0) pos: vec4<f32>, @location(1) color: vec4<f32>) -> Varyings {
-    return Varyings(
-        u_Globals.view_proj * pos,
-        color,
-    );
-}
+fn main_vs(
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_texcoord: vec2<f32>, 
 
-@fragment
-fn main_fs(in: Varyings) -> @location(0) vec4<f32> {
-    return in.color;
+    @location(2) a_instance_position: vec2<f32>,
+    @location(3) a_instance_scale: vec2<f32>,
+    @location(4) a_instance_layer: u32,
+
+) -> VertexOutput {
+    var result: VertexOutput;
+    result.f_texcoord =  a_texcoord; 
+    result.f_layer = a_instance_layer;
+    result.pos = vec4(a_instance_scale * a_position + a_instance_position, 0.0, 1.0);
+    return result;
 }
+  
+ 
+ 
+ 
+@fragment
+fn main_fs(vertex: VertexOutput) -> FragmentOutput {
+    var result: FragmentOutput;
+ 
+   
+    let color:vec4<f32> = textureSample( u_texture, u_sampler , vec2<f32>(vertex.f_texcoord) ); 
+
+    if (color.a == 0f) {  //will never happen ?
+            discard;
+    } else {
+        result.output_attachment = color;
+    }
+    
+    return result;
+}
+ 

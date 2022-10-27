@@ -52,6 +52,9 @@ https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
 ## shaders project ref !
  https://github.com/kvark/baryon
  https://github.com/kvark/vange-rs/tree/master/res/shader/terrain
+ https://austin-eng.com/webgpu-samples/samples/deferredRendering
+ https://github.com/hecrj/wgpu_glyph wgpu glyph 
+ https://github.com/austinEng/webgpu-samples/blob/main/src/sample/particles/main.ts wgpu particles ! 
 
 wgpu examples mipmap 
 

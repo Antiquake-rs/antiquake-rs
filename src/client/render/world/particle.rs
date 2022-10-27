@@ -126,7 +126,7 @@ impl ParticlePipeline {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
+                    resource: wgpu::BindingResource::TextureView(&texture_view_refs[0]), //wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
                 },
             ],
         });
@@ -234,7 +234,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
             multisampled: false,
         },
-        count: NonZeroU32::new(256),
+        count: None // NonZeroU32::new(256),
     },
 ];
 

@@ -4,7 +4,7 @@ let MAX_LIGHTS:i32 = 32;
 
 
 struct VertexOutput {
-    @location(0) f_texcoord: vec2<i32>, 
+    @location(0) f_texcoord: vec2<f32>, 
     @builtin(position) pos: vec4<f32>, 
 };
 
@@ -27,10 +27,10 @@ struct DeferredUniforms {
 
 
 @group(0) @binding(0) var u_sampler: sampler;
-@group(0) @binding(1) var u_diffuse: texture_multisampled_2d<f32>;  //texture2DMS
-@group(0) @binding(2) var u_normal: texture_multisampled_2d<f32>;  //texture2DMS
-@group(0) @binding(3) var u_light: texture_multisampled_2d<f32>;  //texture2DMS
-@group(0) @binding(4) var u_depth: texture_multisampled_2d<f32>;  //texture2DMS
+@group(0) @binding(1) var u_diffuse: texture_2d<f32>;  //texture2DMS //texture_multisampled_2d
+@group(0) @binding(2) var u_normal: texture_2d<f32>;  //texture2DMS
+@group(0) @binding(3) var u_light: texture_2d<f32>;  //texture2DMS
+@group(0) @binding(4) var u_depth: texture_2d<f32>;  //texture2DMS
 
 @group(0) @binding(5) var<uniform> u_deferred: DeferredUniforms;  
   
@@ -38,13 +38,13 @@ struct DeferredUniforms {
   
 @vertex
 fn main_vs(
-   @location(0) a_position: vec3<f32>,
-    @location(1) a_texcoord: vec2<i32>, 
+    @location(0) a_position: vec2<f32>,
+    @location(1) a_texcoord: vec2<f32>, 
 ) -> VertexOutput {
     var result: VertexOutput;
     result.f_texcoord =  a_texcoord; 
  
-    result.pos = vec4(( a_position.x*2.0  - 1.0), (a_position.y * 2.0 - 1.0), 0.0, 1.0);   
+    result.pos = vec4(a_position * 2.0 - 1.0, 0.0, 1.0);   
     return result;
 }
   
@@ -61,7 +61,7 @@ fn dlight_radius( dlight:vec4<f32> ) -> f32 {
   return dlight.w;
 }
 
-fn reconstruct_position(depth :f32, f_texcoord:vec3<i32>) -> vec3<f32> {
+fn reconstruct_position(depth :f32, f_texcoord:vec2<f32>) -> vec3<f32> {
 
     // ???
 
@@ -84,17 +84,17 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
     var result: FragmentOutput;
 
    let dims:vec2<i32> = textureDimensions( u_diffuse );
-   let texcoord:vec2<i32> =  vec2<i32>( (dims.x) * vertex.f_texcoord.x, (dims.y) * vertex.f_texcoord.y );
+   let texcoord:vec2<f32> =  vec2<f32>( f32(dims.x) * vertex.f_texcoord.x, f32(dims.y) * vertex.f_texcoord.y );
    let in_color:vec4<f32> = textureSample( u_diffuse, u_sampler , vec2<f32>(texcoord) ); //texel fetch 
 
   // scale from [0, 1] to [-1, 1]
   let in_normal:vec3<f32> = 2.0
-    * textureSample(u_normal, u_sampler, texcoord).xyz   //texel fetch 
+    * textureSample(u_normal, u_sampler, vec2<f32>(texcoord)).xyz   //texel fetch 
 
     - 1.0;
 
   // Double to restore overbright values.
-  let in_light:vec4<f32> = 2.0 * textureSample( u_light, u_sampler , texcoord );
+  let in_light:vec4<f32> = 2.0 * textureSample( u_light, u_sampler , vec2<f32>(texcoord) );
 
   let in_depth:f32 = textureSample( u_depth, u_sampler , vec2<f32>(texcoord) ).x;
   let position:vec3<f32> = reconstruct_position(in_depth, vertex.f_texcoord);

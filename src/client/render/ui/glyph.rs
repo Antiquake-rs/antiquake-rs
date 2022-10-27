@@ -107,7 +107,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
             multisampled: false,
         },
-        count: NonZeroU32::new(GLYPH_COUNT as u32),
+        count: None //NonZeroU32::new(GLYPH_COUNT as u32),
     },
 ];
 
@@ -250,7 +250,7 @@ impl GlyphRenderer {
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
+                        resource: wgpu::BindingResource::TextureView(&texture_view_refs[0]), // wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
                     },
                 ],
             });

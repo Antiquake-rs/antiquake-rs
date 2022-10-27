@@ -82,7 +82,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
         ty: wgpu::BindingType::Texture {
             view_dimension: wgpu::TextureViewDimension::D2,
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
-            multisampled: true,
+            multisampled: false, //used to be multisampled 
         },
         count: None,
     },
