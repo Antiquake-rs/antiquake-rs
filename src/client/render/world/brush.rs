@@ -197,10 +197,13 @@ impl Pipeline for BrushPipeline {
                 entries: BIND_GROUP_LAYOUT_ENTRIES[0],
             },
             // group 3: updated per-face
-            wgpu::BindGroupLayoutDescriptor {
+            //requires  texture bind array dx12  for fancy lighting stuff in shader 
+            /*  
+             wgpu::BindGroupLayoutDescriptor {
                 label: Some("brush per-face bind group"),
                 entries: BIND_GROUP_LAYOUT_ENTRIES[1],
             },
+              */
         ]
     }
 
