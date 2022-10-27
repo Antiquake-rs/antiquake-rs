@@ -30,20 +30,19 @@ use structopt::StructOpt;
 use game::Game;
 
 use soulgateengine::client; 
- 
+use soulgateengine::client::demo::{DemoServer};
 use soulgateengine::client::input::{Input,InputFocus};
-use soulgateengine::common::console::{CvarRegistry,CmdRegistry,Console};
-use soulgateengine::common::vfs::Vfs;
-use soulgateengine::common::host::{Host, Program};
-//use soulgateengine::client::input::InputFocus::{Game};
 use soulgateengine::client::render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT};
-
-use winit::window::CursorGrabMode;
-
 use soulgateengine::client::menu::Menu;
 use soulgateengine::client::Client;
-use soulgateengine::common::default_base_dir;
 
+use soulgateengine::common::console::{CvarRegistry,CmdRegistry,Console};
+use soulgateengine::common::vfs::Vfs;
+use soulgateengine::common::host::{Host, Program}; 
+use soulgateengine::common::default_base_dir;
+use soulgateengine::common::net::ServerCmd;
+
+use winit::window::CursorGrabMode;
 
 #[macro_use]
 extern crate error_chain;
@@ -51,6 +50,7 @@ extern crate error_chain;
 use std::time::{Instant};
 
 use chrono::Duration;
+
  
 use log::{debug, error, log_enabled, info, Level};
 
@@ -523,37 +523,63 @@ fn main() {
 
     let client_program =
     futures::executor::block_on(ClientProgram::new(window, opt.base_dir, opt.trace));
+   // TODO: make dump_demo part of top-level binary and allow choosing file name
+   if let Some(ref demo) = opt.dump_demo {
+    let mut demfile = match client_program.vfs.open(demo) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error opening demofile: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-/*
-    //load the pak file 
-    let filename:&str = "id1/pak0.pak";
-   // let pakRc = Rc::new(pak::PackFile::new(filename).expect("Unable to load pak0"));
+    let mut demserv = match DemoServer::new(&mut demfile) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error starting demo server: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-    let pak =pak::PackFile::new(filename).expect("Unable to load pak0");
+    let mut outfile = File::create("demodump.txt").unwrap();
+    loop {
+        match demserv.next() {
+            Some(msg) => {
+                let mut curs = Cursor::new(msg.message());
+                loop {
+                    match ServerCmd::deserialize(&mut curs) {
+                        Ok(Some(cmd)) => write!(&mut outfile, "{:#?}\n", cmd).unwrap(),
+                        Ok(None) => break,
+                        Err(e) => {
+                            eprintln!("error processing demo: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
+            }
+            None => break,
+        }
+    }
 
-    let bsp_file = bsp::BspFile::parse(
-        &mut Cursor::new(pak.file("maps/start.bsp").unwrap())
-    ).unwrap();
+    std::process::exit(0);
+}
+if let Some(ref server) = opt.connect {
+    client_program
+        .console
+        .borrow_mut()
+        .stuff_text(format!("connect {}", server));
+} else if let Some(ref demo) = opt.demo {
+    client_program
+        .console
+        .borrow_mut()
+        .stuff_text(format!("playdemo {}", demo));
+}
 
-    println!("Loaded pak");*/
+let mut host = Host::new(client_program);
 
-    /*
-    let mut renderer = render::Renderer::new(
-        pak.clone(), bsp_file,
-        adapter, surface,
-        size,
-    ).unwrap();
-    */
-
-
-
-    //run is framework  453 
-
-    //start is framework 26 0
-
- 
-
- //   framework::run::<LevelRenderspace>("Soulgate");
+event_loop.run(move |event, _target, control_flow| {
+    host.handle_event(event, _target, control_flow);
+});
   
 }
 

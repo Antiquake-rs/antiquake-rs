@@ -1,0 +1,1039 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="Author" CONTENT="American McGee">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.01 [en] (WinNT; I) [Netscape]">
+   <TITLE>WINNT\Profiles\american\Desktop\manual</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#999999" LINK="#990000" VLINK="#990000" ALINK="#990000">
+<B>CONTENTS</B>
+
+<P>&nbsp;<B> <A HREF="#SYSTEM">System Requirements</A></B>
+<BR><B>&nbsp; <A HREF="#RELEASE">Release Notes</A></B>
+
+<P>I. <B>The Basics of Play</B>
+<BR><B>&nbsp; <A HREF="#A. GOAL OF THE">A. Goal of the Game</A></B>
+<BR><B>&nbsp; <A HREF="#B.Skill">B. Skill</A></B>
+<BR><B>&nbsp; <A HREF="#C. MOVING">C. Moving Around</A></B>
+<BR><B>&nbsp; <A HREF="#D. EXPLORING THE">D. Exploring the World</A></B>
+<BR><B>&nbsp; <A HREF="#E. ENVIRONMENTAL">E. Environmental Hazards</A></B>
+<BR>II. <B>Controls</B>
+<BR><B>&nbsp; <A HREF="#A. KEYBOARD">A. Keyboard Commands</A></B>
+<BR><B>&nbsp; <A HREF="#B. THE MAIN">B. Main Menu</A></B>
+<BR><B>&nbsp; <A HREF="#C.">C. The Console</A></B>
+<BR>III. <B>The Game</B>
+<BR>&nbsp;<B> <A HREF="#A. THE">A. The Screen</A></B>
+<BR><B>&nbsp; <A HREF="#B.">B. Firepower</A></B>
+<BR><B>&nbsp; <A HREF="#C. SPECIAL">C. Special Items</A></B>
+<BR><B>&nbsp; <A HREF="#D. THE">D. The Enemy</A></B>
+<BR><B>&nbsp; <A HREF="#E. ENDING A">E. Ending A Level</A></B>
+
+<P><B><A HREF="#IV. FAQs">FAQS</A></B>
+<BR><B><A HREF="#KNOWN BUGS">Known Bugs</A></B>
+<BR><B><A HREF="#V. REPORTING">Reporting Bugs</A></B>
+<BR>&nbsp;
+
+<P>&nbsp;<A NAME="SYSTEM"></A><B>SYSTEM REQUIREMENTS</B>
+
+<P>In order to play with Quake II Test you will need at least the following
+<BR>computer system:
+
+<P>P90 w/16mb of RAM (P133 recommended)
+<BR>24mb of RAM required when running GL
+<BR>40mb of HD space
+
+<P>Latest version of Glide (2.4x) required in order to use 3Dfx with this
+test.
+<BR>The Glide drivers can be found at www.3dfx.com
+<BR>&nbsp;
+
+<P>&nbsp;<A NAME="RELEASE"></A><B>RELEASE NOTES</B>
+
+<P>This demo is not intended to represent the final state of Quake 2, but
+to
+<BR>help us uncover architectural problems. There will be another demo
+available
+<BR>before the game hits store shelves that should be an accurate representation
+<BR>of the final product.
+
+<P>Some of the significant issues with the current demo are:
+
+<P>User control.&nbsp; Currently, the user input is only sampled at 10hz,
+which
+<BR>means that you can miss fast button presses, and it will generally
+feel a
+<BR>little sluggish. Movement underwater and on slopes is in a temporary
+state.
+<BR>There are also some problems with the player getting stuck in certain
+<BR>circumstances that need to be resolved.
+
+<P>Gameplay tuning.&nbsp; Most of the work remaining to us is the fine
+tuning of
+<BR>weapons and monsters for best effect.&nbsp; The current state is not
+<BR>representative of the final state.
+
+<P>Networking.&nbsp; Multiplayer games are disabled in this test.&nbsp;
+We have not
+<BR>finished the rules or compressed the communication.
+
+<P>Optimization.&nbsp; We have a few more data and code optimizations to
+implement
+<BR>that will result in some speed ups.&nbsp; Probably about 5% to 10%
+during actual
+<BR>gameplay.
+
+<P>Data.&nbsp; In the interest of keeping the demo download size reasonable,
+the
+<BR>high quality sound files and cinematics are not included for testing.&nbsp;
+The
+<BR>map files have some known T junctions in them, which can cause single
+pixel
+<BR>dots to show through in places until we fix that.
+
+<P>User extensibility.&nbsp; This demo is explicitly NOT user extendable.&nbsp;
+There is
+<BR>still a little bit of cleanup to be done before we can release the
+game dll
+<BR>source code, and the retail game will be required to use modified data.
+<BR><BR>
+Demo loading. When starting the game it may take a while for the demo to
+load.
+<BR>During this time you might suspect that you machine has hung. This
+is probably
+<BR>not the case.
+<BR><BR>
+The in-game demo will only play one time and then end in an error.<BR>
+<BR>
+<BR><A NAME="I. THE BASICS OF"></A><B>I.</B> <B>THE BASICS OF PLAY</B>
+
+<P><A NAME="A. GOAL OF THE"></A><B>A.</B> <B>GOAL OF THE GAME</B>
+<BR>&nbsp;&nbsp;&nbsp; The basic goal in Quake II is to stay alive and
+complete your missions.
+<BR>&nbsp;&nbsp;&nbsp; When entering a new level your personal computer
+(press F1) is updated
+<BR>&nbsp;&nbsp;&nbsp; with information about the tasks you must complete
+in order to progress
+<BR>&nbsp;&nbsp;&nbsp; through the game. You are presented with a mission
+objective and
+<BR>&nbsp;&nbsp;&nbsp; instructions on how to achieve your objective(s).
+
+<P>&nbsp;&nbsp;&nbsp; You are also given counters for your KILLS, GOALS,
+and, SECRETS. These are
+<BR>&nbsp;&nbsp;&nbsp; displayed on the personal computer. Whenever new
+information is added an
+<BR>&nbsp;&nbsp;&nbsp; icon will appear at the bottom of the main screen.
+
+<P>&nbsp;&nbsp;&nbsp; The overall goal for the Quake II test is to establish
+a communication
+<BR>&nbsp;&nbsp;&nbsp; uplink to your command ship. Your instructions on
+how to achieve this
+<BR>&nbsp;&nbsp;&nbsp; goal will change as you progress through the levels.
+<BR>&nbsp;
+<BR><A NAME="B.Skill"></A><B>B.</B> <B>SKILL</B>
+<BR>&nbsp;&nbsp;&nbsp; Before starting the game you may select a difficulty
+level from the
+<BR>&nbsp;&nbsp;&nbsp; GAME menu.
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; EASY:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This is
+for those of you who are slow and inept.
+<BR>&nbsp;&nbsp;&nbsp; MEDIUM:&nbsp;&nbsp;&nbsp;&nbsp; For those of you
+who have it somewhat together.
+<BR>&nbsp;&nbsp;&nbsp; HARD:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This is
+how we think you should play the game.
+<BR>&nbsp;&nbsp;&nbsp; NIGHTMARE:&nbsp; Designed to please the masochist
+in all of us.
+
+<P>&nbsp;&nbsp; <B><I>SKILL SETTINGS ARE NON-FUNCTIONAL IN THE QUAKE II
+TEST. THEY WILL BE</I></B>
+<BR><B><I>&nbsp;&nbsp; AVAILABLE IN FUTURE RELEASES.</I></B>
+
+<P><A NAME="C. MOVING"></A><B>C.</B> <B>MOVING AROUND</B>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The keys listed below can
+be changed in the Customize Controls Menu.
+
+<P>&nbsp;&nbsp;&nbsp; Walking
+<BR>&nbsp;&nbsp;&nbsp; Use the four arrow keys or the mouse. To walk steadily
+forward,
+<BR>&nbsp;&nbsp;&nbsp; hold down the Forward key (up arrow or left button
+on the mouse). Turn
+<BR>&nbsp;&nbsp;&nbsp; left or right with the left or right arrow keys,
+or by sliding your mouse
+<BR>&nbsp;&nbsp;&nbsp; in the desired direction.
+
+<P>&nbsp;&nbsp;&nbsp; Running
+<BR>&nbsp;&nbsp;&nbsp; Hold down the left Shift key to increase your speed.
+If you
+<BR>&nbsp;&nbsp;&nbsp; prefer to always run during the game, open the Main
+Menu, then the
+<BR>&nbsp;&nbsp;&nbsp; Controls menu, and select "Always Run".
+
+<P>&nbsp;&nbsp;&nbsp; Shooting
+<BR>&nbsp;&nbsp;&nbsp; Tap the CTRL key or the RIGHT mouse button to fire.
+Hold shoot
+<BR>&nbsp;&nbsp;&nbsp; down to keep firing.
+
+<P>&nbsp;&nbsp;&nbsp; Jumping
+<BR>&nbsp;&nbsp;&nbsp; Tap the SPACE bar to jump. You jump farther if you're
+moving
+<BR>&nbsp;&nbsp;&nbsp; forward at the same time, and you jump higher if
+you're moving up a slope
+<BR>&nbsp;&nbsp;&nbsp; at the same time. You'll be surprised at the spots
+you can reach in a
+<BR>&nbsp;&nbsp;&nbsp; jump. You can even avoid some attacks this way.
+
+<P>&nbsp;&nbsp;&nbsp; Ducking
+<BR>&nbsp;&nbsp;&nbsp; Press and hold down the "C" key to duck and crawl
+("C" while
+<BR>&nbsp;&nbsp;&nbsp; moving forward).&nbsp; When you release the "C"
+key, you will return to an
+<BR>&nbsp;&nbsp;&nbsp; upright position. It is also possible to avoid rockets
+in this manner.
+
+<P>&nbsp;&nbsp;&nbsp; Climbing Ladders
+<BR>&nbsp;&nbsp;&nbsp; When you encounter a ladder press and hold down
+the jump key (SPACE bar)
+<BR>&nbsp;&nbsp;&nbsp; to climb.
+
+<P>&nbsp;&nbsp;&nbsp; Swimming
+<BR>&nbsp;&nbsp;&nbsp; While underwater, aim yourself in the direction
+you wish to go
+<BR>&nbsp;&nbsp;&nbsp; and press the forward key to go in that direction.
+Unfortunately, as in
+<BR>&nbsp;&nbsp;&nbsp; real life, you may lose your bearing while underwater.
+Use the jump key
+<BR>&nbsp;&nbsp;&nbsp; (SPACE bar) to kick straight up towards the surface.
+Once on the surface,
+<BR>&nbsp;&nbsp;&nbsp; tread water by holding down jump. To get out of
+the drink, swim toward the
+<BR>&nbsp;&nbsp;&nbsp; shore and you can either jump up onto the land or
+walk straight out if it
+<BR>&nbsp;&nbsp;&nbsp; is shallow enough.&nbsp; There is always a way out
+but you may have to submerge
+<BR>&nbsp;&nbsp;&nbsp; even deeper in order to find it.
+
+<P>&nbsp;&nbsp;&nbsp; Looking Up and Down
+<BR>&nbsp;&nbsp;&nbsp; The letters "A" and "Z" allow you to look up and
+down, respectively.
+
+<P>&nbsp;&nbsp;&nbsp; Strafing
+<BR>&nbsp;&nbsp;&nbsp; Hold down either "Alt" key while the left or right
+arrow key
+<BR>&nbsp;&nbsp;&nbsp; is pressed and you will side-step in that particular
+direction. This
+<BR>&nbsp;&nbsp;&nbsp; is perfect for avoiding incoming missiles, rockets
+or gun blasts from
+<BR>&nbsp;&nbsp;&nbsp; enemy Strogg.
+
+<P>&nbsp;&nbsp;&nbsp; Picking Up Objects
+<BR>&nbsp;&nbsp;&nbsp; To pick up items, weapons, and power-ups, simply
+walk
+<BR>&nbsp;&nbsp;&nbsp; over them. If you are unable to pick something up,
+it means you already
+<BR>&nbsp;&nbsp;&nbsp; have the maximum possible for that object.
+
+<P>&nbsp;&nbsp;&nbsp; Selecting Items in Inventory
+<BR>&nbsp;&nbsp;&nbsp; Hit the TAB key to access your inventory
+<BR>&nbsp;&nbsp;&nbsp; display. Use the square "[ ]" bracket keys to cycle
+through items in your
+<BR>&nbsp;&nbsp;&nbsp; inventory. Press the Enter key to use a highlighted
+item.
+
+<P><A NAME="D. EXPLORING THE"></A><B>D.</B> <B>EXPLORING THE WORLD</B>
+
+<P>&nbsp;&nbsp;&nbsp; Buttons and Floorplates
+<BR>&nbsp;&nbsp;&nbsp; Buttons on walls or posts will activate with a
+<BR>&nbsp;&nbsp;&nbsp; touch, and floorplates must be stepped on. Use your
+discretion - if
+<BR>&nbsp;&nbsp;&nbsp; you see a distinctive-looking button in a spot you
+cannot reach, it's
+<BR>&nbsp;&nbsp;&nbsp; probably a shootable one - fire at it to activate.
+
+<P>&nbsp;&nbsp;&nbsp; Doors
+<BR>&nbsp;&nbsp;&nbsp; As with most places on Earth, the majority of doors
+here open at
+<BR>&nbsp;&nbsp;&nbsp; your approach. If one doesn't, then seek a button,
+floorplate, or key.
+
+<P>&nbsp;&nbsp;&nbsp; Secret Doors
+<BR>&nbsp;&nbsp;&nbsp; Some doors are camouflaged. Almost all secret doors
+open
+<BR>&nbsp;&nbsp;&nbsp; when they are shot, so keep an eye out for these.
+The rest are opened
+<BR>&nbsp;&nbsp;&nbsp; by hidden pressure plates, buttons, or levers.
+
+<P>&nbsp;&nbsp;&nbsp; Platforms
+<BR>&nbsp;&nbsp;&nbsp; Most platforms only go up and down, while some follow
+<BR>&nbsp;&nbsp;&nbsp; tracks around rooms or levels (i.e. horizontally).
+Normally, when
+<BR>&nbsp;&nbsp;&nbsp; you step onto a platform it rises to its full height
+and lowers when
+<BR>&nbsp;&nbsp;&nbsp; you step off (and watch your head going up!). Some
+platforms drop when
+<BR>&nbsp;&nbsp;&nbsp; you step atop them, and some don't work until you
+activate them via a
+<BR>&nbsp;&nbsp;&nbsp; button, pressure plate, or shootable target.
+
+<P>&nbsp;&nbsp;&nbsp; Pressure Plates and Motion Detectors
+<BR>&nbsp;&nbsp;&nbsp; These can be invisible or
+<BR>&nbsp;&nbsp;&nbsp; visible sensors which open doors, unleash traps,
+warn monsters,
+<BR>&nbsp;&nbsp;&nbsp; and so forth.
+
+<P>&nbsp;&nbsp;&nbsp; Uncovering Secrets
+<BR>&nbsp;&nbsp;&nbsp; Secret areas on Stroggos are hidden in various
+<BR>&nbsp;&nbsp;&nbsp; ways (those aliens are sneaky MF'ers). In order
+to uncover these,
+<BR>&nbsp;&nbsp;&nbsp; you might need to shoot a button, kill a cyborg,
+walk through a secret
+<BR>&nbsp;&nbsp;&nbsp; motion detector, etc. All secrets are indicated
+by clues, so don't
+<BR>&nbsp;&nbsp;&nbsp; waste your time hacking on every wall or shooting
+every object in the
+<BR>&nbsp;&nbsp;&nbsp; room. Use your brain, your eyes, and your ears for
+something odd…then
+<BR>&nbsp;&nbsp;&nbsp; act on it.
+
+<P><A NAME="E. ENVIRONMENTAL"></A><B>E. ENVIRONMENTAL HAZARDS</B>
+
+<P>&nbsp;&nbsp;&nbsp; Explosions
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Harmful radioactive containers are scattered
+throughout some military
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bases so watch your gunfire near these.
+Also, make sure you're not
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; leaning up against one during a bullet
+exchange with the enemy or you
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; may end up in 46 little body bags. Keen
+Marines know when to use these
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; explosives to their advantage - aim
+for one when aliens are around them,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or a radioactive container may blow
+open a hole in the wall or floor
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; as an escape route.
+
+<P>&nbsp;&nbsp;&nbsp; Water
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The water on Stroggos is safe enough
+to enter without needing a
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bio-suit, but remember to come up for
+air periodically for a deep
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; breath.
+
+<P>&nbsp;&nbsp;&nbsp; Slime
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; Toxic waste will harm you instantly and keeps
+on tearing at your flesh
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; the longer you stay submerged. Unless you
+have a bio-suit, stay clear
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; from the slime.
+
+<P>&nbsp;&nbsp;&nbsp; Traps
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The Strogg may be ugly as sin, but they
+are not a stupid race. Their
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; planet is full of traps, so be on the
+look-out for laser shooters,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; aliens in ambush, trapdoors, and so
+forth. Don't be paranoid - just
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; be aware of their existence.
+
+<P><A NAME="II."></A><B>II.</B> <B>CONTROLS</B>
+<BR><A NAME="A. KEYBOARD"></A><B>A.</B> <B>KEYBOARD COMMANDS</B>
+<BR>&nbsp;&nbsp;&nbsp; You can use the key configuration option from the
+Controls Menu
+<BR>&nbsp;&nbsp;&nbsp; (Press F4) to customize the keyboard however you
+like, except for
+<BR>&nbsp;&nbsp;&nbsp; the Function Keys, Escape Key, and the ~ (tidle)
+Key.
+
+<P>FUNCTION KEYS
+<BR>Personal Computer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F1
+<BR>Save Game&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F2
+<BR>Load Game&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F3
+<BR>Key Config Menu&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F4
+<BR>Multiplayer Menu&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F5
+<BR>Quick Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F6
+<BR>Quick Load&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F9
+<BR>Quit To Operating System&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; F10
+<BR>Screenshot&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+F12
+
+<P>WEAPONS
+<BR>Blaster&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1
+<BR>Shotgun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+2
+<BR>Super Shotgun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+3
+<BR>Machine Gun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+4
+<BR>Chaingun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+5&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+<BR>Grenade Launcher&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+6
+<BR>Rocket Launcher&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+7
+<BR>Hyper Blaster&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+8&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+<BR>Rail Gun&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+9&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+<BR>BFG&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+
+<P>ITEMS
+<BR>Hand Grenade&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+g
+<BR>Quad Damage&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+q
+<BR>Rebreather&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+b
+<BR>Silencer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+s&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+<BR>Environment Suit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+e
+<BR>Invulnerability&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+i&nbsp;&nbsp; <B><I>NOT IN DEMO</I></B>
+
+<P>MOVEMENT
+<BR>Move / Turn&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Arrow Keys
+<BR>Jump / Swim&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Space Bar
+<BR>Run&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SHIFT
+<BR>Strafe Left&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+, or &lt;
+<BR>Strafe Right&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+. or >
+<BR>Strafe *&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ALT
+<BR>Crouch&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+C
+
+<P>OTHER CONTROLS
+<BR>Inventory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TAB
+<BR>Main Menu&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ESC
+<BR>Console&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+~ (tilde)
+<BR>Look Up&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+A or Page Up
+<BR>Look Down&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Z or Page Down
+
+<P><A NAME="B. THE MAIN"></A><B>B. THE MAIN MENU</B>
+<BR>&nbsp;&nbsp;&nbsp; Hit the ESC key to bring up the Main Menu. While
+in the menu, the game
+<BR>&nbsp;&nbsp;&nbsp; is paused. Use the arrow keys to move the Quake
+II icon up and down the
+<BR>&nbsp;&nbsp;&nbsp; menu. Place the icon at the desired option and hit
+the Enter Key. To
+<BR>&nbsp;&nbsp;&nbsp; return to a previous menu, hit the ESC key again.
+To exit back to
+<BR>&nbsp;&nbsp;&nbsp; the game from the Main Menu, hit ESC.
+
+<P>&nbsp;&nbsp;&nbsp; GAME
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Allows you to set difficulty, start a new game, load a previously
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+saved game, save the current game, and start or join a network
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+game.
+
+<P>&nbsp;&nbsp;&nbsp; DIFFICULTY
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Allows you to choose EASY, MEDIUM, HARD or NIGHTMARE skill level.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<B><I>THIS FEATURE IS DISABLED IN THE DEMO</I></B>.
+
+<P>&nbsp;&nbsp;&nbsp; START GAME
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Starts a new game on the first level.
+
+<P>&nbsp;&nbsp;&nbsp; LOAD
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+This will bring up a list of currently saved game. Highlight
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+the game you wish to play and hit the ENTER key.
+
+<P>&nbsp;&nbsp;&nbsp; SAVE
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+This will bring up a list of currently saved games. Highlight a
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+slot and hit the ENTER key. Your game will be saved into this
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+slot. You cannot save your game if you are dead.
+
+<P>&nbsp;&nbsp;&nbsp; <B><I>NETWORK OPTIONS ARE DISABLED IN THE QUAKE II
+TEST. THEY WILL BE AVAILABLE</I></B>
+<BR><B><I>&nbsp;&nbsp;&nbsp; IN FUTURE RELEASES.</I></B>
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; VIDEO
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DRIVER
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+The video menu currently allows you to select one of four
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+rendering subsystems: software, system OpenGL, 3Dfx OpenGL,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+and PowerVR OpenGL. The software driver is available on all
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+systems. The system OpenGL driver allows Quake2 to render
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+scenes using the default OpenGL driver installed in the system.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Typically this will be selected under Windows NT when using a
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+2D/3D accelerator such as an Intergraph Realizm or accelerators
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+based on the Nvidia RIVA128, ATI Rage Pro, and Rendition V2200.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+It is not recommended to use the OpenGL subsystem on systems
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+that do not have hardware acceleration of OpenGL installed.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+The 3Dfx OpenGL driver should be used on systems that possess a
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+3Dfx Voodoo and Voodoo Rush accelerator, including the Canopus
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Pure3D, Diamond Monster3D, Orchid Righteous 3D, and the Hercules
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Stingray 128.&nbsp; The PowerVR OpenGL subsystem should be used on
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+those systems that are running Win95 with a PowerVR PCX2 board
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+installed, such as the Matrox M3D.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Future
+versions of Quake2 may support other rendering subsystems.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+At this time Quake2 does not support the Microsoft Direct3D
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+proprietary API.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; VIDEO MODE
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Quake2 supports the following video modes:
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; *
+320x240
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 400x300
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 512x384
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 640x480
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 800x600
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 960x720
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 1024x768
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 1152x864
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 1280x960
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+* 1600x1200
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Availability
+of video modes will be limited by the type of
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+graphics adapter installed and available system and video RAM.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+For example, boards based on the 3Dfx Voodoo chipset typically
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+only support video modes of 512x384 and 640x480.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SCREEN SIZE
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+The screen size slider controls the size of the visible area on
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+the screen.&nbsp; Reducing the screen size will usually result in
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+higher performance.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BRIGHTNESS
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+The brightness slider controls the brightness of the screen.&nbsp; Its
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+effects are immediate in the software driver, but do not take
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+effect until "Apply" is selected when using any of the OpenGL
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+subsystems.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FULLSCREEN
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This selects
+fullscreen vs. windowed rendering.&nbsp; On 3Dfx Voodoo
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; graphics
+rendering to a window is not supported.&nbsp; Fullscreen mode
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; availability
+is dependent upon the type of graphics adapter
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; installed.&nbsp;
+On many graphics adapters, modes such as 400x300 and
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 512x384
+are not available with fullscreen rendering. Fullscreen
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; software
+rendering requires the presence of Microsoft DirectX.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With the
+OpenGL subsystem fullscreen rendering will use whatever
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; color
+depth the desktop is currently set to.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TEXTURE QUALITY (OpenGL ONLY)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The texture
+quality slider determines the overall crispness of
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; textures
+with OpenGL renderers.&nbsp; Better quality often results
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in lower
+performance.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8-Bit TEXTURES (Open GL ONLY)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Support
+for 8-bit paletted textures is available on some graphics
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; chipsets
+such as the 3Dfx Voodoo. Enabling 8-bit textures results
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in a slight
+loss of visual quality in exchange for better overall
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; performance.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STIPPLE ALPHA (SOFTWARE ONLY)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Enabling stipple alpha results in faster performance when
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+rendering transparent surfaces such as windows, water, and
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+lava, but also results in reduced image quality when rendering
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+transparent surfaces.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; APPLY
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selecting
+this option "applies" the given video configuration,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; which
+means that the selected options are made current if possible.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A NOTE ABOUT VIDEO OPTIONS
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Some video options available
+in Quake II are not supported by your
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; particular hardware. If
+you select an unsupported video option Quake
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; II will return to the previous
+video settings or a default software
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mode and drop down the console
+to report the error.
+<BR>&nbsp;
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; AUDIO
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This menu will allow you
+to adjust the volume of the in game
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sound effects, set the quality
+of the sound effects, and turn
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CD music on or off.
+<BR><B><I>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; THE QUAKE II DEMO
+DOES NOT INCLUDE HIGH QUALITY</I></B>
+<BR><B><I>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SOUNDS. FUTURE RELEASES
+WILL.</I></B>
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; CONTROLS
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Here you can adjust your
+mouse options, customize your keyboard
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; settings, and restore all
+your control settings to their defaults.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; MOUSE SPEED
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Allows you to adjust your
+mouse movement speed. The higher you
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; set this the faster your
+character will turn in relation to
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mouse movement.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; ALWAYS RUN
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; You can set this to YES
+if you do not want to hold down the RUN
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; button in order to move
+quickly.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; INVERT MOUSE
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This gives your mouse "airplane-style"
+controls.&nbsp; This means
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; that pushing the mouse forward
+"noses down", and pulling it
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; back "noses up".&nbsp; Some
+people prefer this control technique.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; LOOKSPRING
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Returns your view immediately
+to straight ahead when you
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; release the look up / down
+key.&nbsp; Otherwise, you must move
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; forward for a step or two
+before your view snaps back.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Lookspring does not work
+while you are underwater.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; LOOKSTRAFE
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If you are using the look
+up / down key, then this option
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; causes you to sidestep instead
+of turn when you try to move
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; left or right.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FREELOOK
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With this option enabled
+you no longer have to press the
+<BR>&nbsp; MLOOK key to look up and down while using the mouse.
+
+<P><A NAME="C."></A><B>C.</B> <B>CONSOLE</B>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Tap the ~ (tilde) key to
+bring down the console.&nbsp; As with the Main
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Menu, when the console is
+down, a single player game is paused.&nbsp; A wide
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; variety of esoteric commands
+can be entered at the console.
+
+<P><A NAME="III. THE"></A><B>III. THE GAME</B>
+<BR><A NAME="A. THE"></A><B>A. THE SCREEN</B>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; The large top part of the screen is the view
+area, in which you see
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; monsters and architecture. You can enlarge
+the viewing area by hitting
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; the + key. The - key shrinks the view area.
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; Health Display
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This displays the amount
+of life you have remaining. It also shows
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a picture of your face which
+can give you a rough idea of how much
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; damage you have sustained.
+Your face can also indicate the direction
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; from which damage is being
+inflicted.
+
+<P>&nbsp;&nbsp;&nbsp; Ammo Display
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The type and amount of ammo
+remaining is displayed here.
+
+<P>&nbsp;&nbsp;&nbsp; Armor Display
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The amount of armor you
+have remaining is displayed here. The armor
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; type is represented by an
+icon to the side of this Display. If you are
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; completely out of armor
+this display will disappear.
+
+<P>&nbsp;&nbsp;&nbsp; Selected Item Display
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This displays the item that
+is ready to be used. Use the bracket keys
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; to move through the list
+and press the ENTER key to activate it.
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; Active Power Up Display
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If you select a power up
+that has a duration Quake II will display it
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; on the screen with a count
+down to show the time remaining.
+
+<P>&nbsp;&nbsp;&nbsp; Personal Computer
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; When your personal computer
+receives new information an icon will
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; appear at the bottom center
+of the game screen. Press the F1 key to
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pull up your personal computer.
+It will display your current mission
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; objectives, secondary objective
+and your current kills, secrets, and
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; objectives solved. Some
+levels will require you to leave and then
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; re-enter in order to attain
+all kills, secrets, and goals.
+
+<P>&nbsp;&nbsp;&nbsp; Inventory
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Press the tab key to pull down
+your inventory screen. Use the bracket
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; keys to navigate through the list
+and press the ENTER key to active
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the currently selected item. The
+inventory displays the item name, the
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hot key for using it, and the
+amounts you have of each item.
+
+<P><A NAME="B."></A><B>B. FIREPOWER</B>
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Blaster
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The common rechargeable
+energy side-arm as used on Earth. As you know,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the Blaster is not much,
+but it's good enough to gore a guard or
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tickle a tank.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Shotgun
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This mighty sprayer carries
+a lot of ammo but is virtually useless at
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a distance. If possible,
+get in nice and close to use the Shotgun
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; instead of your Blaster
+to add some lead freckles on the Strogg's ugly
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; faces. Remember, it requires
+shells and takes some time to reload.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Super Shotgun
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This is the uncompromising
+big brother to the Shotgun, intended for
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; a close encounter of the
+dangerous kind. It eats more shells than the
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Shotgun, but the show is
+well worth the price of admission.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Machine Gun
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perfect for putting guards
+in their place - in hell. Although this
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; effective weapon is easy
+to use, its light weight causes considerable
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; kickback and it may force
+your gun up, ruining your aim.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Grenade Launcher
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Fast, easy-to-aim explosives
+designed for long-range use in mind.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Not recommended for smaller,
+confined areas or you may also blow
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; up 'real good'.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Hand Grenade
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Just twist open the cap
+and toss it. Treat this like a really
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dangerous baseball, and
+lob it in the direction you choose. Just
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; remember to let go at some
+point. The longer you hold down the
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; fire key, the further you
+will toss the grenade.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Rocket Launcher
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A slow but deliciously lethal
+weapon of choice. Period.
+
+<P><A NAME="C. SPECIAL"></A><B>C. SPECIAL ITEMS</B>
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ammo
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There are four major ammo
+types: shells, bullets, grenades, and
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rockets. With the exception
+of the laser blaster, you must have
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ammunition to use a weapon.
+Each ammo type has a maximum you can
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; carry.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Armor
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There are three armor types:
+Flak Jacket, Combat Suit, and Body Armor.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Each one provides a certain
+amount of protection against both normal
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; attacks and energy weapon
+attacks. Your current armor type will be
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; displayed on your status
+bar. If you take enough hits, your armor
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strength will deplete down
+to nothing, so seek out unused breast
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; plates. If you pick up armor
+that is as good as or worse than your
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; current armor, it is salvaged
+to improve your current armor level.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Armor Shards
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Special remnant of armors,
+which add a bit more durability to your
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; existing protection.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Health
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; There are two types of standard
+health kits to ingest: First Aid
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and Medkits.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Stimpacks
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; These provide an additional
+boost to your health.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bandolier
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Also increases potential
+inventory for each ammo type, except for
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; explosives such as grenades
+and rockets.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Underwater Breather
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Provides oxygen when submerged
+in liquids.
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Quad Damage
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Temporarily multiplies all
+your weapon's strengths by four times.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let the gibbing begin!
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Adrenaline Pack
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This adds an additional
+two health to your overall achievable health
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; level.
+
+<P><A NAME="D. THE"></A><B>D. THE ENEMY</B>
+
+<P>&nbsp;&nbsp;&nbsp; Name: Light Guard
+<BR>&nbsp;&nbsp;&nbsp; Description: Weakest of the three processed humans,
+armed solely with
+<BR>&nbsp;&nbsp;&nbsp; a simple blaster.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Shotgun Guard
+<BR>&nbsp;&nbsp;&nbsp; Description: These loyal troops are equipped with
+an automatic scatter gun
+<BR>&nbsp;&nbsp;&nbsp; prosthetic.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Machine-gun Guard
+<BR>&nbsp;&nbsp;&nbsp; Description: Bigger, meaner, and deadlier than above…with
+a machine-gun
+<BR>&nbsp;&nbsp;&nbsp; for a right arm.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Enforcer
+<BR>&nbsp;&nbsp;&nbsp; Description: Strong, muscle-bound warrior who dishes
+out chain gun speed
+<BR>&nbsp;&nbsp;&nbsp; damage. If he gets close enough he will try to whack
+you over the head
+<BR>&nbsp;&nbsp;&nbsp; with his gun.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Gunner
+<BR>&nbsp;&nbsp;&nbsp; Description: The fighting elite for the Strogg,
+outfitted with a powerful
+<BR>&nbsp;&nbsp;&nbsp; machine gun and an automatic grenade launcher.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Berserker
+<BR>&nbsp;&nbsp;&nbsp; Description: He has a metal spike as one arm, a
+hammer as another, plus
+<BR>&nbsp;&nbsp;&nbsp; two crazy-fast legs.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Parasite
+<BR>&nbsp;&nbsp;&nbsp; Description: Four-legged beast with a weapon on
+its back. Once fired, it
+<BR>&nbsp;&nbsp;&nbsp; attaches itself and literally sucks the life from
+you.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Flyer
+<BR>&nbsp;&nbsp;&nbsp; Description: A small two-winged monster, comprised
+of a controlling brain
+<BR>&nbsp;&nbsp;&nbsp; and a cyborg body that allows it to levitate.
+
+<P>&nbsp;&nbsp;&nbsp; Name: Tank
+<BR>&nbsp;&nbsp;&nbsp; Description: Tanks are armed with three weapons
+that they use at random:
+<BR>&nbsp;&nbsp;&nbsp; an arm-mounted machine gun, an arm-mounted laser
+blaster, a
+<BR>&nbsp;&nbsp;&nbsp; shoulder-mounted rocket launcher.
+
+<P><A NAME="E. ENDING A"></A><B>E. ENDING A LEVEL</B>
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp; Once you finish a level, you'll find an elevator
+or passageway that takes
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; you to the next level. You start the next
+level with the same armor,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; ammo, health, and weapons you had at the end
+of the previous one. If you
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; were using a power-up as you ended the previous
+level it will now be
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; deactivated. In some cases you can return
+to a previous level.
+
+<P><A NAME="IV. FAQs"></A><B>FAQs</B>
+
+<P>Q. I'm stuck. How do I get through the level?
+<BR>A. Take a stroll around and look for a place you haven't been yet.&nbsp;
+Sometimes
+<BR>you have to kill a particular monster in order to progress, so exterminate
+<BR>them all!
+
+<P>Q. How can I find all the secrets?
+<BR>A. Don't worry about it.&nbsp; You never have to find a secret to finish
+a level.
+<BR>Also, some secrets are intentionally hard to find.
+
+<P>Q. I've cleared out the whole level, but my monster kill score isn't
+100%.
+<BR>Where are they hiding?
+<BR>A. Some monsters hide inside secrets, or are released by them.&nbsp;
+You won't be
+<BR>able to kill those monsters until you find their secrets.&nbsp; You
+also may have to leave
+<BR>the level and then return to release all the monsters.
+
+<P>Q. Did I really see two monsters fighting each other?
+<BR>A. Probably.&nbsp; Some monsters hate one another almost as much as
+they hate you.
+<BR>You can use this to your advantage (exercise left up to the reader).
+
+<P><A NAME="KNOWN BUGS"></A><B>KNOWN BUGS</B>
+
+<P>Occasionally your character may become stuck in a wall. Go to the console
+by
+<BR>hitting the ~ (tilde) key and type NOCLIP. Move away from the wall
+and type
+<BR>NOCLIP again.
+
+<P>Monster AI is still in development. Some monsters may seem to be ignoring
+you
+<BR>until you actually shoot them. This is because as small aliens they
+refused
+<BR>to eat their humans and as a result suffered brain damage. We will
+be taking
+<BR>measures to ensure that all aliens receive a proper diet before the
+final release.
+
+<P>Door and plat sounds may malfunction occasionally.
+
+<P>Some areas may cause you to get a "packet overflow" message.
+
+<P>Auto-restart load games sometimes load you one level back from the level
+<BR>you should be started on.
+<BR><BR>
+A quick saved game can only be loaded from the quick load menu.
+<BR>A normal saved game can only be loaded from the normal load game menu.
+<BR><BR>
+The in-game demo will only play one time and then end in an error.
+
+<P><A NAME="V. REPORTING"></A><B>REPORTING BUGS</B>
+
+<P>Bug Reporting for Quake II Compatibility Test:
+
+<P>We have prepared a form to make submitting bugs easy for the player.&nbsp;
+This
+<BR>will ensure that we get the information we need to accurately identify
+and
+<BR>fix these problems.
+
+<P>To submit a bug report, just point your web browser to:
+<BR><A HREF="http://www.idsoftware.com/contact/q2feedback.html">http://www.idsoftware.com/contact/q2feedback.html</A>
+or
+<BR><A HREF="http://www.activision.com/games/action/quake2/q2feedback.html">http://www.activision.com/games/action/quake2/q2feedback.html</A>
+or
+<BR><A HREF="http://www.stomped.com/q2feedback.html">http://www.stomped.com/q2feedback.html</A>
+or
+<BR><A HREF="http://www.bluesnews.com/">http://www.bluesnews.com/</A> or
+<BR><A HREF="http://www.gamecenter.com/Quake2/q2feedback.html">http://www.gamecenter.com/Quake2/q2feedback.html</A>
+
+<P>Once there, all you have to do is fill in the blanks and hit the button
+at
+<BR>the bottom of the page to submit your report.&nbsp; Please be as thorough
+as
+<BR>possible in filling out the form.&nbsp; Also, please note that someone
+may contact
+<BR>you for more information if needed.
+
+<P>Thanks for your help!
+
+<P><A HREF="file:///C|/WINNT/Profiles/american/Desktop/www.idsoftware.com">id
+Software</A>
+<BR>&nbsp;
+<BR>&nbsp;
+</BODY>
+</HTML>

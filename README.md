@@ -21,6 +21,12 @@ Rendering libraries taken from  Thinkofname/rust-quake [github]
 
 
 
+## GOOD SHADER INFO 
+https://anteru.net/blog/2016/mapping-between-HLSL-and-GLSL/
+https://app.element.io/#/room/#wgpu:matrix.org
+Replace .stpq with .xyzw  (they are the same) 
+
+
 
 #### pipelines 
 refactor pipelines in client.render/mod so they are more like ... components that share a single 'interface' and are in an array (registered) that just gets looped through .         
