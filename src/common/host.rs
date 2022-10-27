@@ -88,7 +88,7 @@ where
             }
 
             Event::MainEventsCleared => self.frame(),
-         //   Event::Suspended | Event::Resumed => unimplemented!(),
+         //   Event::Suspended | Event::Resumed => unimplemented!(),  // i disabled this for now ! 
             Event::LoopDestroyed => {
                 // TODO:
                 // - host_writeconfig

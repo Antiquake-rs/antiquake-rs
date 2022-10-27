@@ -9,6 +9,13 @@ let WARP_FREQUENCY:f32 = 0.25;
 let WARP_SCALE:f32 = 1.0;
 
 let  LIGHTMAP_ANIM_END:i32  = 255;
+/*
+
+    NOTES:  Removes the light anim frames for now 
+
+
+*/
+
 
 struct VertexOutput {
     @location(0) f_normal: vec3<f32>,
@@ -106,11 +113,7 @@ fn main_vs(
  
  // shader global ResourceBinding { group: 0, binding: 1 } is not available in the layout pipeline layout
 
- 
-//@group(0)@binding(0) var u_diffuse_texture: texture_2d<f32>;
-//@group(0)@binding(1) var s_diffuse: sampler;
-
-//@group(2) @binding(1) var u_diffuse_sampler: sampler;
+  
 
 
 //big loop that is costly !
@@ -130,6 +133,8 @@ fn main_vs(
 }*/
  
 
+ //   Replace .stpq with .xyzw  (they are the same) 
+
 @fragment
 fn main_fs(vertex: VertexOutput) -> FragmentOutput {
    
@@ -148,24 +153,23 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
             if (fullbright != 0.0) {
                 result.light_attachment = vec4(0.25);
             } else {
-               result.light_attachment = vec4(0.25);
+               result.light_attachment = vec4(0.35);
                // result.light_attachment = calc_light( vertex );
             }
             break;
         }
         case 1: { //TEXTURE_KIND_WARP
             // note the texcoord transpose here
-          /*  let wave1:vec2<f32> = 3.14159265359
-                * (WARP_SCALE * vertex.f_diffuse.ts
+            let wave1:vec2<f32> = 3.14159265359
+                * (WARP_SCALE * vertex.f_diffuse.yx
                     + WARP_FREQUENCY * frameuniforms.time);
 
-            let warp_texcoord:vec2<f32> = vertex.f_diffuse.st + WARP_AMPLITUDE
-                * vec2(sin(wave1.s), sin(wave1.t));  */
-
-             let emptywave:vec2<f32> = vec2(0.0);
+            let warp_texcoord:vec2<f32> = vertex.f_diffuse.xy + WARP_AMPLITUDE
+                * vec2(sin(wave1.x), sin(wave1.y));   
+ 
 
             result.diffuse_attachment = textureSample(
-                u_diffuse_texture, u_diffuse_sampler, emptywave //warp_texcoord
+                u_diffuse_texture, u_diffuse_sampler, warp_texcoord 
             );
             result.light_attachment = vec4(0.25);
             break;
@@ -175,8 +179,8 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
             //swizzling is  x, y, z, w  instead of  stpq (for texture coordinates)
         case 2: { //TEXTURE_KIND_SKY
             let base:vec2<f32> =  (vertex.f_diffuse + frameuniforms.time % 1.0);  //just use % instead of modf 
-            let cloud_texcoord:vec2<f32> = vec2(0.0, 1.0); //vec2(base.s * 0.5, base.t);
-            let sky_texcoord:vec2<f32> = vec2( 0.5, 1.0); //vec2(base.s * 0.5 + 0.5, base.t);
+            let cloud_texcoord:vec2<f32> = vec2(base.x * 0.5, base.y);  
+            let sky_texcoord:vec2<f32> = vec2(base.x * 0.5 + 0.5, base.y);  
 
             let sky_color:vec4<f32> = textureSample(
                 u_diffuse_texture, u_diffuse_sampler,

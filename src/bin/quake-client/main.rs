@@ -85,7 +85,8 @@ struct ClientProgram {
     window_dimensions_changed: bool,
 
     surface: wgpu::Surface,
-    texture_view: wgpu::TextureView,
+    frame: wgpu::SurfaceTexture,
+    texture_view:  wgpu::TextureView ,
    // swap_chain: RefCell<wgpu::SwapChain>,
     gfx_state: RefCell<GraphicsState>,
     ui_renderer: Rc<UiRenderer>,
@@ -196,6 +197,10 @@ impl ClientProgram {
             .await
             .expect("Failed to request_device");
         let size: Extent2d = window.inner_size().into();
+
+
+
+
       /*  let swap_chain = RefCell::new(device.create_swap_chain(
             &surface,
             &wgpu::SwapChainDescriptor {
@@ -207,33 +212,33 @@ impl ClientProgram {
             },
         ));*/
 
-
  
 
          // Create the texture for the main window  (is this correct?)
-        
+
+            //https://stackoverflow.com/questions/68881273/wgpu-rs-thread-main-panicked-at-texture1-does-not-exist
+            //https://github.com/gfx-rs/wgpu/issues/1797
+            //This can be solved by forcing the SurfaceTexture to be dropped after the TextureView.
          let winit::dpi::PhysicalSize { width, height } = window.inner_size();
 
-         let texels = ClientProgram::create_texels(width,height);
-         let texture_extent = wgpu::Extent3d {
-             width: size.width,
-             height: size.height,
-             depth_or_array_layers: 1,
-         };
-         let texture = device.create_texture(&wgpu::TextureDescriptor {
-             label: None,
-             size: texture_extent,
-             mip_level_count: 1,
-             sample_count: 1,
-             dimension: wgpu::TextureDimension::D2,
-             format: wgpu::TextureFormat::R8Uint,
-             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-         });
-        let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+         let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: DIFFUSE_ATTACHMENT_FORMAT,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Immediate,
+            alpha_mode: wgpu::CompositeAlphaMode::Opaque 
+        };
+        surface.configure(&device, &config); 
 
+         let frame =   surface.get_current_texture().unwrap() ;
 
+         //needs to be refcell  ?
+        let texture_view =    frame
+        .texture
+        .create_view(&wgpu::TextureViewDescriptor::default()) ; 
 
-
+        
 
         
         let vfs = Rc::new(vfs);
@@ -277,7 +282,7 @@ impl ClientProgram {
         ).unwrap();
 
         // this will also execute config.cfg and autoexec.cfg (assuming an unmodified quake.rc)
-    //    console.borrow().stuff_text("exec quake.rc\n");
+      console.borrow().stuff_text("exec quake.rc\n");
 
         info!(" starting client ");
         let client = Client::new(
@@ -302,9 +307,9 @@ impl ClientProgram {
             menu,
             window,
             window_dimensions_changed: false,
-            surface,
-            texture_view,
-          //  texture_view,
+            surface, 
+            frame,  //need to keep this around and not drop it from memory
+            texture_view, 
             gfx_state: RefCell::new(gfx_state),
             ui_renderer,
             game,
@@ -359,7 +364,7 @@ impl ClientProgram {
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
         self.game.render(
             &self.gfx_state.borrow(),
-            &self.texture_view,
+            &self.texture_view ,
          //   &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
             width,
             height,

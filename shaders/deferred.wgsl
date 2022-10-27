@@ -85,20 +85,18 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
 
    let dims:vec2<i32> = textureDimensions( u_diffuse );
    let texcoord:vec2<f32> =  vec2<f32>( f32(dims.x) * vertex.f_texcoord.x, f32(dims.y) * vertex.f_texcoord.y );
-  // let in_color:vec4<f32> = textureSample( u_diffuse, u_sampler , vec2<f32>(texcoord) ); //texel fetch 
+ 
   let in_color:vec4<f32> = textureLoad( u_diffuse, vec2<i32>(texcoord) , 0 ); //texel fetch 
 
   // scale from [0, 1] to [-1, 1]
- /* let in_normal:vec3<f32> = 2.0
-    * textureSample(u_normal, u_sampler, vec2<f32>(texcoord)).xyz   //texel fetch 
-    - 1.0;*/
+ 
 
     let in_normal:vec3<f32> = 2.0
     * textureLoad(u_normal, vec2<i32>(texcoord), 0).xyz   //was texel fetch 
     - 1.0;
 
   // Double to restore overbright values.
- // let in_light:vec4<f32> = 2.0 * textureSample( u_light, u_sampler , vec2<f32>(texcoord) );
+  
   let in_light:vec4<f32> = 2.0 * textureLoad( u_light,  vec2<i32>(texcoord) ,0 );
 
   //let in_depth:f32 = textureSample( u_depth, u_sampler , vec2<f32>(texcoord) ).x;

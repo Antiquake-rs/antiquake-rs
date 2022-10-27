@@ -1,3 +1,5 @@
+ 
+
 use crate::client::render::{pipeline::Pipeline, ui::quad::QuadPipeline, GraphicsState};
 
 pub struct BlitPipeline {
@@ -32,10 +34,10 @@ impl BlitPipeline {
 
     pub fn new(
         device: &wgpu::Device,
-      
+       
         input: &wgpu::TextureView,
     ) -> BlitPipeline {
-        let (pipeline, bind_group_layouts) = BlitPipeline::create(device,   &[], 1);
+        let (pipeline, bind_group_layouts) = BlitPipeline::create(device, &[], 1);
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: None,
@@ -65,7 +67,7 @@ impl BlitPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-    
+       
         input: &wgpu::TextureView,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
@@ -84,10 +86,17 @@ impl BlitPipeline {
     }
 
     pub fn blit<'a>(&'a self, state: &'a GraphicsState, pass: &mut wgpu::RenderPass<'a>) {
+
+    
+
         pass.set_pipeline(&self.pipeline());
+       
         pass.set_bind_group(0, &self.bind_group, &[]);
+   
         pass.set_vertex_buffer(0, state.quad_pipeline().vertex_buffer().slice(..));
+       
         pass.draw(0..6, 0..1);
+        
     }
 }
 
