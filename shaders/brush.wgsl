@@ -21,7 +21,7 @@ struct VertexOutput {
     @location(0) f_normal: vec3<f32>,
     @location(1) f_diffuse: vec2<f32>,
     @location(2) f_lightmap: vec2<f32>,
-    @location(3) f_lightmap_anim: vec4<f32>,
+    @location(3) f_lightmap_anim: vec4<u32>,
     @builtin(position) pos: vec4<f32>, 
 };
 
@@ -84,7 +84,7 @@ fn main_vs(
     @location(1) a_normal: vec3<f32>,
     @location(2) a_diffuse: vec2<f32>,
     @location(3) a_lightmap: vec2<f32>,
- //   @location(4) a_lightmap_anim: vec4<f32>,
+    @location(4) a_lightmap_anim: vec4<u32>,
 ) -> VertexOutput {
     
     var result: VertexOutput;
@@ -104,7 +104,7 @@ fn main_vs(
 
     result.f_normal = convert_from_quake(a_normal); //mat3x3(transpose(inverse(push_constants.model_view))) * convert(a_normal);
     result.f_lightmap = a_lightmap;
-  //  result.f_lightmap_anim = a_lightmap_anim;
+    result.f_lightmap_anim = a_lightmap_anim;
     result.pos = push_constants.transform * vec4(convert_from_quake(a_position), 1.0);
 
 
@@ -125,6 +125,8 @@ fn main_vs(
               u_lightmap_texture[i], u_lightmap_sampler , vertex.f_lightmap
         ).r;
 
+        let lightmap_anim = [vertex.f_lightmap_anim[i];  
+
         // range [0, 4]
         let style:f32 = frameuniforms.light_anim_frames[vertex.f_lightmap_anim[i]];
         light[i] = map * style;
@@ -142,9 +144,24 @@ fn calc_light_simple( vertex: VertexOutput ) -> vec4<f32> {
               u_lightmap_texture , u_lightmap_sampler , vertex.f_lightmap
         ).r;
 
+          let lightmap_anim:u32 =  vertex.f_lightmap_anim[i] ;  //can be between
+
+          let frame_index = lightmap_anim/4u;
+          let frame_mod = lightmap_anim%4u;
+
+ 
         // range [0, 4]
-       // let style:f32 = frameuniforms.light_anim_frames[vertex.f_lightmap_anim[i]];
-        light[i] = map ;//* style;
+        let style_vec:vec4<f32> = frameuniforms.light_anim_frames[ frame_index ];
+        
+        switch(  frame_mod ){
+            case 0u: {light[i] = map *  style_vec.x;}
+             case 1u: {light[i] = map *  style_vec.y;}
+              case 2u: {light[i] = map *  style_vec.z;}
+               case 3u: {light[i] = map *  style_vec.w;}
+               default: {}
+
+        }
+       
     }
 
     return light;
