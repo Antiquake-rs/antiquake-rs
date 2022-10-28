@@ -155,7 +155,10 @@ impl ClientProgram {
             
 
             //from wgpu cube example framework
-        let required_limits = wgpu::Limits::downlevel_webgl2_defaults();
+        let mut required_limits = wgpu::Limits::downlevel_webgl2_defaults();
+
+        required_limits.max_push_constant_size = 132;
+
         let optional_features= wgpu::Features::default()  ;
         let required_features= wgpu::Features::PUSH_CONSTANTS;
         let adapter_features = adapter.features();

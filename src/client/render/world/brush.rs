@@ -139,8 +139,8 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
             count: None,
         },
     ],
-      &[
-        // lightmap texture array
+    /*   &[
+        // lightmap texture array  group 3
         wgpu::BindGroupLayoutEntry {
            // count: NonZeroU32::new(4),
             binding: 0,
@@ -152,7 +152,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
             },
             count: None,
         },
-    ],
+    ],*/
 ];
 
 lazy_static! {
@@ -754,6 +754,14 @@ impl BrushRenderer {
             }
         }
 
+
+        let drawPerFace = false;
+
+
+        if(drawPerFace){
+
+
+
         for (tex_id, face_ids) in self.texture_chains.iter() {
             use PushConstantUpdate::*;
             BrushPipeline::set_push_constants(
@@ -808,6 +816,13 @@ impl BrushRenderer {
 
                 pass.draw(face.vertices.clone(), 0..1);
             }
-        }
+
+
+            }
+        }//if draw per face
+
+
+
+
     }
 }

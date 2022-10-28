@@ -115,14 +115,14 @@ impl Pipeline for AliasPipeline {
                         },
                         count: None,
                     },
-                     wgpu::BindGroupLayoutEntry {
+                  /*  wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStages::FRAGMENT,
                         // This should match the filterable field of the
                         // corresponding Texture entry above.
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
-                    },
+                    }, */ 
                 ],
             },
         ]

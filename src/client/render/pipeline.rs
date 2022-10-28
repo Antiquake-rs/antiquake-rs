@@ -215,8 +215,9 @@ pub trait Pipeline {
             wgpu::PUSH_CONSTANT_ALIGNMENT,
         );
         assert!(
-            vpc_size + spc_size + fpc_size < max_pc_size,
-            "Combined size of push constants must be less than push constant size limit of {}",
+            vpc_size + spc_size + fpc_size <= max_pc_size,
+            "Combined size of push constants {} must be less than push constant size limit of {}",
+            vpc_size + spc_size + fpc_size,
             max_pc_size
         );
     }
@@ -231,11 +232,13 @@ pub trait Pipeline {
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
-       
-        //dont use push constants anymore ? 
-       //Self::validate_push_constant_types(device.limits());
-
+        
+        
        let max_pc_size = device.limits().max_push_constant_size;
+       info!("Your device supports {} max push constants.",max_pc_size);
+        //dont use push constants anymore ? 
+        Self::validate_push_constant_types(device.limits());
+
        let max_bind_groups = device.limits().max_bind_groups;
         info!("Your device supports {} max bind groups.",max_bind_groups);
 
@@ -266,7 +269,7 @@ pub trait Pipeline {
             let desc = wgpu::PipelineLayoutDescriptor {
                 label: Some(&label),
                 bind_group_layouts: &layouts,
-                push_constant_ranges: &[]//&ranges,
+                push_constant_ranges: &ranges//&ranges,
             };
             device.create_pipeline_layout(&desc)
         };
