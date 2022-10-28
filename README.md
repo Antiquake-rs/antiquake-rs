@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/antiquake-rs/antiquake-rs.svg?branch=dev)](https://travis-ci.org/antiquake-rs/antiquake-rs)
 
+[project board](https://github.com/orgs/Antiquake-rs/projects/1)
+
 An indie games engine based off of the quake framework implemented in Rust.  Forked from richter by cormac-obrien.
 
 - Antiquake will always support entry-level graphics hardware including Intel Mesa/integrated graphics drivers and linux. 
