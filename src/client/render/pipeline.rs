@@ -378,13 +378,13 @@ pub trait Pipeline {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &wgsl_shader,
-                entry_point: "color_vs",
+                entry_point: "main_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
                 module: &wgsl_shader,
-                entry_point: "color_fs",
+                entry_point: "main_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {

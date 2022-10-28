@@ -5,12 +5,12 @@ A game engine written in Rust that leverages quake mod tools such as the PAK fil
  
 
 ## HOW TO RUN WITH DEBUG LOGS
-RUST_LOG=debug cargo +nightly run
+RUST_LOG=debug cargo run
 
 
  ### STEPS TO RUN 
- boot with this: cargo +nightly run --bin quake-client
- type in console: playdemo demo1
+ boot with this: cargo run --bin quake-client
+ type in console: playdemo demo1  [ENTER]
 
 
 

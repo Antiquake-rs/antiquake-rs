@@ -206,7 +206,7 @@ impl ClientProgram {
             )
             .await
             .expect("Failed to request_device");
-        let size: Extent2d = window.inner_size().into();
+      
 
 
 
@@ -230,7 +230,7 @@ impl ClientProgram {
             //https://github.com/gfx-rs/wgpu/issues/1797
             //This can be solved by forcing the SurfaceTexture to be dropped after the TextureView.
         
-        
+            let size: Extent2d = window.inner_size().into();
         
             let winit::dpi::PhysicalSize { width, height } = window.inner_size();
 
@@ -328,9 +328,28 @@ impl ClientProgram {
         }
     }
 
-
+    //fix me 
     fn recreate_texture_view(&self, present_mode: wgpu::PresentMode){
 
+        let gfx_state = &self.gfx_state.borrow();
+        let device = gfx_state.get_device();
+ 
+
+        let window = &self.window;
+        let size: Extent2d = window.inner_size().into();
+        
+        let winit::dpi::PhysicalSize { width, height } = window.inner_size();
+
+        let surface_config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format: DIFFUSE_ATTACHMENT_FORMAT,
+            width,
+            height,
+            present_mode: wgpu::PresentMode::Immediate,
+            alpha_mode: wgpu::CompositeAlphaMode::Opaque 
+        };
+    
+        self.surface.configure(&device, &surface_config);
 
       //  self.texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
      
