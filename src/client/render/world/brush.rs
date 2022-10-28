@@ -527,16 +527,23 @@ impl BrushRendererBuilder {
         //self.lightmaps[0]
 
 
-        let lightmap_view =  state.default_lightmap().create_view(&Default::default());
+        //let lightmap_view =  state.default_lightmap().create_view(&Default::default());
 
-      //  let mut lightmap_view =lightmap.create_view(&Default::default());
-
-
-        /*lightmap_view.resize_with(4, || {
+        let mut lightmap_views: Vec<_> = self.faces[face_id]
+        .lightmap_ids
+        .iter()
+        .map(|id| self.lightmaps[*id].create_view(&Default::default()))
+        .collect();
+        
+        //this makes sure there are 4 lightmap views -- if not it sticks in default tex
+        lightmap_views.resize_with(4, || {
             state.default_lightmap().create_view(&Default::default())
-        });*/
+        });
 
-        let lightmap_view_ref = lightmap_view;
+        let lightmap_view_refs = lightmap_views.iter().collect::<Vec<_>>();
+
+
+        let lightmap_view_ref = lightmap_view_refs[0];
 
         let layout = &state
             .brush_pipeline()
@@ -758,7 +765,7 @@ impl BrushRenderer {
         }
 
 
-        let drawPerFace = false;
+        let drawPerFace = true;
 
 
         if(drawPerFace){
