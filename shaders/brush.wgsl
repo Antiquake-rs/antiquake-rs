@@ -1,4 +1,13 @@
 //see brush.vert and brush.frag  and this file for a guide on how to convert these boyz !
+/*
+      should do  
+          transform: mat4x4<f32>,
+          model_view: mat4x4<f32> 
+      in buffers!! not push const
+
+
+      should fix normal maps 
+*/
 
 let TEXTURE_KIND_REGULAR:i32 = 0;
 let TEXTURE_KIND_WARP:i32 = 1;
@@ -45,7 +54,7 @@ struct TextureUniforms {
 
 struct PushConstants {
     transform: mat4x4<f32>,
-    model_view: mat4x4<f32>,
+   // model_view: mat4x4<f32>,  //should do this and the transform in buffers!! not push const
     texture_kind:i32
 }
 var<push_constant> push_constants: PushConstants;

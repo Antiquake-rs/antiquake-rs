@@ -472,7 +472,7 @@ impl WorldRenderer {
             pass,
             Update(bump.alloc(brush::VertexPushConstants {
                 transform: camera.view_projection(),
-                model_view: camera.view(),
+              //  model_view: camera.view(),
             })),
             Clear,
             Clear,
@@ -501,7 +501,7 @@ impl WorldRenderer {
                         pass,
                         Update(bump.alloc(brush::VertexPushConstants {
                             transform: self.calculate_mvp_transform(camera, ent),
-                            model_view: self.calculate_mv_transform(camera, ent),
+                           // model_view: self.calculate_mv_transform(camera, ent),
                         })),
                         Clear,
                         Clear,
