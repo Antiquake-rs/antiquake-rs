@@ -47,8 +47,8 @@ pub struct ParticlePipeline {
     bind_group_layouts: Vec<wgpu::BindGroupLayout>,
     vertex_buffer: wgpu::Buffer,
     sampler: wgpu::Sampler,
-    textures: Vec<wgpu::Texture>,
-    texture_views: Vec<wgpu::TextureView>,
+    texture :  wgpu::Texture,
+    texture_view :  wgpu::TextureView ,
     bind_group: wgpu::BindGroup,
 }
 
@@ -85,7 +85,7 @@ impl ParticlePipeline {
             border_color: None,
         });
 
-        let textures: Vec<wgpu::Texture> = (0..256)
+       /*  let textures: Vec<wgpu::Texture> = (0..256)
             .map(|i| {
                 let mut pixels = PARTICLE_TEXTURE_PIXELS;
 
@@ -110,33 +110,72 @@ impl ParticlePipeline {
                 )
             })
             .collect();
-        let texture_views: Vec<wgpu::TextureView> = textures
+            
+            
+            let texture_views: Vec<wgpu::TextureView> = textures
             .iter()
             .map(|t| t.create_view(&Default::default()))
             .collect();
-        let texture_view_refs = texture_views.iter().collect::<Vec<_>>();
+           let texture_view_refs = texture_views.iter().collect::<Vec<_>>();
+        
+        */
 
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("particle bind group"),
-            layout: &bind_group_layouts[0],
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&texture_view_refs[0]), //wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
-                },
-            ],
-        });
+
+        /*
+            I dont think this is exactly correct but its closer 
+        
+        */
+            let mut pixels = PARTICLE_TEXTURE_PIXELS;
+
+            let mut colored_pixels:[u8; 64] = pixels;
+ 
+            for  i in 0..64 {
+                if pixels[i] == 0 {
+                    colored_pixels[i] = 0xFF;
+                } else {
+                    colored_pixels[i]  = pixels[i] * i as u8;
+                } 
+            }
+
+
+            
+            let (diffuse_data, _) = palette.translate(&colored_pixels); 
+
+            let main_particle_texture = create_texture(
+                device,
+                queue,
+                Some(&format!("particle texture")),
+                8  ,
+                8  ,
+                &TextureData::Diffuse(diffuse_data),
+            );
+
+            let texture_view = main_particle_texture.create_view(&Default::default());
+
+
+            
+
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("particle bind group"),
+                layout: &bind_group_layouts[0],
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::Sampler(&sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(&texture_view), //wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
+                    },
+                ],
+            });
 
         ParticlePipeline {
             pipeline,
             bind_group_layouts,
             sampler,
-            textures,
-            texture_views,
+            texture: main_particle_texture  ,
+            texture_view ,
             bind_group,
             vertex_buffer,
         }

@@ -1,4 +1,7 @@
  
+/*
+ we should provide the color in a buffer instead of a push constant . push constants are already stressed to the MAX_LIGHTS
+ */
 
 struct VertexOutput {
     @location(0) f_texcoord: vec2<f32>, 
@@ -31,17 +34,29 @@ fn main_vs(
     @location(1) a_texcoord: vec2<f32>, 
 ) -> VertexOutput {
     var result: VertexOutput;
-    result.f_texcoord =  a_texcoord; 
+
+    //mod the texcoord by the color 
+    let color_index:i32 = push_constants.color;
+
+    let COLOR_ROWS:i32 = 8;
+    let COLOR_COLS:i32 = 8;
+
+    let x_row:i32 = color_index % COLOR_ROWS;
+    let y_row:i32 = color_index / COLOR_COLS;
+
+    let tile_scale = 0.125f;
+
+    //similar to glyph code 
+   // result.f_texcoord =  a_texcoord; 
+    result.f_texcoord =  vec2((a_texcoord.x  +  f32(x_row))* tile_scale ,(  a_texcoord.y + f32(y_row)) * tile_scale); 
+
  
     result.pos = push_constants.transform * vec4(a_position,1.0);   
     return result;
 }
   
  
- 
-
-//why would a particle shader need an array of 256 textures being pumped in ? seems overkill   
-
+  
 @fragment
 fn main_fs(vertex: VertexOutput) -> FragmentOutput {
 var result: FragmentOutput;
