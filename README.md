@@ -14,6 +14,14 @@ Levels can be designed using Trenchbroom editor.
 
 ![alt tag](https://i.imgur.com/25nOENn.png)
 
+
+
+### STEPS TO RUN 
+boot with this: cargo run --bin quake-client
+type in console: playdemo demo1
+
+
+
 ## Status
 
 Antiquake is in pre-alpha. 
