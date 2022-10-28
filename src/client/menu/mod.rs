@@ -133,6 +133,9 @@ impl Menu {
 
         let s = m.state.get().clone();
         if let MenuState::Active { index } = s {
+
+            ///this throws an error !!
+
             m.state.replace(MenuState::Active {
                 index: (index - 1) % m.items.len(),
             });

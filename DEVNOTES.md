@@ -24,22 +24,20 @@ gfx pipelines yay!!!
 
 
 #### Next Steps 
--make this not require nightly (see richter draft pr )(https://github.com/cormac-obrien/richter/pull/48)
+-pull in bindings improvements 
+https://github.com/cormac-obrien/richter/pull/48/files
 
--Try to import a map from trenchbroom and see if we can load it like an indie game 
+
+-Try to import a map from trenchbroom and see if we can load it  
 -Add ECS architecture?
--ability to load a pak-zip (pak3) 
+-ability to load a pak-zip (pak3) [slime]
 
--basically improve the engine so that an indie game will run in it 
+- STRETCH: improve the engine so that it can run mods effectively
 
 https://www.youtube.com/watch?v=57TKNzYTf5U
 
 
 
-
-### Credits 
-
-Rendering libraries taken from  richter
 
 
 ## inspiration 
