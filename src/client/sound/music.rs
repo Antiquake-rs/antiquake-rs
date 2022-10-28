@@ -82,6 +82,7 @@ impl MusicPlayer {
                 
                         // stop the old track before starting the new one so there's no overlap
                         self.sink = None;
+                        
                         // TODO handle PlayError
                         let new_sink = Sink::try_new(&self.stream).unwrap();
                         new_sink.append(source);
