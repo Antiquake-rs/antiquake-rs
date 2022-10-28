@@ -11,3 +11,4 @@ target
 *.slime
 *.zip
 
+last-shader.wgsl
