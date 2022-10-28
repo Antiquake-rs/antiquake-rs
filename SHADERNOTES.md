@@ -5,11 +5,7 @@
 
 convert particle color to not use push constants and instead use uniform buffers
 
-add shadows to brush [rendered map] (fullbright part of it )
-
-
-
-
+ 
 
 ## GOOD SHADER INFO 
 https://anteru.net/blog/2016/mapping-between-HLSL-and-GLSL/

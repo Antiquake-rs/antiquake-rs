@@ -2,9 +2,7 @@
 ## Antiquake Engine 
 
 A game engine written in Rust that leverages quake mod tools such as the PAK file format and the standard Quake map format.  
-
-Levels can be designed using Trenchbroom editor. 
-
+ 
 
 ## HOW TO RUN 
 RUST_LOG=debug cargo +nightly run
@@ -21,8 +19,17 @@ cargo run --debug --bin quake-client
 
 
 
-#### 
-need to fix the git commit history ...  just clone richter again and cop ythese files  on it 
+## what is done 
+gfx pipelines yay!!!
+
+
+#### Next Steps 
+
+-Try to import a map from trenchbroom and see if we can load it like an indie game 
+-Add ECS architecture?
+-ability to load a pak-zip (pak3) 
+
+-basically improve the engine so that an indie game will run in it 
 
 
 
@@ -74,36 +81,13 @@ https://www.w3.org/TR/WGSL/
 ## inspiration 
 jpiolho/QuakePlugins -- cool system w lua hooks 
 
- ### Shader files to rewrite !!
- -sprite.wgsl
- -quad.wgsl
- -postprocess.wgsl
- -particle.wgsl
- -glyph.wgsl
- -deferred.wgsl 
- -brush.wgsl
- -blit.wgsl 
- -alias.wgsl 
-
-
+  
  ## probable bugs 
  client/input/game -> line 354 -> mousewheels 
 
-
-
--swapchain became texture view. i think that is what the pipeline writes to.  its totally jacked up .
-
-
-
-## TODO 
-fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tests/in/push-constants.wgsl
-
-
-float is not provided by the pipeline !! 
-
-
-
-
+ 
+ 
+ 
 
 ## Spells System
 

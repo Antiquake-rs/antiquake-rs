@@ -85,55 +85,16 @@ impl ParticlePipeline {
             border_color: None,
         });
 
-       /*  let textures: Vec<wgpu::Texture> = (0..256)
-            .map(|i| {
-                let mut pixels = PARTICLE_TEXTURE_PIXELS;
-
-                // set up palette translation
-                for pix in pixels.iter_mut() {
-                    if *pix == 0 {
-                        *pix = 0xFF;
-                    } else {
-                        *pix *= i as u8;
-                    }
-                }
-
-                let (diffuse_data, _) = palette.translate(&pixels);
-
-                create_texture(
-                    device,
-                    queue,
-                    Some(&format!("particle texture {}", i)),
-                    8,
-                    8,
-                    &TextureData::Diffuse(diffuse_data),
-                )
-            })
-            .collect();
-            
-            
-            let texture_views: Vec<wgpu::TextureView> = textures
-            .iter()
-            .map(|t| t.create_view(&Default::default()))
-            .collect();
-           let texture_view_refs = texture_views.iter().collect::<Vec<_>>();
-        
-        */
-
-
-        /*
-            I dont think this is exactly correct but its closer 
-        
-        */
-            let mut pixels = PARTICLE_TEXTURE_PIXELS;
-
-            let mut colored_pixels:[u8; 64] = pixels;
+       
+             
+            //turn the PARTICLE_TEXTURE_PIXELS map into colored pixels with this loop
+            let mut colored_pixels:[u8; 64] = PARTICLE_TEXTURE_PIXELS;
  
             for  i in 0..64 {
-                if pixels[i] == 0 {
+                if PARTICLE_TEXTURE_PIXELS[i] == 0 {
                     colored_pixels[i] = 0xFF;
                 } else {
-                    colored_pixels[i]  = pixels[i] * i as u8;
+                    colored_pixels[i]  = PARTICLE_TEXTURE_PIXELS[i] * i as u8;
                 } 
             }
 
@@ -151,9 +112,7 @@ impl ParticlePipeline {
             );
 
             let texture_view = main_particle_texture.create_view(&Default::default());
-
-
-            
+ 
 
             let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("particle bind group"),

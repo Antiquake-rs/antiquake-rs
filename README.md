@@ -1,4 +1,4 @@
-# Antiquake
+# Antiquake Engine
 
 [![Build Status](https://travis-ci.org/antiquake-rs/antiquake-rs.svg?branch=dev)](https://travis-ci.org/antiquake-rs/antiquake-rs)
 
@@ -7,6 +7,10 @@ An indie games engine based off of the quake framework implemented in Rust.  For
 - Antiquake will always support entry-level graphics hardware including Intel Mesa/integrated graphics drivers and linux. 
 - Antiquake will only require a maximum of 128 push constants for a GPU which is the typical min spec. 
 - Antiquake does not depend on python or c++ it is a pure rust implementation using wgpu and naga for graphics
+
+
+Levels can be designed using Trenchbroom editor. 
+
 
 ![alt tag](https://i.imgur.com/25nOENn.png)
 
