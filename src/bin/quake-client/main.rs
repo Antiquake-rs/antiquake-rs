@@ -86,8 +86,7 @@ struct ClientProgram {
 
     surface: wgpu::Surface,
     surface_config: wgpu::SurfaceConfiguration,
- //   texture_view:  wgpu::TextureView ,
-   // swap_chain: RefCell<wgpu::SwapChain>,
+  
     gfx_state: RefCell<GraphicsState>,
     ui_renderer: Rc<UiRenderer>,
    
@@ -220,7 +219,10 @@ impl ClientProgram {
             //https://stackoverflow.com/questions/68881273/wgpu-rs-thread-main-panicked-at-texture1-does-not-exist
             //https://github.com/gfx-rs/wgpu/issues/1797
             //This can be solved by forcing the SurfaceTexture to be dropped after the TextureView.
-         let winit::dpi::PhysicalSize { width, height } = window.inner_size();
+        
+        
+        
+            let winit::dpi::PhysicalSize { width, height } = window.inner_size();
 
          let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -231,15 +233,8 @@ impl ClientProgram {
             alpha_mode: wgpu::CompositeAlphaMode::Opaque 
         };
        
-
-   /*      let surface_texture =   surface.get_current_texture().unwrap() ;
-
-         //needs to be refcell  ?
-        let texture_view =    surface_texture
-        .texture
-        .create_view(&wgpu::TextureViewDescriptor::default()) ; 
-*/
-        
+        surface.configure(&device, &surface_config);
+ 
 
         
         let vfs = Rc::new(vfs);
@@ -300,6 +295,9 @@ impl ClientProgram {
 
         let game = Game::new(cvars.clone(), cmds.clone(), input.clone(), client).unwrap();
 
+        
+     
+
         ClientProgram {
             vfs,
             cvars,
@@ -347,32 +345,20 @@ impl ClientProgram {
         let _ = self.swap_chain.replace(swap_chain);
     }*/
 
-
-/*
- Swapchain output view   is used for the color attachment view
-
- what do modern engines use for a color attachment view !? for winit 
-
- The swapchain has been merged into the surface. Where you once made a new swapchain, you now call surface.configure() and your acquire_next_frame calls also go on the surface.
-
-*/
+ 
 
     fn render(&mut self) {
 
-       // let color_attachment_texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        //self.surface.configure(device, config)
-
+      
         //let swap_chain_output = self.surface.borrow_mut().get_current_frame().unwrap();
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
 
         let surface = &self.surface;
 
-        //need to split up these long chains of borrows sometimes ! 
+        //needed to split up these long chains of borrows sometimes ! 
         let gfx_state = &self.gfx_state.borrow();
         let device = gfx_state.get_device();
-
-        surface.configure(device, &self.surface_config);
+ 
 
         let surface_texture = match surface.get_current_texture() {
             Ok(surface_texture) => surface_texture,
@@ -389,25 +375,18 @@ impl ClientProgram {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-
-        
-
+  
 
         self.game.render(
             &self.gfx_state.borrow(),
-            &texture_view ,
-         //   &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
+            &texture_view ,      
             width,
             height,
             &self.console.borrow(),
             &self.menu.borrow(),
         );
 
-
-
-
         surface_texture.present();
-
 
 
     }
