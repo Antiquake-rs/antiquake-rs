@@ -1,15 +1,14 @@
-# Richter
+# Antiquake
 
-[![Build Status](https://travis-ci.org/cormac-obrien/richter.svg?branch=devel)](https://travis-ci.org/cormac-obrien/richter)
+[![Build Status](https://travis-ci.org/antiquake-rs/antiquake-rs.svg?branch=dev)](https://travis-ci.org/antiquake-rs/antiquake-rs)
 
-A modern implementation of the Quake engine in Rust.
+An indie games engine based off of the quake framework implemented in Rust.  Forked from richter by cormac-obrien.
 
 ![alt tag](https://i.imgur.com/25nOENn.png)
 
 ## Status
 
-Richter is in pre-alpha development, so it's still under heavy construction.
-However, the client is nearly alpha-ready -- check out the Client section below to see progress.
+Antiquake is in pre-alpha. 
 
 ### Client
 
@@ -89,12 +88,12 @@ This works for demos in the PAK archives (e.g. `demo1.dem`) or any demos you hap
 
 ### Server
 
-The Richter server is still in its early stages, so there's no checklist here yet.
+The server is still in its early stages, so there's no checklist here yet.
 However, you can still check out the QuakeC bytecode VM in the [`progs` module](https://github.com/cormac-obrien/richter/blob/devel/src/server/progs/mod.rs).
 
 ## Building
 
-Richter makes use of feature gates and compiler plugins, which means you'll need a nightly build of
+Antiquake makes use of feature gates and compiler plugins, which means you'll need a nightly build of
 `rustc`. The simplest way to do this is to download [rustup](https://www.rustup.rs/) and follow the
 directions.
 

@@ -73,6 +73,9 @@ use std::{
     mem::size_of,
     num::{NonZeroU32, NonZeroU64, NonZeroU8},
     rc::Rc,
+    io::{BufReader},
+    fs::{File},
+    path::{PathBuf}
 };
 
 use crate::{
@@ -139,7 +142,7 @@ pub fn texture_descriptor<'a>(
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
         format,
-        usage: wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED,
+        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
     }
 }
 
@@ -163,6 +166,7 @@ pub fn create_texture<'a>(
             texture: &texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All
         },
         data.data(),
         wgpu::ImageDataLayout {
@@ -252,7 +256,7 @@ impl std::convert::From<winit::dpi::PhysicalSize<u32>> for Extent2d {
 }
 
 pub struct GraphicsState {
-    device: wgpu::Device,
+    device: wgpu::Device,  
     queue: wgpu::Queue,
 
     initial_pass_target: InitialPassTarget,
@@ -285,8 +289,7 @@ pub struct GraphicsState {
 
     vfs: Rc<Vfs>,
     palette: Palette,
-    gfx_wad: Wad,
-    compiler: RefCell<shaderc::Compiler>,
+    gfx_wad: Wad 
 }
 
 impl GraphicsState {
@@ -299,7 +302,7 @@ impl GraphicsState {
     ) -> Result<GraphicsState, Error> {
         let palette = Palette::load(&vfs, "gfx/palette.lmp");
         let gfx_wad = Wad::load(vfs.open("gfx.wad")?).unwrap();
-        let mut compiler = shaderc::Compiler::new().unwrap();
+      
 
         let initial_pass_target = InitialPassTarget::new(&device, size, sample_count);
         let deferred_pass_target = DeferredPassTarget::new(&device, size, sample_count);
@@ -308,7 +311,7 @@ impl GraphicsState {
         let frame_uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("frame uniform buffer"),
             size: size_of::<world::FrameUniforms>() as wgpu::BufferAddress,
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
         let entity_uniform_buffer = RefCell::new(DynamicUniformBuffer::new(&device));
@@ -387,35 +390,42 @@ impl GraphicsState {
                     },
                 ],
             }),
-        ];
+        ];  
+
+       // let shader:wgpu::ShaderModule = Self::load_shader("shader.wgsl",&device).expect("Failed to load shader");
+       
+        /* let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: None,
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../../../shaders/shader.wgsl"))),
+        });*/
 
         let alias_pipeline = AliasPipeline::new(
             &device,
-            &mut compiler,
+          
             &world_bind_group_layouts,
             sample_count,
         );
         let brush_pipeline = BrushPipeline::new(
             &device,
             &queue,
-            &mut compiler,
+           
             &world_bind_group_layouts,
             sample_count,
         );
         let sprite_pipeline = SpritePipeline::new(
             &device,
-            &mut compiler,
+            
             &world_bind_group_layouts,
             sample_count,
         );
-        let deferred_pipeline = DeferredPipeline::new(&device, &mut compiler, sample_count);
+        let deferred_pipeline = DeferredPipeline::new(&device,  sample_count);
         let particle_pipeline =
-            ParticlePipeline::new(&device, &queue, &mut compiler, sample_count, &palette);
-        let postprocess_pipeline = PostProcessPipeline::new(&device, &mut compiler, sample_count);
-        let quad_pipeline = QuadPipeline::new(&device, &mut compiler, sample_count);
-        let glyph_pipeline = GlyphPipeline::new(&device, &mut compiler, sample_count);
+            ParticlePipeline::new(&device, &queue,   sample_count, &palette);
+        let postprocess_pipeline = PostProcessPipeline::new(&device,  sample_count);
+        let quad_pipeline = QuadPipeline::new(&device,  sample_count);
+        let glyph_pipeline = GlyphPipeline::new(&device,   sample_count);
         let blit_pipeline =
-            BlitPipeline::new(&device, &mut compiler, final_pass_target.resolve_view());
+            BlitPipeline::new(&device,  final_pass_target.resolve_view());
 
         let default_lightmap = create_texture(
             &device,
@@ -459,9 +469,13 @@ impl GraphicsState {
             default_lightmap_view,
             vfs,
             palette,
-            gfx_wad,
-            compiler: RefCell::new(compiler),
+            gfx_wad 
         })
+    }
+
+  
+    pub fn get_device(&self) -> &wgpu::Device {
+        return &self.device;
     }
 
     pub fn create_texture<'a>(
@@ -504,7 +518,7 @@ impl GraphicsState {
             self.final_pass_target = FinalPassTarget::new(self.device(), size, sample_count);
             self.blit_pipeline.rebuild(
                 &self.device,
-                &mut *self.compiler.borrow_mut(),
+              
                 self.final_pass_target.resolve_view(),
             )
         }
@@ -517,36 +531,36 @@ impl GraphicsState {
     fn recreate_pipelines(&mut self, sample_count: u32) {
         self.alias_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+        
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.brush_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+          
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.sprite_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+            
             &self.world_bind_group_layouts,
             sample_count,
         );
         self.deferred_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.postprocess_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+           
             sample_count,
         );
         self.glyph_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.quad_pipeline
-            .rebuild(&self.device, &mut self.compiler.borrow_mut(), sample_count);
+            .rebuild(&self.device,   sample_count);
         self.blit_pipeline.rebuild(
             &self.device,
-            &mut self.compiler.borrow_mut(),
+             
             self.final_pass_target.resolve_view(),
         );
     }
@@ -790,6 +804,8 @@ impl ClientRenderer {
                 }
             }
         }
+
+      
 
         let ui_state = match conn {
             Some(Connection {

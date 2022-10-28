@@ -42,7 +42,7 @@ lazy_static! {
         vec![
             wgpu::BindGroupLayoutEntry {
                 binding:0,
-                visibility:wgpu::ShaderStage::all(),
+                visibility:wgpu::ShaderStages::all(),
                 ty:wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -57,7 +57,7 @@ lazy_static! {
             // TODO: move this to push constants once they're exposed in wgpu
             wgpu::BindGroupLayoutEntry {
                 binding:0,
-                visibility:wgpu::ShaderStage::VERTEX,
+                visibility:wgpu::ShaderStages::VERTEX,
                 ty:wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: true,
@@ -69,15 +69,15 @@ lazy_static! {
             // diffuse and fullbright sampler
             wgpu::BindGroupLayoutEntry {
                 binding:1,
-                visibility:wgpu::ShaderStage::FRAGMENT,
-                ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                visibility:wgpu::ShaderStages::FRAGMENT,
+                ty:wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count:None,
             },
             // lightmap sampler
             wgpu::BindGroupLayoutEntry {
                 binding:2,
-                visibility:wgpu::ShaderStage::FRAGMENT,
-                ty:wgpu::BindingType::Sampler { filtering: true, comparison: false },
+                visibility:wgpu::ShaderStages::FRAGMENT,
+                ty:wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count:None,
             },
         ],
@@ -127,32 +127,32 @@ impl Pipeline for WorldPipelineBase {
             strip_index_format: None,
             front_face: wgpu::FrontFace::Cw,
             cull_mode: None,
-            clamp_depth: false,
+            unclipped_depth: false,
             polygon_mode: wgpu::PolygonMode::Fill,
             conservative: false,
         }
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         vec![
             // diffuse attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: DIFFUSE_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
-            },
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
             // normal attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: NORMAL_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
-            },
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
             // light attachment
-            wgpu::ColorTargetState {
+            Some(wgpu::ColorTargetState {
                 format: LIGHT_ATTACHMENT_FORMAT,
                 blend: Some(wgpu::BlendState::REPLACE),
-                write_mask: wgpu::ColorWrite::ALL,
-            },
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
         ]
     }
 
@@ -278,7 +278,7 @@ impl Camera {
 // TODO: derive Debug once const generics are stable
 pub struct FrameUniforms {
     // TODO: pack frame values into a [Vector4<f32>; 16],
-    lightmap_anim_frames: [UniformArrayFloat; 64],
+   // lightmap_anim_frames: [UniformArrayFloat; 64],
     camera_pos: Vector4<f32>,
     time: f32,
 
@@ -385,13 +385,13 @@ impl WorldRenderer {
             .queue()
             .write_buffer(state.frame_uniform_buffer(), 0, unsafe {
                 any_as_bytes(&FrameUniforms {
-                    lightmap_anim_frames: {
+                    /*lightmap_anim_frames: {
                         let mut frames = [UniformArrayFloat::new(0.0); 64];
                         for i in 0..64 {
                             frames[i] = UniformArrayFloat::new(lightstyle_values[i]);
                         }
                         frames
-                    },
+                    },*/
                     camera_pos: camera.origin.extend(1.0),
                     time: engine::duration_to_f32(time),
                     r_lightmap: UniformBool::new(cvars.get_value("r_lightmap").unwrap() != 0.0),

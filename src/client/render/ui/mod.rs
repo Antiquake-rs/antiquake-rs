@@ -117,6 +117,10 @@ impl UiRenderer {
         quad_commands: &'pass mut Vec<QuadRendererCommand<'pass>>,
         glyph_commands: &'pass mut Vec<GlyphRendererCommand>,
     ) {
+
+        //for some reason, overlay is always set to console ??
+        
+
         let (hud_state, overlay) = match ui_state {
             UiState::Title { overlay } => (None, Some(overlay)),
             UiState::InGame { hud, overlay } => (Some(hud), overlay.as_ref()),

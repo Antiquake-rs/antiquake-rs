@@ -7,7 +7,7 @@ use std::{
     rc::Rc,
 };
 
-use richter::client::render::Extent2d;
+use antiquakeengine::client::render::Extent2d;
 
 use chrono::Utc;
 
@@ -56,7 +56,7 @@ impl Capture {
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("capture buffer"),
             size: (row_width * capture_size.height * BYTES_PER_PIXEL) as u64,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
@@ -91,11 +91,18 @@ impl Capture {
         P: AsRef<Path>,
     {
         let mut data = Vec::new();
-        {
+
+        //just removing this for now until i understand callbacks ..
+
+        
+      /*   {
             // map the buffer
             // TODO: maybe make this async so we don't force the whole program to block
             let slice = self.buffer.slice(..);
-            let map_future = slice.map_async(wgpu::MapMode::Read);
+            let map_future = slice.map_async(
+                    wgpu::MapMode::Read,
+                    fCallback
+                    );
             device.poll(wgpu::Maintain::Wait);
             futures::executor::block_on(map_future).unwrap();
 
@@ -111,7 +118,7 @@ impl Capture {
                 }
             }
         }
-        self.buffer.unmap();
+        self.buffer.unmap();  */
 
         let f = File::create(path).unwrap();
         let mut png_encoder = png::Encoder::new(

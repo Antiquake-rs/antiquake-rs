@@ -23,12 +23,12 @@ pub struct AliasPipeline {
 impl AliasPipeline {
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+       
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> AliasPipeline {
         let (pipeline, bind_group_layouts) =
-            AliasPipeline::create(device, compiler, world_bind_group_layouts, sample_count);
+            AliasPipeline::create(device,  world_bind_group_layouts, sample_count);
 
         AliasPipeline {
             pipeline,
@@ -39,7 +39,7 @@ impl AliasPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        
         world_bind_group_layouts: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) {
@@ -47,7 +47,7 @@ impl AliasPipeline {
             .iter()
             .chain(self.bind_group_layouts.iter())
             .collect();
-        self.pipeline = AliasPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = AliasPipeline::recreate(device,  &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
@@ -97,6 +97,7 @@ impl Pipeline for AliasPipeline {
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/shaders/alias.frag"))
     }
 
+    //https://sotrh.github.io/learn-wgpu/beginner/tutorial5-textures/#the-bindgroup
     fn bind_group_layout_descriptors() -> Vec<wgpu::BindGroupLayoutDescriptor<'static>> {
         vec![
             // group 2: updated per-texture
@@ -106,7 +107,7 @@ impl Pipeline for AliasPipeline {
                     // diffuse texture, updated once per face
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStage::FRAGMENT,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
                         ty: wgpu::BindingType::Texture {
                             view_dimension: wgpu::TextureViewDimension::D2,
                             sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -114,6 +115,14 @@ impl Pipeline for AliasPipeline {
                         },
                         count: None,
                     },
+                  /*  wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        // This should match the filterable field of the
+                        // corresponding Texture entry above.
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    }, */ 
                 ],
             },
         ]
@@ -123,7 +132,7 @@ impl Pipeline for AliasPipeline {
         WorldPipelineBase::primitive_state()
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         WorldPipelineBase::color_target_states()
     }
 
@@ -135,7 +144,7 @@ impl Pipeline for AliasPipeline {
     fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
         vec![wgpu::VertexBufferLayout {
             array_stride: size_of::<AliasVertex>() as u64,
-            step_mode: wgpu::InputStepMode::Vertex,
+            step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &VERTEX_ATTRIBUTES[..],
         }]
     }
@@ -334,7 +343,7 @@ impl AliasRenderer {
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: None,
                 contents: unsafe { any_slice_as_bytes(vertices.as_slice()) },
-                usage: wgpu::BufferUsage::VERTEX,
+                usage: wgpu::BufferUsages::VERTEX,
             });
 
         let mut textures = Vec::new();

@@ -56,18 +56,18 @@ impl ParticlePipeline {
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        compiler: &mut shaderc::Compiler,
+   
         sample_count: u32,
         palette: &Palette,
     ) -> ParticlePipeline {
         let (pipeline, bind_group_layouts) =
-            ParticlePipeline::create(device, compiler, &[], sample_count);
+            ParticlePipeline::create(device,   &[], sample_count);
 
         use wgpu::util::DeviceExt as _;
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: unsafe { any_slice_as_bytes(&VERTICES) },
-            usage: wgpu::BufferUsage::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -126,7 +126,7 @@ impl ParticlePipeline {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
+                    resource: wgpu::BindingResource::TextureView(&texture_view_refs[0]), //wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
                 },
             ],
         });
@@ -145,11 +145,11 @@ impl ParticlePipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+     
         sample_count: u32,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        self.pipeline = ParticlePipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = ParticlePipeline::recreate(device, &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
@@ -221,23 +221,20 @@ pub struct FragmentPushConstants {
 const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
     wgpu::BindGroupLayoutEntry {
         binding: 0,
-        visibility: wgpu::ShaderStage::FRAGMENT,
-        ty: wgpu::BindingType::Sampler {
-            filtering: true,
-            comparison: false,
-        },
+        visibility: wgpu::ShaderStages::FRAGMENT,
+        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
         count: None,
     },
     // per-index texture array
     wgpu::BindGroupLayoutEntry {
         binding: 1,
-        visibility: wgpu::ShaderStage::FRAGMENT,
+        visibility: wgpu::ShaderStages::FRAGMENT,
         ty: wgpu::BindingType::Texture {
             view_dimension: wgpu::TextureViewDimension::D2,
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
             multisampled: false,
         },
-        count: NonZeroU32::new(256),
+        count: None // NonZeroU32::new(256),
     },
 ];
 
@@ -297,7 +294,7 @@ impl Pipeline for ParticlePipeline {
         WorldPipelineBase::primitive_state()
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         WorldPipelineBase::color_target_states()
     }
 
@@ -311,7 +308,7 @@ impl Pipeline for ParticlePipeline {
     fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
         vec![wgpu::VertexBufferLayout {
             array_stride: size_of::<ParticleVertex>() as u64,
-            step_mode: wgpu::InputStepMode::Vertex,
+            step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &VERTEX_ATTRIBUTES[0],
         }]
     }

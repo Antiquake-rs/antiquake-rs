@@ -19,13 +19,12 @@
 // SOFTWARE.
 
 use std::{cell::RefCell, path::PathBuf, rc::Rc};
+ 
 
-use crate::{
-    capture::{cmd_screenshot, Capture},
-    trace::{cmd_trace_begin, cmd_trace_end},
-};
-
-use richter::{
+use crate::capture::{cmd_screenshot, Capture};
+use crate::trace::{cmd_trace_begin, cmd_trace_end};
+ 
+use antiquakeengine::{
     client::{
         input::Input,
         menu::Menu,
@@ -144,7 +143,7 @@ impl Game {
         console: &Console,
         menu: &Menu,
     ) {
-        info!("Beginning render pass");
+      
         let mut encoder = gfx_state
             .device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -170,18 +169,22 @@ impl Game {
                     texture: gfx_state.final_pass_target().resolve_attachment(),
                     mip_level: 0,
                     origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All
                 },
             );
             cap
         });
 
-        // blit to swap chain
+        // blit to swap chain  -- swap chain is gone now you use surface ?? i dont understand 
+        //this makes the game crash 
+ 
         {
             let swap_chain_target = SwapChainTarget::with_swap_chain_view(color_attachment_view);
             let blit_pass_builder = swap_chain_target.render_pass_builder();
             let mut blit_pass = encoder.begin_render_pass(&blit_pass_builder.descriptor());
             gfx_state.blit_pipeline().blit(gfx_state, &mut blit_pass);
-        }
+        }    
+
 
         let command_buffer = encoder.finish();
         {

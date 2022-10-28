@@ -1,6 +1,6 @@
 use std::{cell::RefCell, io::BufWriter, rc::Rc, fs::File};
 
-use richter::{client::trace::TraceFrame, common::console::CvarRegistry};
+use antiquakeengine::{client::trace::TraceFrame, common::console::CvarRegistry};
 
 const DEFAULT_TRACE_PATH: &'static str = "richter-trace.json";
 

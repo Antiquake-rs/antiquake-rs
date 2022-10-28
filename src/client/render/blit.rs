@@ -1,3 +1,5 @@
+ 
+
 use crate::client::render::{pipeline::Pipeline, ui::quad::QuadPipeline, GraphicsState};
 
 pub struct BlitPipeline {
@@ -32,10 +34,10 @@ impl BlitPipeline {
 
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+       
         input: &wgpu::TextureView,
     ) -> BlitPipeline {
-        let (pipeline, bind_group_layouts) = BlitPipeline::create(device, compiler, &[], 1);
+        let (pipeline, bind_group_layouts) = BlitPipeline::create(device, &[], 1);
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: None,
@@ -65,11 +67,11 @@ impl BlitPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+       
         input: &wgpu::TextureView,
     ) {
         let layout_refs: Vec<_> = self.bind_group_layouts.iter().collect();
-        let pipeline = BlitPipeline::recreate(device, compiler, &layout_refs, 1);
+        let pipeline = BlitPipeline::recreate(device,  &layout_refs, 1);
         self.pipeline = pipeline;
         self.bind_group =
             Self::create_bind_group(device, self.bind_group_layouts(), &self.sampler, input);
@@ -84,10 +86,17 @@ impl BlitPipeline {
     }
 
     pub fn blit<'a>(&'a self, state: &'a GraphicsState, pass: &mut wgpu::RenderPass<'a>) {
+
+    
+
         pass.set_pipeline(&self.pipeline());
+       
         pass.set_bind_group(0, &self.bind_group, &[]);
+   
         pass.set_vertex_buffer(0, state.quad_pipeline().vertex_buffer().slice(..));
+       
         pass.draw(0..6, 0..1);
+        
     }
 }
 
@@ -107,17 +116,14 @@ impl Pipeline for BlitPipeline {
                 // sampler
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler {
-                        filtering: true,
-                        comparison: false,
-                    },
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
                 // blit texture
                 wgpu::BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: wgpu::ShaderStage::FRAGMENT,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Texture {
                         view_dimension: wgpu::TextureViewDimension::D2,
                         sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -141,7 +147,7 @@ impl Pipeline for BlitPipeline {
         QuadPipeline::primitive_state()
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         QuadPipeline::color_target_states()
     }
 

@@ -32,7 +32,7 @@ use failure::Error;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use winit::{
-    dpi::LogicalPosition,
+    dpi::{LogicalPosition,PhysicalPosition},
     event::{
         DeviceEvent, ElementState, Event, KeyboardInput, MouseButton, MouseScrollDelta,
         VirtualKeyCode as Key, WindowEvent,
@@ -335,6 +335,10 @@ pub enum MouseWheel {
 // TODO: this currently doesn't handle NaN and treats 0.0 as negative which is probably not optimal
 impl ::std::convert::From<MouseScrollDelta> for MouseWheel {
     fn from(src: MouseScrollDelta) -> MouseWheel {
+
+       // let logicalPos = LogicalPosition { y, .. };
+       // let mousePos = PhysicalPosition::from_logical(logicalPos);
+
         match src {
             MouseScrollDelta::LineDelta(_, y) => {
                 if y > 0.0 {
@@ -344,7 +348,10 @@ impl ::std::convert::From<MouseScrollDelta> for MouseWheel {
                 }
             }
 
-            MouseScrollDelta::PixelDelta(LogicalPosition { y, .. }) => {
+
+          
+            //careful of bug ?
+            MouseScrollDelta::PixelDelta(PhysicalPosition { y, .. }) => {
                 if y > 0.0 {
                     MouseWheel::Up
                 } else {

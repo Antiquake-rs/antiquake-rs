@@ -1,11 +1,13 @@
 use std::{
     io::{Cursor, Read},
     rc::Rc,
+    fs::File
 };
 
-use crate::{client::sound::SoundError, common::vfs::Vfs};
+use crate::{client::sound::SoundError, common::vfs::{Vfs,VfsError, VirtualFile}};
 
 use rodio::{Decoder, OutputStreamHandle, Sink, Source};
+ 
 
 /// Plays music tracks.
 pub struct MusicPlayer {
@@ -46,35 +48,60 @@ impl MusicPlayer {
             }
         }
 
+
+        info!("Trying to play track {}", name);
+
+
         // TODO: there's probably a better way to do this extension check
-        let mut file = if !name.contains('.') {
+        let mut  file:Result<VirtualFile, VfsError> = if !name.contains('.') {
             // try all supported formats
+
             self.vfs
                 .open(format!("music/{}.flac", name))
                 .or_else(|_| self.vfs.open(format!("music/{}.wav", name)))
                 .or_else(|_| self.vfs.open(format!("music/{}.mp3", name)))
                 .or_else(|_| self.vfs.open(format!("music/{}.ogg", name)))
-                .or(Err(SoundError::NoSuchTrack(name.to_owned())))?
+                
         } else {
-            self.vfs.open(name)?
+            self.vfs.open(name)
         };
 
-        let mut data = Vec::new();
-        file.read_to_end(&mut data)?;
-        let source = Decoder::new(Cursor::new(data))?
-            .convert_samples::<f32>()
-            .buffered()
-            .repeat_infinite();
+       /*  if let Ok(file) = do_steps() {
+            println!("Failed to perform necessary steps");
+        }*/
 
-        // stop the old track before starting the new one so there's no overlap
-        self.sink = None;
-        // TODO handle PlayError
-        let new_sink = Sink::try_new(&self.stream).unwrap();
-        new_sink.append(source);
-        self.sink = Some(new_sink);
+                let fileConverted = match file {
+                    Ok(mut file) => {
 
-        Ok(())
-    }
+                        let mut data = Vec::new();
+                        file.read_to_end(&mut data)?;
+                        let source = Decoder::new(Cursor::new(data))?
+                            .convert_samples::<f32>()
+                            .buffered()
+                            .repeat_infinite();
+                
+                        // stop the old track before starting the new one so there's no overlap
+                        self.sink = None;
+                        
+                        // TODO handle PlayError
+                        let new_sink = Sink::try_new(&self.stream).unwrap();
+                        new_sink.append(source);
+                        self.sink = Some(new_sink);
+                
+                        return  Ok(())
+
+                    },
+                    Err(error) => {
+                    info!("Could not play media: {}" ,name);
+                     return Ok(())
+                    }
+                };
+
+               return fileConverted;
+    }  
+
+      
+    
 
     /// Start playing the track with the given number.
     ///

@@ -6,3 +6,7 @@ target
 *.pak
 *.pak.d
 .#*
+
+
+.slime
+.zip

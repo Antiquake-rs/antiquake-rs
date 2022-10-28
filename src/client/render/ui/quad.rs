@@ -84,17 +84,17 @@ pub struct QuadPipeline {
 impl QuadPipeline {
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        
         sample_count: u32,
     ) -> QuadPipeline {
         let (pipeline, bind_group_layouts) =
-            QuadPipeline::create(device, compiler, &[], sample_count);
+            QuadPipeline::create(device,  &[], sample_count);
 
         use wgpu::util::DeviceExt as _;
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: unsafe { any_slice_as_bytes(&VERTICES) },
-            usage: wgpu::BufferUsage::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         let uniform_buffer = RefCell::new(DynamicUniformBuffer::new(device));
@@ -112,11 +112,11 @@ impl QuadPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+    
         sample_count: u32,
     ) {
         let layout_refs = self.bind_group_layouts.iter().collect::<Vec<_>>();
-        self.pipeline = QuadPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = QuadPipeline::recreate(device,   &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
@@ -155,11 +155,8 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
         // sampler
         wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStage::FRAGMENT,
-            ty: wgpu::BindingType::Sampler {
-                filtering: true,
-                comparison: false,
-            },
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
             count: None,
         },
     ],
@@ -167,7 +164,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
         // texture
         wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStage::FRAGMENT,
+            visibility: wgpu::ShaderStages::FRAGMENT,
             ty: wgpu::BindingType::Texture {
                 view_dimension: wgpu::TextureViewDimension::D2,
                 sample_type: wgpu::TextureSampleType::Float { filterable: true },
@@ -181,7 +178,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
         // TODO: move to push constants once they're exposed in wgpu
         wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStage::all(),
+            visibility: wgpu::ShaderStages::all(),
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: true,
@@ -235,18 +232,18 @@ impl Pipeline for QuadPipeline {
             strip_index_format: None,
             front_face: wgpu::FrontFace::Cw,
             cull_mode: Some(wgpu::Face::Back),
-            clamp_depth: false,
+            unclipped_depth: false,
             polygon_mode: wgpu::PolygonMode::Fill,
             conservative: false,
         }
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
-        vec![wgpu::ColorTargetState {
+    fn color_target_states() ->Vec<Option<wgpu::ColorTargetState>> {
+        vec![Some(wgpu::ColorTargetState {
             format: DIFFUSE_ATTACHMENT_FORMAT,
             blend: Some(wgpu::BlendState::REPLACE),
-            write_mask: wgpu::ColorWrite::ALL,
-        }]
+            write_mask: wgpu::ColorWrites::ALL,
+        })]
     }
 
     fn depth_stencil_state() -> Option<wgpu::DepthStencilState> {
@@ -257,7 +254,7 @@ impl Pipeline for QuadPipeline {
     fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
         vec![wgpu::VertexBufferLayout {
             array_stride: size_of::<QuadVertex>() as u64,
-            step_mode: wgpu::InputStepMode::Vertex,
+            step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &VERTEX_BUFFER_ATTRIBUTES[..],
         }]
     }

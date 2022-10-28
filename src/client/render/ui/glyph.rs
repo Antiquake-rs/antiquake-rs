@@ -19,6 +19,8 @@ pub const GLYPH_HEIGHT: usize = 8;
 const GLYPH_COLS: usize = 16;
 const GLYPH_ROWS: usize = 16;
 const GLYPH_COUNT: usize = GLYPH_ROWS * GLYPH_COLS;
+
+const GLYPH_TEXTURE_HEIGHT:usize = GLYPH_HEIGHT * GLYPH_ROWS;
 const GLYPH_TEXTURE_WIDTH: usize = GLYPH_WIDTH * GLYPH_COLS;
 
 /// The maximum number of glyphs that can be rendered at once.
@@ -47,16 +49,16 @@ pub struct GlyphPipeline {
 impl GlyphPipeline {
     pub fn new(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+       
         sample_count: u32,
     ) -> GlyphPipeline {
         let (pipeline, bind_group_layouts) =
-            GlyphPipeline::create(device, compiler, &[], sample_count);
+            GlyphPipeline::create(device,   &[], sample_count);
 
         let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("quad instance buffer"),
             size: (MAX_INSTANCES * size_of::<GlyphInstance>()) as u64,
-            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -70,11 +72,11 @@ impl GlyphPipeline {
     pub fn rebuild(
         &mut self,
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+      
         sample_count: u32,
     ) {
         let layout_refs = self.bind_group_layouts.iter().collect::<Vec<_>>();
-        self.pipeline = GlyphPipeline::recreate(device, compiler, &layout_refs, sample_count);
+        self.pipeline = GlyphPipeline::recreate(device,  &layout_refs, sample_count);
     }
 
     pub fn pipeline(&self) -> &wgpu::RenderPipeline {
@@ -94,23 +96,20 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[wgpu::BindGroupLayoutEntry] = &[
     // sampler
     wgpu::BindGroupLayoutEntry {
         binding: 0,
-        visibility: wgpu::ShaderStage::FRAGMENT,
-        ty: wgpu::BindingType::Sampler {
-            filtering: true,
-            comparison: false,
-        },
+        visibility: wgpu::ShaderStages::FRAGMENT,
+        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
         count: None,
     },
     // glyph texture array
     wgpu::BindGroupLayoutEntry {
         binding: 1,
-        visibility: wgpu::ShaderStage::FRAGMENT,
+        visibility: wgpu::ShaderStages::FRAGMENT,
         ty: wgpu::BindingType::Texture {
             view_dimension: wgpu::TextureViewDimension::D2,
             sample_type: wgpu::TextureSampleType::Float { filterable: true },
             multisampled: false,
         },
-        count: NonZeroU32::new(GLYPH_COUNT as u32),
+        count: None //NonZeroU32::new(GLYPH_COUNT as u32),
     },
 ];
 
@@ -142,7 +141,7 @@ impl Pipeline for GlyphPipeline {
         }]
     }
 
-    fn color_target_states() -> Vec<wgpu::ColorTargetState> {
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>> {
         QuadPipeline::color_target_states()
     }
 
@@ -154,12 +153,12 @@ impl Pipeline for GlyphPipeline {
         vec![
             wgpu::VertexBufferLayout {
                 array_stride: size_of::<QuadVertex>() as u64,
-                step_mode: wgpu::InputStepMode::Vertex,
+                step_mode: wgpu::VertexStepMode::Vertex,
                 attributes: &VERTEX_BUFFER_ATTRIBUTES[0],
             },
             wgpu::VertexBufferLayout {
                 array_stride: size_of::<GlyphInstance>() as u64,
-                step_mode: wgpu::InputStepMode::Instance,
+                step_mode: wgpu::VertexStepMode::Instance,
                 attributes: &VERTEX_BUFFER_ATTRIBUTES[1],
             },
         ]
@@ -171,7 +170,7 @@ impl Pipeline for GlyphPipeline {
 pub struct GlyphInstance {
     pub position: Vector2<f32>,
     pub scale: Vector2<f32>,
-    pub layer: u32,
+    pub glyph_index: u32,
 }
 
 pub enum GlyphRendererCommand {
@@ -191,9 +190,9 @@ pub enum GlyphRendererCommand {
 
 pub struct GlyphRenderer {
     #[allow(dead_code)]
-    textures: Vec<wgpu::Texture>,
+    texture: wgpu::Texture,
     #[allow(dead_code)]
-    texture_views: Vec<wgpu::TextureView>,
+    texture_view: wgpu::TextureView,
     const_bind_group: wgpu::BindGroup,
 }
 
@@ -203,14 +202,14 @@ impl GlyphRenderer {
 
         // TODO: validate conchars dimensions
 
-        let indices = conchars
+      /*   let indices = conchars
             .indices()
             .iter()
             .map(|i| if *i == 0 { 0xFF } else { *i })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>();*/
 
         // reorder indices from atlas order to array order
-        let mut array_order = Vec::new();
+      /*   let mut array_order = Vec::new();
         for glyph_id in 0..GLYPH_COUNT {
             for glyph_r in 0..GLYPH_HEIGHT {
                 for glyph_c in 0..GLYPH_WIDTH {
@@ -219,9 +218,24 @@ impl GlyphRenderer {
                     array_order.push(indices[atlas_r * GLYPH_TEXTURE_WIDTH + atlas_c]);
                 }
             }
-        }
+        }*/
 
-        let textures = array_order
+        let (diffuse_data, _) = state.palette().translate(&conchars.indices());
+        let main_glyph_texture =  state.create_texture(
+            Some(&format!("conchars")),
+            GLYPH_TEXTURE_WIDTH as u32,
+            GLYPH_TEXTURE_HEIGHT as u32,
+            &TextureData::Diffuse(diffuse_data),
+        );
+
+        /*
+        
+            Now that i am feeding the shader a single large texture,
+            i need to make the shader slice and tile the  glyphs at the proper indices
+        
+        */
+
+       /*   let textures = array_order
             .chunks_exact(GLYPH_WIDTH * GLYPH_HEIGHT)
             .enumerate()
             .map(|(id, indices)| {
@@ -233,14 +247,10 @@ impl GlyphRenderer {
                     &TextureData::Diffuse(diffuse_data),
                 )
             })
-            .collect::<Vec<_>>();
+            .collect::<Vec<_>>();*/
 
-        let texture_views = textures
-            .iter()
-            .map(|tex| tex.create_view(&Default::default()))
-            .collect::<Vec<_>>();
-        let texture_view_refs = texture_views.iter().collect::<Vec<_>>();
-
+        let texture_view = main_glyph_texture.create_view(&Default::default());
+         
         let const_bind_group = state
             .device()
             .create_bind_group(&wgpu::BindGroupDescriptor {
@@ -253,18 +263,25 @@ impl GlyphRenderer {
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
+                        resource: wgpu::BindingResource::TextureView(&texture_view), // wgpu::BindingResource::TextureViewArray(&texture_view_refs[..]),
                     },
                 ],
             });
 
         GlyphRenderer {
-            textures,
-            texture_views,
+            texture:main_glyph_texture,
+            texture_view,
             const_bind_group,
         }
     }
 
+
+
+    /*
+    
+    
+        Heavily mod this code 
+    */
     pub fn generate_instances(
         &self,
         commands: &[GlyphRendererCommand],
@@ -305,7 +322,7 @@ impl GlyphRenderer {
                             (GLYPH_WIDTH as f32 * scale) as u32,
                             (GLYPH_HEIGHT as f32 * scale) as u32,
                         ),
-                        layer: *glyph_id as u32,
+                        glyph_index: *glyph_id as u32,
                     });
                 }
                 GlyphRendererCommand::Text {
@@ -344,7 +361,7 @@ impl GlyphRenderer {
                                 (GLYPH_WIDTH as f32 * scale) as u32,
                                 (GLYPH_HEIGHT as f32 * scale) as u32,
                             ),
-                            layer: chr as u32,
+                            glyph_index: chr as u32,
                         });
                     }
                 }

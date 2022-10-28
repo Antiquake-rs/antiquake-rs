@@ -22,28 +22,86 @@ use std::mem::size_of;
 
 use crate::common::util::{any_as_bytes, Pod};
 
+use std::{
+   
+    io::{BufReader, Error as IoError, Read},
+    fs::{File},
+    path::{PathBuf}
+};
+
+
 /// The `Pipeline` trait, which allows render pipelines to be defined more-or-less declaratively.
 
-fn create_shader<S>(
+/*fn create_shader<S>(
     device: &wgpu::Device,
-    compiler: &mut shaderc::Compiler,
+    shade_source: wgpu::ShaderSource,
     name: S,
-    kind: shaderc::ShaderKind,
+   // kind: shaderc::ShaderKind,
     source: S,
 ) -> wgpu::ShaderModule
 where
     S: AsRef<str>,
 {
     log::debug!("creating shader {}", name.as_ref());
-    let spirv = compiler
-        .compile_into_spirv(source.as_ref(), kind, name.as_ref(), "main", None)
-        .unwrap();
-    device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+   
+    device.create_shader_module(
+    wgpu::ShaderModuleDescriptor {
         label: Some(name.as_ref()),
-        source: wgpu::ShaderSource::SpirV(spirv.as_binary().into()),
-        flags: wgpu::ShaderFlags::empty(),
+        source: shade_source 
     })
+}*/
+
+/*
+    From vange-rs
+    src/render/mod.rs
+    https://github.com/kvark/vange-rs/blob/master/src/render/mod.rs
+*/
+pub fn make_shader_code(name: &str) -> Result<String, IoError> {
+    let base_path = PathBuf::from("shaders");//.join("shader");
+    let path = base_path.join(name).with_extension("wgsl");
+    if !path.is_file() {
+        panic!("Shader not found: {:?}", path);
+    }
+
+    let mut source = String::new();
+    let mut file = File::open(&path).expect("Could not open shader file");
+    BufReader::new(&file).read_to_string(&mut source)?;
+    let mut buf = String::new();
+    // parse meta-data
+    {
+        let mut lines = source.lines();
+        let first = lines.next().unwrap();
+        if first.starts_with("//!include") {
+            for include in first.split_whitespace().skip(1) {
+                let inc_path = base_path.join(include).with_extension("inc.wgsl");
+                match File::open(&inc_path) {
+                    Ok(include) => BufReader::new(include).read_to_string(&mut buf)?,
+                    Err(e) => panic!("Unable to include {:?}: {:?}", inc_path, e),
+                };
+            }
+        }
+    }
+
+    buf.push_str(&source);
+    Ok(buf)
 }
+
+//this updated way to create a shader requires no compiler since it uses wgsl format
+pub fn create_shader(name: &str, device: &wgpu::Device) -> Result<wgpu::ShaderModule, std::io::Error> {
+   // profiling::scope!("Load Shaders", name);
+
+    let code =  make_shader_code(name)?;
+    debug!("shader '{}':\n{}", name, code);
+    if cfg!(debug_assertions) {
+        std::fs::write("last-shader.wgsl", &code).unwrap();
+    }
+
+    Ok(device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(name),
+        source: wgpu::ShaderSource::Wgsl(code.into()),
+    }))
+}
+
 
 pub enum PushConstantUpdate<T> {
     /// Update the push constant to a new value.
@@ -84,7 +142,7 @@ pub trait Pipeline {
     fn primitive_state() -> wgpu::PrimitiveState;
 
     /// The color state used for the pipeline.
-    fn color_target_states() -> Vec<wgpu::ColorTargetState>;
+    fn color_target_states() -> Vec<Option<wgpu::ColorTargetState>>;
 
     /// The depth-stencil state used for the pipeline, if any.
     fn depth_stencil_state() -> Option<wgpu::DepthStencilState>;
@@ -94,7 +152,7 @@ pub trait Pipeline {
 
     fn vertex_push_constant_range() -> wgpu::PushConstantRange {
         let range = wgpu::PushConstantRange {
-            stages: wgpu::ShaderStage::VERTEX,
+            stages: wgpu::ShaderStages::VERTEX,
             range: 0..size_of::<Self::VertexPushConstants>() as u32
                 + size_of::<Self::SharedPushConstants>() as u32,
         };
@@ -104,7 +162,7 @@ pub trait Pipeline {
 
     fn fragment_push_constant_range() -> wgpu::PushConstantRange {
         let range = wgpu::PushConstantRange {
-            stages: wgpu::ShaderStage::FRAGMENT,
+            stages: wgpu::ShaderStages::FRAGMENT,
             range: size_of::<Self::VertexPushConstants>() as u32
                 ..size_of::<Self::VertexPushConstants>() as u32
                     + size_of::<Self::SharedPushConstants>() as u32
@@ -157,8 +215,9 @@ pub trait Pipeline {
             wgpu::PUSH_CONSTANT_ALIGNMENT,
         );
         assert!(
-            vpc_size + spc_size + fpc_size < max_pc_size,
-            "Combined size of push constants must be less than push constant size limit of {}",
+            vpc_size + spc_size + fpc_size <= max_pc_size,
+            "Combined size of push constants {} must be less than push constant size limit of {}",
+            vpc_size + spc_size + fpc_size,
             max_pc_size
         );
     }
@@ -169,20 +228,31 @@ pub trait Pipeline {
     /// created from this pipeline's `bind_group_layout_descriptors()` method when creating the
     /// `RenderPipeline`. This permits the reuse of `BindGroupLayout`s between pipelines.
     fn create(
-        device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+        device: &wgpu::Device, 
         bind_group_layout_prefix: &[wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> (wgpu::RenderPipeline, Vec<wgpu::BindGroupLayout>) {
+        
+        
+       let max_pc_size = device.limits().max_push_constant_size;
+       info!("Your device supports {} max push constants.",max_pc_size);
+        //dont use push constants anymore ? 
         Self::validate_push_constant_types(device.limits());
+
+       let max_bind_groups = device.limits().max_bind_groups;
+        info!("Your device supports {} max bind groups.",max_bind_groups);
 
         info!("Creating {} pipeline", Self::name());
         let bind_group_layouts = Self::bind_group_layout_descriptors()
             .iter()
-            .map(|desc| device.create_bind_group_layout(desc))
+            .map(|desc| {
+                info!( "creating bind group {}", desc.label.unwrap() );
+                return device.create_bind_group_layout(desc);
+                
+            })
             .collect::<Vec<_>>();
         info!(
-            "{} layouts in prefix | {} specific to pipeline",
+            "{} bind group layouts in prefix | {} specific to pipeline",
             bind_group_layout_prefix.len(),
             bind_group_layouts.len(),
         );
@@ -193,45 +263,57 @@ pub trait Pipeline {
                 .iter()
                 .chain(bind_group_layouts.iter())
                 .collect();
-            info!("{} layouts total", layouts.len());
+            info!("{} bindgrouplayouts total", layouts.len());
             let ranges = Self::push_constant_ranges();
             let label = format!("{} pipeline layout", Self::name());
             let desc = wgpu::PipelineLayoutDescriptor {
                 label: Some(&label),
                 bind_group_layouts: &layouts,
-                push_constant_ranges: &ranges,
+                push_constant_ranges: &ranges//&ranges,
             };
             device.create_pipeline_layout(&desc)
         };
+ 
 
-        let vertex_shader = create_shader(
-            device,
-            compiler,
+        let wgsl_shader = create_shader(          
+            format!("{}.wgsl", Self::name()).as_str(),
+            device
+        ).expect("Could not create wgsl shader");
+
+
+        /*let vertex_shader = create_shader(
+            device, 
+             shader,
             format!("{}.vert", Self::name()).as_str(),
-            shaderc::ShaderKind::Vertex,
+            shaderc::ShaderKind::Vert,
             Self::vertex_shader(),
         );
         let fragment_shader = create_shader(
             device,
-            compiler,
+            shader,
             format!("{}.frag", Self::name()).as_str(),
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),
-        );
+        );*/
+
+//need to update this so it accepted the new unified shader !
+//how do other modern engines do this ?
+//see https://github.com/kvark/vange-rs/blob/master/src/render/object.rs line 140 
+
 
         info!("create_render_pipeline");
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vertex_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "main_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
-                module: &fragment_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "main_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {
@@ -240,6 +322,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
+            multiview: None   //??
         });
 
         (pipeline, bind_group_layouts)
@@ -250,7 +333,7 @@ pub trait Pipeline {
     /// Pipelines must be reconstructed when the MSAA sample count is changed.
     fn recreate(
         device: &wgpu::Device,
-        compiler: &mut shaderc::Compiler,
+     //   compiler: &mut shaderc::Compiler,
         bind_group_layouts: &[&wgpu::BindGroupLayout],
         sample_count: u32,
     ) -> wgpu::RenderPipeline {
@@ -264,6 +347,14 @@ pub trait Pipeline {
                 Self::fragment_push_constant_range(),
             ],
         });
+        
+        let wgsl_shader = create_shader(          
+            format!("{}.wgsl", Self::name()).as_str(),
+            device
+        ).expect("Could not create wgsl shader");
+
+     /* 
+          
         let vertex_shader = create_shader(
             device,
             compiler,
@@ -278,18 +369,22 @@ pub trait Pipeline {
             shaderc::ShaderKind::Fragment,
             Self::fragment_shader(),
         );
+      */
+      
+      
+      
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some(&format!("{} pipeline", Self::name())),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &vertex_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_vs",
                 buffers: &Self::vertex_buffer_layouts(),
             },
             primitive: Self::primitive_state(),
             fragment: Some(wgpu::FragmentState {
-                module: &fragment_shader,
-                entry_point: "main",
+                module: &wgsl_shader,
+                entry_point: "color_fs",
                 targets: &Self::color_target_states(),
             }),
             multisample: wgpu::MultisampleState {
@@ -298,6 +393,7 @@ pub trait Pipeline {
                 alpha_to_coverage_enabled: false,
             },
             depth_stencil: Self::depth_stencil_state(),
+            multiview: None  //??
         });
 
         pipeline
@@ -337,7 +433,7 @@ pub trait Pipeline {
                     data
                 );
 
-                pass.set_push_constants(wgpu::ShaderStage::VERTEX, vpc_offset, d);
+                pass.set_push_constants(wgpu::ShaderStages::VERTEX, vpc_offset, d);
             }
         }
 
@@ -356,7 +452,7 @@ pub trait Pipeline {
                 );
 
                 pass.set_push_constants(
-                    wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT,
+                    wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
                     spc_offset,
                     d,
                 );
@@ -377,7 +473,7 @@ pub trait Pipeline {
                     data
                 );
 
-                pass.set_push_constants(wgpu::ShaderStage::FRAGMENT, fpc_offset, d);
+                pass.set_push_constants(wgpu::ShaderStages::FRAGMENT, fpc_offset, d);
             }
         }
     }

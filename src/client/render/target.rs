@@ -32,7 +32,7 @@ pub fn create_color_attachment(
     device: &wgpu::Device,
     size: Extent2d,
     sample_count: u32,
-    usage: wgpu::TextureUsage,
+    usage: wgpu::TextureUsages,
 ) -> wgpu::Texture {
     device.create_texture(&wgpu::TextureDescriptor {
         label: Some("color attachment"),
@@ -41,7 +41,7 @@ pub fn create_color_attachment(
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: DIFFUSE_ATTACHMENT_FORMAT,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | usage,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
     })
 }
 
@@ -53,7 +53,7 @@ pub fn create_normal_attachment(
     device: &wgpu::Device,
     size: Extent2d,
     sample_count: u32,
-    usage: wgpu::TextureUsage,
+    usage: wgpu::TextureUsages,
 ) -> wgpu::Texture {
     device.create_texture(&wgpu::TextureDescriptor {
         label: Some("normal attachment"),
@@ -62,7 +62,7 @@ pub fn create_normal_attachment(
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: NORMAL_ATTACHMENT_FORMAT,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | usage,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
     })
 }
 
@@ -74,7 +74,7 @@ pub fn create_light_attachment(
     device: &wgpu::Device,
     size: Extent2d,
     sample_count: u32,
-    usage: wgpu::TextureUsage,
+    usage: wgpu::TextureUsages,
 ) -> wgpu::Texture {
     device.create_texture(&wgpu::TextureDescriptor {
         label: Some("light attachment"),
@@ -83,7 +83,7 @@ pub fn create_light_attachment(
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: LIGHT_ATTACHMENT_FORMAT,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | usage,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
     })
 }
 
@@ -95,7 +95,7 @@ pub fn create_depth_attachment(
     device: &wgpu::Device,
     size: Extent2d,
     sample_count: u32,
-    usage: wgpu::TextureUsage,
+    usage: wgpu::TextureUsages,
 ) -> wgpu::Texture {
     device.create_texture(&wgpu::TextureDescriptor {
         label: Some("depth attachment"),
@@ -104,13 +104,13 @@ pub fn create_depth_attachment(
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: DEPTH_ATTACHMENT_FORMAT,
-        usage: wgpu::TextureUsage::RENDER_ATTACHMENT | usage,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
     })
 }
 
 /// Intermediate object that can generate `RenderPassDescriptor`s.
 pub struct RenderPassBuilder<'a> {
-    color_attachments: Vec<wgpu::RenderPassColorAttachment<'a>>,
+    color_attachments: Vec<Option<wgpu::RenderPassColorAttachment<'a>>>,
     depth_attachment: Option<wgpu::RenderPassDepthStencilAttachment<'a>>,
 }
 
@@ -158,13 +158,13 @@ pub struct InitialPassTarget {
 impl InitialPassTarget {
     pub fn new(device: &wgpu::Device, size: Extent2d, sample_count: u32) -> InitialPassTarget {
         let diffuse_attachment =
-            create_color_attachment(device, size, sample_count, wgpu::TextureUsage::SAMPLED);
+            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);  //was SAMPLED
         let normal_attachment =
-            create_normal_attachment(device, size, sample_count, wgpu::TextureUsage::SAMPLED);
+            create_normal_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let light_attachment =
-            create_light_attachment(device, size, sample_count, wgpu::TextureUsage::SAMPLED);
+            create_light_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let depth_attachment =
-            create_depth_attachment(device, size, sample_count, wgpu::TextureUsage::SAMPLED);
+            create_depth_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
 
         let diffuse_view = diffuse_attachment.create_view(&Default::default());
         let normal_view = normal_attachment.create_view(&Default::default());
@@ -230,30 +230,30 @@ impl RenderTarget for InitialPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
             color_attachments: vec![
-                wgpu::RenderPassColorAttachment {
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.diffuse_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
-                wgpu::RenderPassColorAttachment {
+                }),
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.normal_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
-                wgpu::RenderPassColorAttachment {
+                }),
+                Some(wgpu::RenderPassColorAttachment {
                     view: self.light_view(),
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: true,
                     },
-                },
+                }),
             ],
             depth_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                 view: self.depth_view(),
@@ -277,7 +277,7 @@ pub struct DeferredPassTarget {
 impl DeferredPassTarget {
     pub fn new(device: &wgpu::Device, size: Extent2d, sample_count: u32) -> DeferredPassTarget {
         let color_attachment =
-            create_color_attachment(device, size, sample_count, wgpu::TextureUsage::SAMPLED);
+            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::TEXTURE_BINDING);
         let color_view = color_attachment.create_view(&Default::default());
 
         DeferredPassTarget {
@@ -308,14 +308,15 @@ impl DeferredPassTarget {
 impl RenderTarget for DeferredPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: self.color_view(),
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
@@ -333,7 +334,7 @@ pub struct FinalPassTarget {
 impl FinalPassTarget {
     pub fn new(device: &wgpu::Device, size: Extent2d, sample_count: u32) -> FinalPassTarget {
         let color_attachment =
-            create_color_attachment(device, size, sample_count, wgpu::TextureUsage::empty());
+            create_color_attachment(device, size, sample_count, wgpu::TextureUsages::empty());
         let color_view = color_attachment.create_view(&Default::default());
         // add COPY_SRC so we can copy to a buffer for capture and SAMPLED so we
         // can blit to the swap chain
@@ -341,7 +342,7 @@ impl FinalPassTarget {
             device,
             size,
             1,
-            wgpu::TextureUsage::COPY_SRC | wgpu::TextureUsage::SAMPLED,
+            wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::TEXTURE_BINDING,
         );
         let resolve_view = resolve_attachment.create_view(&Default::default());
 
@@ -367,14 +368,15 @@ impl FinalPassTarget {
 impl RenderTarget for FinalPassTarget {
     fn render_pass_builder<'a>(&'a self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: &self.color_view,
                 resolve_target: Some(self.resolve_view()),
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
@@ -403,14 +405,15 @@ impl<'a> SwapChainTarget<'a> {
 impl<'a> RenderTarget for SwapChainTarget<'a> {
     fn render_pass_builder(&self) -> RenderPassBuilder {
         RenderPassBuilder {
-            color_attachments: vec![wgpu::RenderPassColorAttachment {
+            color_attachments: vec![
+                Some(wgpu::RenderPassColorAttachment {
                 view: self.swap_chain_view,
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: true,
                 },
-            }],
+            })],
             depth_attachment: None,
         }
     }
