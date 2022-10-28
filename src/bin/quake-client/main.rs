@@ -85,11 +85,12 @@ struct ClientProgram {
     window_dimensions_changed: bool,
 
     surface: wgpu::Surface,
-    surface_texture: wgpu::SurfaceTexture,
-    texture_view:  wgpu::TextureView ,
+    surface_config: wgpu::SurfaceConfiguration,
+ //   texture_view:  wgpu::TextureView ,
    // swap_chain: RefCell<wgpu::SwapChain>,
     gfx_state: RefCell<GraphicsState>,
     ui_renderer: Rc<UiRenderer>,
+   
 
     game: Game,
     input: Rc<RefCell<Input>>,
@@ -221,7 +222,7 @@ impl ClientProgram {
             //This can be solved by forcing the SurfaceTexture to be dropped after the TextureView.
          let winit::dpi::PhysicalSize { width, height } = window.inner_size();
 
-         let config = wgpu::SurfaceConfiguration {
+         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: DIFFUSE_ATTACHMENT_FORMAT,
             width,
@@ -229,15 +230,15 @@ impl ClientProgram {
             present_mode: wgpu::PresentMode::Immediate,
             alpha_mode: wgpu::CompositeAlphaMode::Opaque 
         };
-        surface.configure(&device, &config); 
+       
 
-         let surface_texture =   surface.get_current_texture().unwrap() ;
+   /*      let surface_texture =   surface.get_current_texture().unwrap() ;
 
          //needs to be refcell  ?
         let texture_view =    surface_texture
         .texture
         .create_view(&wgpu::TextureViewDescriptor::default()) ; 
-
+*/
         
 
         
@@ -251,7 +252,7 @@ impl ClientProgram {
 
         let gfx_state = GraphicsState::new(device, queue, size, sample_count, vfs.clone()).unwrap();
         let ui_renderer = Rc::new(UiRenderer::new(&gfx_state, &menu.borrow()));
-
+        
         // TODO: factor this out
         // implements "exec" command
         let exec_vfs = vfs.clone();
@@ -308,10 +309,12 @@ impl ClientProgram {
             window,
             window_dimensions_changed: false,
             surface, 
-            surface_texture,  //need to keep this around and not drop it from memory
-            texture_view, 
+            surface_config,  //need to keep this around and not drop it from memory
+           
+       //     texture_view, 
             gfx_state: RefCell::new(gfx_state),
             ui_renderer,
+       
             game,
             input,
         }
@@ -362,16 +365,53 @@ impl ClientProgram {
 
         //let swap_chain_output = self.surface.borrow_mut().get_current_frame().unwrap();
         let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
+
+        let surface = &self.surface;
+
+        //need to split up these long chains of borrows sometimes ! 
+        let gfx_state = &self.gfx_state.borrow();
+        let device = gfx_state.get_device();
+
+        surface.configure(device, &self.surface_config);
+
+        let surface_texture = match surface.get_current_texture() {
+            Ok(surface_texture) => surface_texture,
+            Err(_) => {
+              //  surface.configure(&self.gfx_state.borrow().device, &self.surface_config);
+                surface
+                    .get_current_texture()
+                    .expect("Failed to acquire next surface texture!")
+            }
+        };
+
+        
+        let texture_view = surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+
+        
+
+
         self.game.render(
             &self.gfx_state.borrow(),
-            &self.texture_view ,
+            &texture_view ,
          //   &swap_chain_output.output.view,  //color_attachment_view: &wgpu::TextureView,
             width,
             height,
             &self.console.borrow(),
             &self.menu.borrow(),
         );
+
+
+
+
+        surface_texture.present();
+
+
+
     }
+
 }
 
 impl Program for ClientProgram {
@@ -439,9 +479,12 @@ impl Program for ClientProgram {
         // run console commands
         self.console.borrow().execute();
 
-        self.render();
 
-        self.surface_texture.borrow().present();
+ 
+
+        self.render();
+ 
+     //   self.surface_texture.borrow().present();
     }
 
     fn shutdown(&mut self) {

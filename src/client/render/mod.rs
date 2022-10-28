@@ -256,7 +256,7 @@ impl std::convert::From<winit::dpi::PhysicalSize<u32>> for Extent2d {
 }
 
 pub struct GraphicsState {
-    device: wgpu::Device,
+    device: wgpu::Device,  
     queue: wgpu::Queue,
 
     initial_pass_target: InitialPassTarget,
@@ -474,7 +474,9 @@ impl GraphicsState {
     }
 
   
-
+    pub fn get_device(&self) -> &wgpu::Device {
+        return &self.device;
+    }
 
     pub fn create_texture<'a>(
         &self,
