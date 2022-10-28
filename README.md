@@ -1,116 +1,119 @@
+# Antiquake
 
-## Antiquake Engine 
+[![Build Status](https://travis-ci.org/antiquake-rs/antiquake-rs.svg?branch=dev)](https://travis-ci.org/antiquake-rs/antiquake-rs)
 
-A game engine written in Rust that leverages quake mod tools such as the PAK file format and the standard Quake map format.  
+An indie games engine based off of the quake framework implemented in Rust.  Forked from richter by cormac-obrien.
 
-Levels can be designed using Trenchbroom editor. 
+![alt tag](https://i.imgur.com/25nOENn.png)
 
+## Status
 
-## HOW TO RUN 
-RUST_LOG=debug cargo +nightly run
+Antiquake is in pre-alpha. 
 
+### Client
 
- ### STEPS TO RUN 
- boot with this: cargo +nightly run --bin quake-client
- type in console: playdemo demo1
+The client is capable of connecting to and playing on original Quake servers using `sv_protocol 15`.
+To connect to a Quake server, run
 
+```
+$ cargo run --release --bin quake-client -- --connect <server_ip>:<server_port>
+```
 
+Quake servers run on port 26000 by default.
+I can guarantee compatibility with FitzQuake and its derived engines, as I use the QuakeSpasm server for development (just remember `sv_protocol 15`).
 
+The client also supports demo playback using the `--demo` option:
 
-cargo run --debug --bin quake-client
+```
+$ cargo run --release --bin quake-client -- --demo <demo_file>
+```
 
+This works for demos in the PAK archives (e.g. `demo1.dem`) or any demos you happen to have placed in the `id1` directory.
 
-### Credits 
+#### Feature checklist
 
-Rendering libraries taken from  Thinkofname/rust-quake [github]
+- Networking
+  - [x] NetQuake network protocol implementation (`sv_protocol 15`)
+    - [x] Connection protocol implemented
+    - [x] All in-game server commands handled
+    - [x] Carryover between levels
+  - [ ] FitzQuake extended protocol support (`sv_protocol 666`)
+- Rendering
+  - [x] Deferred dynamic lighting
+  - [x] Particle effects
+  - Brush model (`.bsp`) rendering
+    - Textures
+      - [x] Static textures
+      - [x] Animated textures
+      - [x] Alternate animated textures
+      - [x] Liquid texture warping
+      - [ ] Sky texture scrolling (currently partial support)
+    - [x] Lightmaps
+    - [x] Occlusion culling
+  - Alias model (`.mdl`) rendering
+    - [x] Keyframe animation
+      - [x] Static keyframes
+      - [x] Animated keyframes
+    - [ ] Keyframe interpolation
+    - [ ] Ambient lighting
+    - [ ] Viewmodel rendering
+  - UI
+    - [x] Console
+    - [x] HUD
+    - [x] Level intermissions
+    - [ ] On-screen messages
+    - [ ] Menus
+- Sound
+  - [x] Loading and playback
+  - [x] Entity sound
+  - [ ] Ambient sound
+  - [x] Spatial attenuation
+  - [ ] Stereo spatialization
+  - [x] Music
+- Console
+  - [x] Line editing
+  - [x] History browsing
+  - [x] Cvar modification
+  - [x] Command execution
+  - [x] Quake script file execution
+- Demos
+  - [x] Demo playback
+  - [ ] Demo recording
+- File formats
+  - [x] BSP loader
+  - [x] MDL loader
+  - [x] SPR loader
+  - [x] PAK archive extraction
+  - [x] WAD archive extraction
 
+### Server
 
+The server is still in its early stages, so there's no checklist here yet.
+However, you can still check out the QuakeC bytecode VM in the [`progs` module](https://github.com/cormac-obrien/richter/blob/devel/src/server/progs/mod.rs).
 
-## GOOD SHADER INFO 
-https://anteru.net/blog/2016/mapping-between-HLSL-and-GLSL/
-https://app.element.io/#/room/#wgpu:matrix.org
-Replace .stpq with .xyzw  (they are the same) 
+## Building
 
+Antiquake makes use of feature gates and compiler plugins, which means you'll need a nightly build of
+`rustc`. The simplest way to do this is to download [rustup](https://www.rustup.rs/) and follow the
+directions.
 
+Because a Quake distribution contains multiple binaries, this software is packaged as a Cargo
+library project. The source files for binaries are located in the `src/bin` directory and can be run
+with
 
-#### pipelines 
-refactor pipelines in client.render/mod so they are more like ... components that share a single 'interface' and are in an array (registered) that just gets looped through .         
+    $ cargo run --bin <name>
 
+where `<name>` is the name of the source file without the `.rs` extension.
 
+## Legal
 
+This software is released under the terms of the MIT License (see LICENSE.txt).
 
- 
+This project is in no way affiliated with id Software LLC, Bethesda Softworks LLC, or ZeniMax Media
+Inc. Information regarding the Quake trademark can be found at Bethesda's [legal information
+page](https://bethesda.net/en/document/legal-information).
 
-## resources 
-https://www.models-resource.com/pc_computer/quake/model/33486/
-
-
-## use this for ecs 
-https://www.youtube.com/watch?v=oHYs-UqS458&t=2077s
-
-
-## shaders project ref !
- https://github.com/kvark/baryon
- https://github.com/kvark/vange-rs/tree/master/res/shader/terrain
- https://austin-eng.com/webgpu-samples/samples/deferredRendering
- https://github.com/hecrj/wgpu_glyph wgpu glyph 
- https://github.com/austinEng/webgpu-samples/blob/main/src/sample/particles/main.ts wgpu particles ! 
-
-wgpu examples mipmap 
-
-
- 
-READ THIS ABT SHADER S 
-https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/#how-do-we-use-the-shaders
-https://www.w3.org/TR/WGSL/
-
-
-## inspiration 
-jpiolho/QuakePlugins -- cool system w lua hooks 
-
- ### Shader files to rewrite !!
- -sprite.wgsl
- -quad.wgsl
- -postprocess.wgsl
- -particle.wgsl
- -glyph.wgsl
- -deferred.wgsl 
- -brush.wgsl
- -blit.wgsl 
- -alias.wgsl 
-
-
- ## probable bugs 
- client/input/game -> line 354 -> mousewheels 
-
-
-
--swapchain became texture view. i think that is what the pipeline writes to.  its totally jacked up .
-
-
-
-## TODO 
-fix renderer -> push constants -> https://github.com/gfx-rs/naga/blob/master/tests/in/push-constants.wgsl
-
-
-float is not provided by the pipeline !! 
-
-
-
-
-
-## Spells System
-
-10:00 time 
-https://www.youtube.com/watch?v=Lv6WEFGzqNQ
-
-
-## stat system
-game_stat  (by tantan)
-
-
-## entity comp arch
-
-https://www.youtube.com/watch?v=oHYs-UqS458&list=PL0rDS3s8z_DBdjxl0GK87p1rFZ5c2Fz1e&index=12
--build an ECS registry like at end of video 
--load stuff from config files 
+Due to licensing restrictions, the data files necessary to run Quake cannot be distributed with this
+package. `pak0.pak`, which contains the files for the first episode ("shareware Quake"), can be
+retrieved from id's FTP server at `ftp://ftp.idsoftware.com/idstuff/quake`. The full game can be
+purchased from a number of retailers including Steam and GOG.
