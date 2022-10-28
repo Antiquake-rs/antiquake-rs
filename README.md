@@ -4,11 +4,18 @@
 
 An indie games engine based off of the quake framework implemented in Rust.  Forked from richter by cormac-obrien.
 
+- Antiquake will always support entry-level graphics hardware including Intel Mesa/integrated graphics drivers and linux. 
+- Antiquake will only require a maximum of 128 push constants for a GPU which is the typical min spec. 
+- Antiquake does not depend on python or c++ it is a pure rust implementation using wgpu and naga for graphics
+
 ![alt tag](https://i.imgur.com/25nOENn.png)
 
 ## Status
 
 Antiquake is in pre-alpha. 
+
+ 
+
 
 ### Client
 
