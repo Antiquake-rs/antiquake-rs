@@ -33,7 +33,7 @@ struct FragmentOutput {
 
 //see struct at render/world/mod 275 
 struct FrameUniforms {
-     //light_anim_frames: array<f32,64>,
+     light_anim_frames: array<vec4<f32>,16>,
     camera_pos: vec4<f32>,
     time:f32,
       r_lightmap:  u32
@@ -66,7 +66,8 @@ var<push_constant> push_constants: PushConstants;
 @group(2) @binding(1) var u_fullbright_texture: texture_2d<f32>;
 //@group(2) @binding(2) var texture_uniforms: TextureUniforms;
 
-//@group(3) @binding(0) var u_lightmap_texture:  texture_2d_array<f32>;
+//per face 
+@group(3) @binding(0) var u_lightmap_texture:  texture_2d<f32>;
 
  
 
@@ -131,6 +132,23 @@ fn main_vs(
 
     return light;
 }*/
+
+fn calc_light_simple( vertex: VertexOutput ) -> vec4<f32> {
+    var light:vec4<f32> = vec4(0.0, 0.0, 0.0, 0.0);
+
+    
+    for (var i:i32 = 0; i < 4  ; i++) {
+        let map:f32 = textureSample(
+              u_lightmap_texture , u_lightmap_sampler , vertex.f_lightmap
+        ).r;
+
+        // range [0, 4]
+       // let style:f32 = frameuniforms.light_anim_frames[vertex.f_lightmap_anim[i]];
+        light[i] = map ;//* style;
+    }
+
+    return light;
+ }
  
 
  //   Replace .stpq with .xyzw  (they are the same) 
@@ -153,8 +171,8 @@ fn main_fs(vertex: VertexOutput) -> FragmentOutput {
             if (fullbright != 0.0) {
                 result.light_attachment = vec4(0.25);
             } else {
-               result.light_attachment = vec4(0.35);
-               // result.light_attachment = calc_light( vertex );
+               result.light_attachment = calc_light_simple(vertex);
+               
             }
             break;
         }
