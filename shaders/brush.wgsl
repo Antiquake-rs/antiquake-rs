@@ -76,7 +76,7 @@ fn convert_from_quake(in1: vec3<f32>) -> vec3<f32> {
 }
 
 //read https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/#writing-the-shaders
-//clip position is the new as gl_position
+//  position is the new as gl_position
 @vertex
 fn main_vs(
     @location(0) a_position: vec3<f32>,
@@ -91,7 +91,7 @@ fn main_vs(
   
      if (push_constants.texture_kind == TEXTURE_KIND_SKY) {
         var dir:vec3<f32> = a_position - frameuniforms.camera_pos.xyz;
-        dir = vec3(dir.x,dir.y,dir.z * 3.0);
+        dir = vec3<f32>(dir * 3.0f);
 
         // the coefficients here are magic taken from the Quake source
         let len:f32 = 6.0 * 63.0 / length(dir);
@@ -101,7 +101,7 @@ fn main_vs(
         result.f_diffuse = a_diffuse;
     }
 
-    result.f_normal = a_normal; //mat3x3(transpose(inverse(push_constants.model_view))) * convert(a_normal);
+    result.f_normal = convert_from_quake(a_normal); //mat3x3(transpose(inverse(push_constants.model_view))) * convert(a_normal);
     result.f_lightmap = a_lightmap;
   //  result.f_lightmap_anim = a_lightmap_anim;
     result.pos = push_constants.transform * vec4(convert_from_quake(a_position), 1.0);

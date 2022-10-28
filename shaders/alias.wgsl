@@ -35,7 +35,7 @@ fn main_vs(
     var result: VertexOutput;
     result.f_normal =  a_normal;//mat3x3(transpose(inverse(push_constants.model_view))) * convert(a_normal);
     result.f_diffuse = a_diffuse;
-    result.pos = vec4(convert_from_quake(a_position1), 1.0);   //push_constants.transform *
+    result.pos = push_constants.transform * vec4(convert_from_quake(a_position1), 1.0);   //push_constants.transform *
     return result;
 }
  

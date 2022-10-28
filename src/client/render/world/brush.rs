@@ -139,7 +139,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
             count: None,
         },
     ],
-    /*   &[
+      &[
         // lightmap texture array  group 3
         wgpu::BindGroupLayoutEntry {
            // count: NonZeroU32::new(4),
@@ -152,7 +152,7 @@ const BIND_GROUP_LAYOUT_ENTRIES: &[&[wgpu::BindGroupLayoutEntry]] = &[
             },
             count: None,
         },
-    ],*/
+    ],
 ];
 
 lazy_static! {
@@ -200,10 +200,10 @@ impl Pipeline for BrushPipeline {
             // group 3: updated per-face
             //requires  texture bind array dx12  for fancy lighting stuff in shader 
           
-         /*  wgpu::BindGroupLayoutDescriptor {
+           wgpu::BindGroupLayoutDescriptor {
                 label: Some("brush per-face bind group"),
                 entries: BIND_GROUP_LAYOUT_ENTRIES[1],
-            },*/  
+            },  
               
         ]
     }
@@ -524,9 +524,12 @@ impl BrushRendererBuilder {
 
     fn create_per_face_bind_group(&self, state: &GraphicsState, face_id: usize) -> wgpu::BindGroup {
 
+        //self.lightmaps[0]
 
 
-        let mut lightmap_view = self.lightmaps[0].create_view(&Default::default());
+        let lightmap_view =  state.default_lightmap().create_view(&Default::default());
+
+      //  let mut lightmap_view =lightmap.create_view(&Default::default());
 
 
         /*lightmap_view.resize_with(4, || {
@@ -677,8 +680,8 @@ impl BrushRendererBuilder {
                 .push(face_id);
 
             // generate face bind group
-        //    let per_face_bind_group = self.create_per_face_bind_group(state, face_id);
-        //    self.per_face_bind_groups.push(per_face_bind_group);
+            let per_face_bind_group = self.create_per_face_bind_group(state, face_id);
+            self.per_face_bind_groups.push(per_face_bind_group);
         }
 
         use wgpu::util::DeviceExt as _;
