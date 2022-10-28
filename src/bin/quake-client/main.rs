@@ -278,7 +278,7 @@ impl ClientProgram {
         ).unwrap();
 
         // this will also execute config.cfg and autoexec.cfg (assuming an unmodified quake.rc)
-      console.borrow().stuff_text("exec quake.rc\n");
+     // console.borrow().stuff_text("exec quake.rc\n");
 
         info!(" starting client ");
         let client = Client::new(
@@ -463,7 +463,7 @@ impl Program for ClientProgram {
 
         self.render();
  
-     //   self.surface_texture.borrow().present();
+     
     }
 
     fn shutdown(&mut self) {

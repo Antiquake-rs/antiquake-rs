@@ -143,7 +143,7 @@ impl Game {
         console: &Console,
         menu: &Menu,
     ) {
-        info!("Beginning render pass");
+      
         let mut encoder = gfx_state
             .device()
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });

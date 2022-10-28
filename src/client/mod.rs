@@ -1201,15 +1201,20 @@ fn cmd_toggleconsole(
     conn: Rc<RefCell<Option<Connection>>>,
     input: Rc<RefCell<Input>>,
 ) -> Box<dyn Fn(&[&str]) -> String> {
+
+   
     Box::new(move |_| {
         let focus = input.borrow().focus();
         match *conn.borrow() {
+            
             Some(_) => match focus {
+              
                 InputFocus::Game => input.borrow_mut().set_focus(InputFocus::Console),
                 InputFocus::Console => input.borrow_mut().set_focus(InputFocus::Game),
                 InputFocus::Menu => input.borrow_mut().set_focus(InputFocus::Console),
             },
             None => match focus {
+               
                 InputFocus::Console => input.borrow_mut().set_focus(InputFocus::Menu),
                 InputFocus::Game => unreachable!(),
                 InputFocus::Menu => input.borrow_mut().set_focus(InputFocus::Console),
@@ -1220,19 +1225,26 @@ fn cmd_toggleconsole(
 }
 
 // implements the "togglemenu" command
+//MAYBE IS BROKEN ?
 fn cmd_togglemenu(
     conn: Rc<RefCell<Option<Connection>>>,
     input: Rc<RefCell<Input>>,
 ) -> Box<dyn Fn(&[&str]) -> String> {
+
+  
+
     Box::new(move |_| {
         let focus = input.borrow().focus();
         match *conn.borrow() {
             Some(_) => match focus {
+               
+
                 InputFocus::Game => input.borrow_mut().set_focus(InputFocus::Menu),
                 InputFocus::Console => input.borrow_mut().set_focus(InputFocus::Menu),
                 InputFocus::Menu => input.borrow_mut().set_focus(InputFocus::Game),
             },
             None => match focus {
+               
                 InputFocus::Console => input.borrow_mut().set_focus(InputFocus::Menu),
                 InputFocus::Game => unreachable!(),
                 InputFocus::Menu => input.borrow_mut().set_focus(InputFocus::Console),

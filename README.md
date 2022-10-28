@@ -10,6 +10,11 @@ Levels can be designed using Trenchbroom editor.
 RUST_LOG=debug cargo +nightly run
 
 
+ ### STEPS TO RUN 
+ boot with this: cargo +nightly run --bin quake-client
+ type in console: playdemo demo1
+
+
 
 
 cargo run --debug --bin quake-client
@@ -30,17 +35,6 @@ Replace .stpq with .xyzw  (they are the same)
 
 #### pipelines 
 refactor pipelines in client.render/mod so they are more like ... components that share a single 'interface' and are in an array (registered) that just gets looped through .         
-
-
-
-## Shaders 
-
-https://sotrh.github.io/learn-wgpu/beginner/tutorial3-pipeline/#writing-the-shaders
-
-
-rewrite my shaders to put them into wgsl 
-
-wgsl shaders dont need to be compiled like vert-frag ones do ! 
 
 
 

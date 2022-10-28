@@ -805,6 +805,8 @@ impl ClientRenderer {
             }
         }
 
+      
+
         let ui_state = match conn {
             Some(Connection {
                 state: ref cl_state,

@@ -49,4 +49,5 @@ https://www.w3.org/TR/WGSL/
 
 #### This becomes this 
 layout(set = 0, binding = 1) uniform texture2D u_texture[256];
+
 binding_array<texture_2d<f32>>

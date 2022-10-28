@@ -52,7 +52,7 @@ fn main_vs(
 
    // let atlas_r = 
 
-    result.f_texcoord =  vec2(a_texcoord.x * tile_scale +  f32(x_row) * tile_scale , a_texcoord.y  *  tile_scale + f32(y_row) * tile_scale); 
+    result.f_texcoord =  vec2((a_texcoord.x  +  f32(x_row))* tile_scale ,(  a_texcoord.y + f32(y_row)) * tile_scale); 
 
     
 
