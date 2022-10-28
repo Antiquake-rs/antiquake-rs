@@ -7,7 +7,7 @@ use std::{
     rc::Rc,
 };
 
-use soulgateengine::client::render::Extent2d;
+use antiquakeengine::client::render::Extent2d;
 
 use chrono::Utc;
 

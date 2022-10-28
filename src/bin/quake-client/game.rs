@@ -24,7 +24,7 @@ use std::{cell::RefCell, path::PathBuf, rc::Rc};
 use crate::capture::{cmd_screenshot, Capture};
 use crate::trace::{cmd_trace_begin, cmd_trace_end};
  
-use soulgateengine::{
+use antiquakeengine::{
     client::{
         input::Input,
         menu::Menu,

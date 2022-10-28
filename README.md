@@ -1,5 +1,5 @@
 
-## Soulgate Engine 
+## Antiquake Engine 
 
 A game engine written in Rust that leverages quake mod tools such as the PAK file format and the standard Quake map format.  
 

@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use soulgateengine::client::menu::{Menu, MenuBodyView, MenuBuilder, MenuView};
+use antiquakeengine::client::menu::{Menu, MenuBodyView, MenuBuilder, MenuView};
 
 use failure::Error;
 

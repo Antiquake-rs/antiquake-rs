@@ -28,19 +28,26 @@ use std::{
 use structopt::StructOpt;
  
 use game::Game;
+ 
 
-use soulgateengine::client; 
-use soulgateengine::client::demo::{DemoServer};
-use soulgateengine::client::input::{Input,InputFocus};
-use soulgateengine::client::render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT};
-use soulgateengine::client::menu::Menu;
-use soulgateengine::client::Client;
-
-use soulgateengine::common::console::{CvarRegistry,CmdRegistry,Console};
-use soulgateengine::common::vfs::Vfs;
-use soulgateengine::common::host::{Host, Program}; 
-use soulgateengine::common::default_base_dir;
-use soulgateengine::common::net::ServerCmd;
+use antiquakeengine::{
+    client::{
+        self,
+        demo::{DemoServer},
+        input::{Input,InputFocus},
+        render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT},
+        menu::Menu,
+        Client,
+    },
+    common::{
+        console::{CvarRegistry,CmdRegistry,Console},
+        vfs::Vfs,
+        host::{Host, Program},
+        default_base_dir,
+        net::ServerCmd,
+    }
+};
+ 
 
 use winit::window::CursorGrabMode;
 
@@ -56,8 +63,8 @@ use log::{debug, error, log_enabled, info, Level};
 
 
  
-//use soulgateengine::render::renderspace::level::LevelRenderspace;
-//use soulgateengine::render::renderspace::level::framework; //have to get it through there 
+//use antiquakeengine::render::renderspace::level::LevelRenderspace;
+//use antiquakeengine::render::renderspace::level::framework; //have to get it through there 
 
 use winit::{
     event::{Event, WindowEvent},
@@ -537,7 +544,7 @@ fn main() {
             winit::window::WindowBuilder::new()
                 // disable file drag-and-drop so cpal and winit play nice --doesnt rly work 
                 .with_drag_and_drop(false)
-                .with_title("Soulgate")
+                .with_title("Antiquake")
                 .with_inner_size(winit::dpi::PhysicalSize::<u32>::from((1366u32, 768)))
                 .build(&event_loop)
                 .unwrap()
@@ -546,7 +553,7 @@ fn main() {
         #[cfg(not(target_os = "windows"))]
         {
             winit::window::WindowBuilder::new()
-                .with_title("Soulgate")
+                .with_title("Antiquake")
                 .with_inner_size(winit::dpi::PhysicalSize::<u32>::from((1366u32, 768)))
                 .build(&event_loop)
                 .unwrap()
