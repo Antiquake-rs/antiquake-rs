@@ -15,11 +15,13 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+
 use std::{
-    fs::File,
+    fs::{self,File,DirEntry},
     io::{self, BufReader, Cursor, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
-    str::{rfind}
+   
 };
 
 use crate::common::pak::{Pak, PakError};
@@ -88,36 +90,29 @@ impl Vfs {
         let mut num_paks = 0;
 
 
-        for entry in subfiles {
-           // let entry = entry?;
-            let file_path = entry.path();
-            
-    
-            let metadata = fs::metadata(&path);
-            let last_modified = metadata.modified().elapsed().as_secs();
+        for entryResult in subfiles {
 
-            let last_period_pos = file_path.rfind('.');
 
-            match last_period_pos {
-                Some(pos) => {
+            match(entryResult){
+                Ok(entry) => {
+                    let addResult = Self::try_add_as_pakfile( &vfs,  entry );
 
-                    let file_ext = file_path[last_period_pos..];
-
-                    match file_ext.to_lowercase() {
-                        ".pak" => {
-                            vfs.add_pakfile(&file_path, PakExtType::PakType).unwrap();
+                    match addResult {
+                        Ok(added) => {
                             num_paks += 1;
                         }
-                        ".pk3" => {
-                            vfs.add_pakfile(&file_path, PakExtType::Pk3).unwrap();
-                            num_paks += 1;
-                        }
-                        default => {continue}
-                    } 
-
+                        Err => {continue;}
+                    }
                 }
-                None => {continue}
+                Err => {
+                    continue;
+                }
             }
+
+           
+
+           // let entry = entry?;
+          
 
             //if extension is .pak ,...  if it is pk3 .. ... 
           
@@ -181,17 +176,54 @@ impl Vfs {
         vfs
     }
 
+    pub fn try_add_as_pakfile(vfs:&Vfs, entry:DirEntry):Result<(),VfsError>{
+
+        let file_path = entry.path();
+            
+    
+        let metadata = fs::metadata(&file_path);
+      //  let last_modified = metadata?.modified()?.elapsed().as_secs();
+
+        let file_path_string = file_path.display().to_string();
+        let last_period_pos = file_path_string.rfind('.');
+
+        match last_period_pos {
+            Some(pos) => {
+
+                let file_ext = file_path_string[last_period_pos..];
+
+                match file_ext.to_lowercase() {
+                    ".pak" => {
+                        vfs.add_pakfile(&file_path, PakExtType::PakType).unwrap();
+                        Ok(())
+                    }
+                    ".pk3" => {
+                        vfs.add_pakfile(&file_path, PakExtType::Pk3Type).unwrap();
+                        Ok(())
+                    }
+                    default => {
+                        info!("Could not add pak with extension {}", file_ext);
+                        Ok(())
+                    }
+                } 
+
+            }
+            None => {
+                info!("Could not add pak with path {}", file_path_string);
+                Ok(())
+              }
+        }
+         
+    }
+
     pub fn add_pakfile<P>(&mut self, path: P, ext_type: PakExtType) -> Result<(), VfsError>
     where
         P: AsRef<Path>,
     {
         let path = path.as_ref();
 
-        match ext_type {
-             PakExtType::PakType => {self.components.push(VfsComponent::Pak(Pak::new(path)?));}
-             PakExtType::Pk3Type => {self.components.push(VfsComponent::Pak(Pk3::new(path)?));}
-        }
-        
+        self.components.push(VfsComponent::Pak(Pak::new(path,PakExtType::PakType)?));
+         
 
         Ok(())
     }

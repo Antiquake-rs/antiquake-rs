@@ -19,13 +19,15 @@
 
 use std::{
     collections::{hash_map::Iter, HashMap},
-    fs,
+    fs::File,
     io::{self, Read, Seek, SeekFrom},
     path::Path,
 };
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use thiserror::Error;
+
+use super::vfs::{PakExtType};
 
 const PAK_MAGIC: [u8; 4] = [b'P', b'A', b'C', b'K'];
 const PAK_ENTRY_SIZE: usize = 64;
@@ -68,8 +70,8 @@ impl Pak {
 
 
         match extType {
-            PakExtType::PakType => { Ok( loadPak( infile ) ) }
-            PakExtType::Pk3Type => { Ok( loadPk3( infile ) ) } 
+            PakExtType::PakType => { return Self::loadPak( infile )  }
+            PakExtType::Pk3Type => { return Self::loadPk3( infile )  } 
         }
 
 
@@ -108,7 +110,7 @@ impl Pak {
 
 
 
-    pub fn loadPak(infile:File) => Pak {
+    pub fn loadPak(infile:File) -> Result<Pak, PakError> {
 
 
 
@@ -172,8 +174,10 @@ impl Pak {
 
 
 
-    pub fn loadPk3() => Pak {
+    pub fn loadPk3(infile:File) -> Result<Pak, PakError> {
 
+        //fix
+        return Self::loadPak(infile);
         
     }
 
