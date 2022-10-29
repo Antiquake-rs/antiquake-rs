@@ -10,5 +10,6 @@ target
 
 *.slime
 *.zip
+.pk3
 
 last-shader.wgsl
