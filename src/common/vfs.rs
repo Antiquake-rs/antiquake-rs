@@ -111,61 +111,11 @@ impl Vfs {
 
            
 
-           // let entry = entry?;
           
-
-            //if extension is .pak ,...  if it is pk3 .. ... 
-          
-
-
-
-
-    
-          /*  if last_modified < 24 * 3600 && metadata.is_file() {
-                println!(
-                    "Last modified: {:?} seconds, is read only: {:?}, size: {:?} bytes, filename: {:?}",
-                    last_modified,
-                    metadata.permissions().readonly(),
-                    metadata.len(),
-                    path.file_name().ok_or("No filename")?
-                );
-            }
-            */ 
         }
 
 
-        /*
-            Find all of the files in the folder
-            for each with a valid extension, add it to the vfs 
-            
-        */
-
-
-        // ...then add PAK archives.
-       
-       /* let mut pak_path = game_dir;
-        for vfs_id in 0..crate::common::MAX_PAKFILES {
-            // Add the file name.
-            pak_path.push(format!("pak{}.pak", vfs_id));
-
-            // Keep adding PAKs until we don't find one or we hit MAX_PAKFILES.
-            if !pak_path.exists() {
-                // If the lowercase path doesn't exist, try again with uppercase.
-                pak_path.pop();
-                pak_path.push(format!("PAK{}.PAK", vfs_id));
-                if !pak_path.exists() {
-                    break;
-                }
-            }
-
-            vfs.add_pakfile(&pak_path, PakExtType::PakType).unwrap();
-            num_paks += 1;
-
-            // Remove the file name, leaving the game directory.
-            pak_path.pop();
-        }
-
-       */
+      
 
         if num_paks == 0 {
             log::warn!("No PAK files found.");
