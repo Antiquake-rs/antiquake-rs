@@ -19,7 +19,7 @@
 
 use std::{
     collections::{hash_map::Iter, HashMap},
-    fs::File,
+    fs::{self,File},
     io::{self, Read, Seek, SeekFrom},
     path::Path,
 };
@@ -70,8 +70,8 @@ impl Pak {
 
 
         match extType {
-            PakExtType::PakType => { return Self::loadPak( infile )  }
-            PakExtType::Pk3Type => { return Self::loadPk3( infile )  } 
+            PakExtType::PakType => { return Self::loadPak( &mut infile )  }
+            PakExtType::Pk3Type => { return Self::loadPk3( &mut infile )  } 
         }
 
 
@@ -110,7 +110,7 @@ impl Pak {
 
 
 
-    pub fn loadPak(infile:File) -> Result<Pak, PakError> {
+    pub fn loadPak(infile:&mut File) -> Result<Pak, PakError> {
 
 
 
@@ -161,7 +161,7 @@ impl Pak {
             infile.seek(SeekFrom::Start(file_offset as u64))?;
 
             let mut data: Vec<u8> = Vec::with_capacity(file_size as usize);
-            (&mut infile)
+            ( infile)
                 .take(file_size as u64)
                 .read_to_end(&mut data)?;
 
@@ -174,10 +174,10 @@ impl Pak {
 
 
 
-    pub fn loadPk3(infile:File) -> Result<Pak, PakError> {
+    pub fn loadPk3(infile:&mut File) -> Result<Pak, PakError> {
 
         //fix
-        return Self::loadPak(infile);
+        return Self::loadPak( infile);
         
     }
 

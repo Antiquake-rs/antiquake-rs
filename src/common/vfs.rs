@@ -95,16 +95,16 @@ impl Vfs {
 
             match(entryResult){
                 Ok(entry) => {
-                    let addResult = Self::try_add_as_pakfile( &vfs,  entry );
+                    let addResult = Self::try_add_as_pakfile( &mut vfs,  entry );
 
                     match addResult {
                         Ok(added) => {
                             num_paks += 1;
                         }
-                        Err => {continue;}
+                        Err(_) => {continue;}
                     }
                 }
-                Err => {
+                Err(_) => {
                     continue;
                 }
             }
@@ -176,7 +176,7 @@ impl Vfs {
         vfs
     }
 
-    pub fn try_add_as_pakfile(vfs:&Vfs, entry:DirEntry):Result<(),VfsError>{
+    pub fn try_add_as_pakfile(vfs:&mut Vfs, entry:DirEntry) -> Result<(),VfsError>{
 
         let file_path = entry.path();
             
@@ -190,15 +190,15 @@ impl Vfs {
         match last_period_pos {
             Some(pos) => {
 
-                let file_ext = file_path_string[last_period_pos..];
+                let file_ext = &file_path_string[pos..];
 
-                match file_ext.to_lowercase() {
-                    ".pak" => {
-                        vfs.add_pakfile(&file_path, PakExtType::PakType).unwrap();
+                match file_ext.to_lowercase().as_str() {
+                     ".pak" => {
+                        vfs.add_pakfile(file_path, PakExtType::PakType).unwrap();
                         Ok(())
                     }
                     ".pk3" => {
-                        vfs.add_pakfile(&file_path, PakExtType::Pk3Type).unwrap();
+                        vfs.add_pakfile(file_path, PakExtType::Pk3Type).unwrap();
                         Ok(())
                     }
                     default => {
