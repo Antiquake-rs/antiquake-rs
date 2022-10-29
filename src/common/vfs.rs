@@ -19,9 +19,11 @@ use std::{
     fs::File,
     io::{self, BufReader, Cursor, Read, Seek, SeekFrom},
     path::{Path, PathBuf},
+    str::{rfind}
 };
 
 use crate::common::pak::{Pak, PakError};
+
 
 use thiserror::Error;
 
@@ -33,6 +35,15 @@ pub enum VfsError {
     NoSuchFile(String),
 }
 
+
+
+pub enum PakExtType {
+    PakType,
+    Pk3Type 
+}
+
+ 
+
 #[derive(Debug)]
 enum VfsComponent {
     Pak(Pak),
@@ -43,6 +54,8 @@ enum VfsComponent {
 pub struct Vfs {
     components: Vec<VfsComponent>,
 }
+
+ 
 
 impl Vfs {
     pub fn new() -> Vfs {
@@ -69,9 +82,73 @@ impl Vfs {
 
         vfs.add_directory(&game_dir).unwrap();
 
-        // ...then add PAK archives.
+        let subfiles = fs::read_dir(game_dir).unwrap();
+
+
         let mut num_paks = 0;
-        let mut pak_path = game_dir;
+
+
+        for entry in subfiles {
+           // let entry = entry?;
+            let file_path = entry.path();
+            
+    
+            let metadata = fs::metadata(&path);
+            let last_modified = metadata.modified().elapsed().as_secs();
+
+            let last_period_pos = file_path.rfind('.');
+
+            match last_period_pos {
+                Some(pos) => {
+
+                    let file_ext = file_path[last_period_pos..];
+
+                    match file_ext.to_lowercase() {
+                        ".pak" => {
+                            vfs.add_pakfile(&file_path, PakExtType::PakType).unwrap();
+                            num_paks += 1;
+                        }
+                        ".pk3" => {
+                            vfs.add_pakfile(&file_path, PakExtType::Pk3).unwrap();
+                            num_paks += 1;
+                        }
+                        default => {continue}
+                    } 
+
+                }
+                None => {continue}
+            }
+
+            //if extension is .pak ,...  if it is pk3 .. ... 
+          
+
+
+
+
+    
+          /*  if last_modified < 24 * 3600 && metadata.is_file() {
+                println!(
+                    "Last modified: {:?} seconds, is read only: {:?}, size: {:?} bytes, filename: {:?}",
+                    last_modified,
+                    metadata.permissions().readonly(),
+                    metadata.len(),
+                    path.file_name().ok_or("No filename")?
+                );
+            }
+            */ 
+        }
+
+
+        /*
+            Find all of the files in the folder
+            for each with a valid extension, add it to the vfs 
+            
+        */
+
+
+        // ...then add PAK archives.
+       
+       /* let mut pak_path = game_dir;
         for vfs_id in 0..crate::common::MAX_PAKFILES {
             // Add the file name.
             pak_path.push(format!("pak{}.pak", vfs_id));
@@ -86,26 +163,36 @@ impl Vfs {
                 }
             }
 
-            vfs.add_pakfile(&pak_path).unwrap();
+            vfs.add_pakfile(&pak_path, PakExtType::PakType).unwrap();
             num_paks += 1;
 
             // Remove the file name, leaving the game directory.
             pak_path.pop();
         }
 
+       */
+
         if num_paks == 0 {
             log::warn!("No PAK files found.");
         }
 
+        info!("Found {} pakfiles.", num_paks);
+        
         vfs
     }
 
-    pub fn add_pakfile<P>(&mut self, path: P) -> Result<(), VfsError>
+    pub fn add_pakfile<P>(&mut self, path: P, ext_type: PakExtType) -> Result<(), VfsError>
     where
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        self.components.push(VfsComponent::Pak(Pak::new(path)?));
+
+        match ext_type {
+             PakExtType::PakType => {self.components.push(VfsComponent::Pak(Pak::new(path)?));}
+             PakExtType::Pk3Type => {self.components.push(VfsComponent::Pak(Pk3::new(path)?));}
+        }
+        
+
         Ok(())
     }
 

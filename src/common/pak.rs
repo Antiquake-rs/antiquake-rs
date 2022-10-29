@@ -58,13 +58,60 @@ pub struct Pak(HashMap<String, Box<[u8]>>);
 
 impl Pak {
     // TODO: rename to from_path or similar
-    pub fn new<P>(path: P) -> Result<Pak, PakError>
+    pub fn new<P>(path: P, extType:PakExtType) -> Result<Pak, PakError>
     where
         P: AsRef<Path>,
     {
         debug!("Opening {}", path.as_ref().to_str().unwrap());
 
         let mut infile = fs::File::open(path)?;
+
+
+        match extType {
+            PakExtType::PakType => { Ok( loadPak( infile ) ) }
+            PakExtType::Pk3Type => { Ok( loadPk3( infile ) ) } 
+        }
+
+
+
+    }
+
+    /// Opens a file in the file tree for reading.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # extern crate richter;
+    /// use richter::common::pak::Pak;
+    ///
+    /// # fn main() {
+    /// let mut pak = Pak::new("pak0.pak").unwrap();
+    /// let progs_dat = pak.open("progs.dat").unwrap();
+    /// # }
+    /// ```
+    pub fn open<S>(&self, path: S) -> Result<&[u8], PakError>
+    where
+        S: AsRef<str>,
+    {
+        let path = path.as_ref();
+        self.0
+            .get(path)
+            .map(|s| s.as_ref())
+            .ok_or(PakError::NoSuchFile(path.to_owned()))
+    }
+
+    pub fn iter<'a>(&self) -> Iter<String, impl AsRef<[u8]>> {
+        self.0.iter()
+    }
+
+
+
+
+
+
+    pub fn loadPak(infile:File) => Pak {
+
+
+
         let mut magic = [0u8; 4];
         infile.read(&mut magic)?;
 
@@ -120,32 +167,20 @@ impl Pak {
         }
 
         Ok(Pak(map))
+
     }
 
-    /// Opens a file in the file tree for reading.
-    ///
-    /// # Examples
-    /// ```no_run
-    /// # extern crate richter;
-    /// use richter::common::pak::Pak;
-    ///
-    /// # fn main() {
-    /// let mut pak = Pak::new("pak0.pak").unwrap();
-    /// let progs_dat = pak.open("progs.dat").unwrap();
-    /// # }
-    /// ```
-    pub fn open<S>(&self, path: S) -> Result<&[u8], PakError>
-    where
-        S: AsRef<str>,
-    {
-        let path = path.as_ref();
-        self.0
-            .get(path)
-            .map(|s| s.as_ref())
-            .ok_or(PakError::NoSuchFile(path.to_owned()))
+
+
+    pub fn loadPk3() => Pak {
+
+        
     }
 
-    pub fn iter<'a>(&self) -> Iter<String, impl AsRef<[u8]>> {
-        self.0.iter()
-    }
+
+
+
+
+
+    
 }

@@ -48,8 +48,4 @@ pub fn default_base_dir() -> std::path::PathBuf {
 }
 
 pub const MAX_LIGHTSTYLES: usize = 64;
-
-/// The maximum number of `.pak` files that should be loaded at runtime.
-///
-/// The original engine does not make this restriction, and this limit can be increased if need be.
-pub const MAX_PAKFILES: usize = 32;
+ 
