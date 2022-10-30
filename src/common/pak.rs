@@ -29,6 +29,11 @@ use thiserror::Error;
 
 use super::vfs::{PakExtType};
 
+
+use zip::result::ZipError;
+
+
+
 const PAK_MAGIC: [u8; 4] = [b'P', b'A', b'C', b'K'];
 const PAK_ENTRY_SIZE: usize = 64;
 
@@ -176,8 +181,25 @@ impl Pak {
 
     pub fn loadPk3(infile:&mut File) -> Result<Pak, PakError> {
 
-        //fix
-        return Self::loadPak( infile);
+ 
+        let mut zip = zip::ZipArchive::new(infile)?;
+    
+        for i in 0..zip.len()
+        {
+            let mut file = zip.by_index(i).unwrap();
+            println!("Filename: {}", file.name());
+            let first_byte = file.bytes().next().unwrap()?;
+            println!("{}", first_byte);
+        }
+
+         let mut map = HashMap::new();
+
+
+         //fill the map 
+        
+        
+         //fix
+        return Ok(Pak(map))
         
     }
 
