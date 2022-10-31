@@ -297,6 +297,53 @@ pub struct LoadProgs {
     pub string_table: Rc<RefCell<StringTable>>,
 }
 
+//new blank progs 
+pub fn new () -> Result<LoadProgs, ProgsError> {
+
+    let mut strings = Vec::new();  
+    let string_table = Rc::new(RefCell::new(StringTable::new(strings)));
+    let mut function_defs = Vec::new();
+    let mut field_defs = Vec::new();
+    let mut statements = Vec::new();
+    let mut globaldefs = Vec::new();
+    let mut addrs = Vec::new();
+
+
+    let functions = Functions {
+        string_table: string_table.clone(),
+        defs: function_defs.into_boxed_slice(),
+        statements: statements.into_boxed_slice(),
+    };
+
+    let functions_rc = Rc::new(functions);
+
+    let ent_addr_count = 0;
+
+    let cx = ExecutionContext::create(string_table.clone(), functions_rc.clone());
+
+    let globals = Globals::new(
+        string_table.clone(),
+        globaldefs.into_boxed_slice(),
+        addrs.into_boxed_slice(),
+    );
+
+    let entity_def = Rc::new(EntityTypeDef::new(
+        string_table.clone(),
+        ent_addr_count,
+        field_defs.into_boxed_slice(),
+    )?);
+
+
+
+    Ok(LoadProgs {
+        cx,
+        globals,
+        entity_def,
+        string_table,
+    })
+}
+
+
 /// Loads all data from a `progs.dat` file.
 ///
 /// This returns objects representing the necessary context to execute QuakeC bytecode.
@@ -547,6 +594,8 @@ pub struct ExecutionContext {
 }
 
 impl ExecutionContext {
+     
+
     pub fn create(
         string_table: Rc<RefCell<StringTable>>,
         functions: Rc<Functions>,

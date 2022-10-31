@@ -25,7 +25,6 @@ pub mod precache;
 pub mod progs;
 pub mod world;
 
-
  
 use std::{
     thread::{self},
@@ -33,7 +32,8 @@ use std::{
     collections::HashMap,
     rc::Rc,
     net::{ToSocketAddrs,SocketAddr},
-    io::{self}
+    io::{self},
+    fs::File
 };
 
 use crate::{
@@ -43,14 +43,14 @@ use crate::{
         math::Hyperplane,
         model::Model,
         parse,
-        vfs::Vfs,
+        vfs::{Vfs,VirtualFile},
+        default_base_dir,
         net::{
             self, NetError,
             connect::{ConnectSocket,ConnectListener, Request, Response, ResponseServerInfo, ResponseAccept},
             
-        },
-        util::read_f32_3,
-        vfs::VirtualFile,
+        }, 
+        util::read_f32_3, 
     },
     server::{
         progs::{functions::FunctionKind, GlobalAddrFunction},
@@ -155,6 +155,8 @@ impl ClientSlots {
 /// An error returned by a game server.
 #[derive(Error, Debug)]
 pub enum GameServerError {
+    #[error("Unable to load map")]
+    MapLoadingError,
     #[error("Invalid CD track number")]
     InvalidCdTrack,
     #[error("No such CD track: {0}")]
@@ -185,7 +187,7 @@ pub struct GameServer {
 
 
  
-    server_session: Session 
+    server_session: Session // may not exist yet  
 
 
 
@@ -206,25 +208,49 @@ impl GameServer {
           
             protocol_version: net::PROTOCOL_VERSION,
     
-            server_session: Session::new(  
-                max_clients ,
-                vfs: Rc<Vfs>,
-                cvars: Rc<RefCell<CvarRegistry>>,
-                progs: LoadProgs,
-                models: Vec<Model>,
-                entmap: String, ) 
+            server_session: Session::new( max_clients )
         })
     }
 
-    pub fn loadMap(&self, file_path:  String) -> Result<GameServer, GameServerError> {
+    pub fn loadMap(&self, file_path:  String) -> Result< VirtualFile , GameServerError> {
 
-        let mut map_reader = BufReader::new(file);
-        let mut map_file = match vfs.open( file_path )  {
+    
+      
+        /*   
+        cvars: Rc<RefCell<CvarRegistry>>,
+        progs: LoadProgs,
+        models: Vec<Model>,
+        entmap: String,
+        */ 
+  
+
+ 
+
+       let vfs = Rc::new( Vfs::with_base_dir(base_dir.unwrap_or( default_base_dir())) ) ;
+ 
+
+        let mut map_file = match vfs.as_ref().open( file_path )  {
             Ok(f) => f,
-            Err(e) => return Err(GameServerError::Io(e))  
-        }; 
+            Err(e) => return  Err( GameServerError::MapLoadingError   )
+        };  
 
+        let models: Vec<Model> = Vec::new() ; 
+
+        let (mut brush_models, mut entmap) = Bsp::load(map_file).unwrap();
         
+        let con_names = Rc::new(RefCell::new(Vec::new()));    
+        let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
+        // render::register_cvars(&cvars.borrow());
+
+
+        let progs = Progs::new();
+          
+
+
+         self.server_session.load_level(  vfs , cvars, progs, brush_models, entmap ) ; 
+
+
+          Ok( map_file )
 
     }
 
@@ -344,6 +370,10 @@ impl SessionPersistent {
 
 /// The state of a server.
 pub enum SessionState {
+
+    //the server is starting -- only has persistant state 
+    Starting(),
+
     /// The server is loading.
     ///
     /// Certain operations, such as precaching, are only permitted while the
@@ -409,19 +439,25 @@ pub struct Session {
 
 impl Session {
     pub fn new(
-        max_clients: usize,
+        max_clients: usize 
+    ) -> Session {
+        Session {
+            persist: SessionPersistent::new(max_clients),
+            state: SessionState::Starting(),
+        }
+    }
+
+    pub fn load_level( 
+        &self,
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         progs: LoadProgs,
         models: Vec<Model>,
         entmap: String,
-    ) -> Session {
-        Session {
-            persist: SessionPersistent::new(max_clients),
-            state: SessionState::Loading(SessionLoading {
+    )   {
+       self.state =  SessionState::Loading(SessionLoading {
                 level: LevelState::new(vfs, cvars, progs, models, entmap),
-            }),
-        }
+            } );
     }
 
     /// Returns the maximum number of clients allowed on the server.
