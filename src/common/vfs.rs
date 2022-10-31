@@ -93,7 +93,7 @@ impl Vfs {
         for entryResult in subfiles {
 
 
-            match(entryResult){
+            match entryResult {
                 Ok(entry) => {
                     let addResult = Self::try_add_as_pakfile( &mut vfs,  entry );
 
@@ -151,6 +151,10 @@ impl Vfs {
                         vfs.add_pakfile(file_path, PakExtType::Pk3Type).unwrap();
                         Ok(())
                     }
+                    ".zip" => {
+                        vfs.add_pakfile(file_path, PakExtType::Pk3Type).unwrap();
+                        Ok(())
+                    }
                     default => {
                         info!("Could not add pak with extension {}", file_ext);
                         Ok(())
@@ -172,7 +176,7 @@ impl Vfs {
     {
         let path = path.as_ref();
 
-        self.components.push(VfsComponent::Pak(Pak::new(path,PakExtType::PakType)?));
+        self.components.push(VfsComponent::Pak(Pak::new(path,ext_type)?));
          
 
         Ok(())

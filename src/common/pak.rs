@@ -57,6 +57,8 @@ pub enum PakError {
     NonUtf8FileName(#[from] std::string::FromUtf8Error),
     #[error("No such file in PAK archive: {0}")]
     NoSuchFile(String),
+    #[error("Unable to open ZIP archive: {0}")]
+    InvalidZipArchive(String),
 }
 
 /// An open Pak archive.
@@ -71,12 +73,12 @@ impl Pak {
     {
         debug!("Opening {}", path.as_ref().to_str().unwrap());
 
-        let mut infile = fs::File::open(path)?;
+        
 
 
         match extType {
-            PakExtType::PakType => { return Self::loadPak( &mut infile )  }
-            PakExtType::Pk3Type => { return Self::loadPk3( &mut infile )  } 
+            PakExtType::PakType => { return Self::loadPak(&path.as_ref())  }
+            PakExtType::Pk3Type => { return Self::loadPk3(&path.as_ref())  } 
         }
 
 
@@ -115,9 +117,10 @@ impl Pak {
 
 
 
-    pub fn loadPak(infile:&mut File) -> Result<Pak, PakError> {
+    pub fn loadPak(path:&Path) -> Result<Pak, PakError> {
 
-
+        let path_name = path.to_owned().as_path().display().to_string();
+        let mut infile = fs::File::open(path)?;
 
         let mut magic = [0u8; 4];
         infile.read(&mut magic)?;
@@ -166,7 +169,7 @@ impl Pak {
             infile.seek(SeekFrom::Start(file_offset as u64))?;
 
             let mut data: Vec<u8> = Vec::with_capacity(file_size as usize);
-            ( infile)
+            (&mut infile)
                 .take(file_size as u64)
                 .read_to_end(&mut data)?;
 
@@ -179,27 +182,66 @@ impl Pak {
 
 
 
-    pub fn loadPk3(infile:&mut File) -> Result<Pak, PakError> {
+    pub fn loadPk3(path:&Path) -> Result<Pak, PakError> {
 
- 
-        let mut zip = zip::ZipArchive::new(infile)?;
-    
-        for i in 0..zip.len()
-        {
-            let mut file = zip.by_index(i).unwrap();
-            println!("Filename: {}", file.name());
-            let first_byte = file.bytes().next().unwrap()?;
-            println!("{}", first_byte);
+        let path_name = path.to_owned().as_path().display().to_string();
+
+        let mut infile = fs::File::open(path)?;
+        
+        let mut zipResult = zip::ZipArchive::new(infile);
+
+       
+
+        match zipResult {
+            Ok(mut zip) => {
+
+                let mut map = HashMap::new();
+                
+                for i in 0..zip.len()
+                {
+                    let mut subfile = zip.by_index(i).unwrap();
+                    println!("Filename: {}", subfile.name());
+
+                    let subfile_size = subfile.size(); //size when uncompressed
+
+                    if !subfile.is_dir() {
+                        //let first_byte = subfile.bytes().next().unwrap()?;
+                        //println!("{}", first_byte);
+
+
+                        let mut data: Vec<u8> = Vec::with_capacity(subfile_size as usize);
+                        (&mut subfile)
+                            .take(subfile_size as u64)
+                            .read_to_end(&mut data)?;
+                        
+                        let file_name_key =  subfile.name().to_string();
+                        map.insert( file_name_key, data.into_boxed_slice());
+
+
+                    }
+
+
+                }
+
+            
+
+
+                //fill the map 
+                
+                
+                //fix
+                return Ok(Pak(map))
+
+
+            },
+            Err(_) => {
+                return Err(PakError::InvalidZipArchive(path_name))
+            }
         }
-
-         let mut map = HashMap::new();
-
-
-         //fill the map 
         
+    
         
-         //fix
-        return Ok(Pak(map))
+        return Err(PakError::InvalidZipArchive(path_name))
         
     }
 
