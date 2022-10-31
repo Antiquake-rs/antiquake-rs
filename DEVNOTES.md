@@ -24,13 +24,13 @@ gfx pipelines yay!!!
 
 
 #### Next Steps 
--pull in bindings improvements 
-https://github.com/cormac-obrien/richter/pull/48/files
+- be able to load a map  by spinning up a local server on port 27500 
+
 
 
 -Try to import a map from trenchbroom and see if we can load it  
 -Add ECS architecture?
--ability to load a pak-zip (pak3) [slime]
+ 
 
 - STRETCH: improve the engine so that it can run mods effectively
 
@@ -42,6 +42,8 @@ https://www.youtube.com/watch?v=57TKNzYTf5U
 
 ## inspiration 
 jpiolho/QuakePlugins -- cool system w lua hooks 
+
+https://github.com/Novum/vkQuake/tree/master/Quake
 
   
  ## probable bugs 

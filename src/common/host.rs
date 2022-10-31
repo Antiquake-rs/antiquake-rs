@@ -18,6 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/*
+
+What exactly is this doing ?
+*/
+
 use std::cell::{Ref, RefMut};
 
 use crate::common::{console::CvarRegistry, engine};

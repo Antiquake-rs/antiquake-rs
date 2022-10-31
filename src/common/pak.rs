@@ -236,7 +236,6 @@ impl Pak {
         
     
         
-        return Err(PakError::InvalidZipArchive(path_name))
         
     }
 

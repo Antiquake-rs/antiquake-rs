@@ -35,8 +35,9 @@ use std::{
     cell::RefCell,
     collections::{HashMap, VecDeque},
     io::BufReader,
-    net::ToSocketAddrs,
+    net::{ToSocketAddrs,SocketAddr},
     rc::Rc,
+    thread::{self},
 };
 
 use crate::{
@@ -1449,20 +1450,33 @@ fn cmd_loadmap(
             return "usage: loadmap [MAPFILE]".to_owned();
         }
 
+       
         let mut map_file = match vfs.open(format!("maps/{}.bsp", args[0])) {
             Ok(f) => f,
             Err(e) => return format!("{}", e),
         };
 
+
         //spin up a local server to use to run the level entity statefulness 
-        let local_server = match GameServer::new(&mut map_file) {
-            Ok(d) => d,
-            Err(e) => return format!("{}", e),
-        };
+
+        
+        let local_server_result = GameServer::new(   map_file  ) ;
 
 
-        //connect to the local client somehow 
-        match connect(args[0], stream.clone()) {
+        
+        match local_server_result {
+            Ok(srv ) => {srv.start();}
+            Err(e) => {info!("{}",e);}
+        }
+            
+  
+
+
+        let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
+    
+
+          //connect to the local client using port 27500  
+        match connect( addr  , stream.clone()) {
             Ok(new_conn) => {
                 conn.replace(Some(new_conn));
                 input.borrow_mut().set_focus(InputFocus::Game);
@@ -1471,6 +1485,9 @@ fn cmd_loadmap(
             Err(e) => format!("{}", e),
         }
 
+            
+
+       
 
       /*   conn.replace(Some(Connection {
             state: ClientState::new(stream.clone()),

@@ -543,6 +543,7 @@ impl ConnectListener {
 
     /// Receives a request and returns it along with its remote address.
     pub fn recv_request(&self) -> Result<(Request, SocketAddr), NetError> {
+        println!("Server is listening for requests ");
         // Original engine receives connection requests in `net_message`,
         // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
         let mut recv_buf = [0u8; MAX_MESSAGE];

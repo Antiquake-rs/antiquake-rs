@@ -25,10 +25,14 @@ pub mod precache;
 pub mod progs;
 pub mod world;
 
+
+ 
 use std::{
+    thread::{self},
     cell::{Ref, RefCell},
     collections::HashMap,
     rc::Rc,
+    net::{ToSocketAddrs,SocketAddr},
     io::{self}
 };
 
@@ -40,6 +44,13 @@ use crate::{
         model::Model,
         parse,
         vfs::Vfs,
+        net::{
+            self, NetError,
+            connect::{ConnectSocket,ConnectListener, Request, Response, ResponseServerInfo, ResponseAccept},
+            
+        },
+        util::read_f32_3,
+        vfs::VirtualFile,
     },
     server::{
         progs::{functions::FunctionKind, GlobalAddrFunction},
@@ -62,12 +73,7 @@ use self::{
         EntityFlags, EntitySolid, FieldAddrFloat, FieldAddrFunctionId, FieldAddrStringId, World,
     },
 };
-
-use crate::common::{
-    net::{self, NetError},
-    util::read_f32_3,
-    vfs::VirtualFile,
-};
+ 
 use io::BufReader;
 use thiserror::Error;
 
@@ -179,11 +185,20 @@ pub struct GameServer {
 
     // all message data
     message_data: Vec<u8>,
+
+    client_max: u8,
+    client_count: u8,
+    protocol_version: u8,
+    port: u32,
+
 }
 
 impl GameServer {
-    /// Construct a new `DemoServer` from the specified demo file.
-    pub fn new(file: &mut VirtualFile) -> Result<GameServer, GameServerError> {
+
+ 
+
+    /// Construct a new `GameServer` that loads the specified map.  This runs in a new thread ?
+    pub fn new(file:  VirtualFile) -> Result<GameServer, GameServerError> {
         let mut map_reader = BufReader::new(file);
 
     
@@ -213,14 +228,115 @@ impl GameServer {
                 msg_range: msg_start..msg_end,
             });
         }*/
+ 
+       
+
 
         Ok(GameServer {
          //   track_override,
             message_id: 0,
             messages,
             message_data,
+
+            port:27500,
+            client_max: 1,
+            client_count: 0,
+            protocol_version: net::PROTOCOL_VERSION
+
         })
     }
+
+
+
+    pub fn start(&self)   {
+
+           
+            
+                //do this in a new thread ? 
+           
+           
+
+            let handle = thread::spawn(|| { 
+                println!("Starting server on port 27500");
+                let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
+                let mut serverConnectionListener = ConnectListener::bind( addr ).unwrap();
+
+                //recv_request
+                loop {
+                    let connectionResult = serverConnectionListener.recv_request(); 
+
+                    match connectionResult {
+
+                        Ok((request,socketAddr)) => {
+
+                            let response_result = GameServer::process_request(request); 
+                            
+                            match response_result {
+                                Ok(response) => {
+                                    let send_response_result = serverConnectionListener.send_response( response , socketAddr );
+                                },
+                                Err(_) =>  { info!("NetError -- got bad packet from client");}
+
+                            }
+
+                        
+
+                            continue;
+                        }
+                        Err(_) => {
+                            //todo 
+                            info!("NetError -- got bad packet from client");
+                        }
+
+                    }
+            }
+
+
+        });
+
+    }
+
+
+    pub fn process_request(   request:Request  ) -> Result<Response, NetError>  {
+
+        let response = match request {
+
+            Request::Connect(_) => {
+
+                return Ok(  Response::Accept(ResponseAccept { port:27500 }) )
+            },
+
+            Request::ServerInfo(_) => {
+                
+                // let packet = response_server_info.to_bytes().unwrap();
+                return Ok(
+                    Response::ServerInfo(ResponseServerInfo {
+                    address: String::from("127.0.0.1"),
+                    hostname: String::from("localhost"),
+                    levelname: String::from("e1m1"),
+                    client_count: 1,
+                    client_max: 16,
+                    protocol_version: 15,
+                    } ) 
+                )
+
+            },
+            Request::PlayerInfo(_) => {
+
+                return Err(NetError::Other(format!("Not Implemented:PlayerInfo")));
+            },
+            Request::RuleInfo(_) => {
+
+                return Err(NetError::Other(format!("Not Implemented:RuleInfo")));
+            },
+            
+
+        };
+
+
+    }
+
+
 }
 
 /// Server state that persists between levels.
