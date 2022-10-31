@@ -1466,7 +1466,7 @@ fn cmd_loadmap(
         //spin up a local server to use to run the level entity statefulness 
 
         
-        let local_server_result = GameServer::new(   map_file  ) ;
+        let local_server_result = GameServer::new() ;
 
         let map_name = format!("maps/{}.bsp", args[0]) ;
         

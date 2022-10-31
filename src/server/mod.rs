@@ -179,15 +179,13 @@ pub struct GameServer {
    // track_override: Option<u32>,
  
 
-    client_max: u8,
-    client_count: u8,
+     
     protocol_version: u8,
     port: u32,
 
 
-    session_persistent: SessionPersistent,
-    session_state: SessionState,
-
+ 
+    server_session: Session 
 
 
 
@@ -197,53 +195,28 @@ impl GameServer {
 
   
     /// Construct a new `GameServer` that loads the specified map.  This runs in a new thread ?
-    pub fn new( ) -> Result<GameServer, GameServerError> {
-        
-
-    
- /*
-        let mut message_data = Vec::new();
-        let mut messages = Vec::new();
-        
-        // read all messages
-        while let Ok(msg_len) = dem_reader.read_u32::<LittleEndian>() {
-            // get view angles
-            let view_angles_f32 = read_f32_3(&mut dem_reader)?;
-            let view_angles = Vector3::new(
-                Deg(view_angles_f32[0]),
-                Deg(view_angles_f32[1]),
-                Deg(view_angles_f32[2]),
-            );
-
-            // read next message
-            let msg_start = message_data.len();
-            for _ in 0..msg_len {
-                message_data.push(dem_reader.read_u8()?);
-            }
-            let msg_end = message_data.len();
-
-            messages.push(GameServerMessage {
-                view_angles,
-                msg_range: msg_start..msg_end,
-            });
-        }*/
+    pub fn new( ) -> Result<GameServer, GameServerError> { 
  
-       
+ 
+        let max_clients = 1; 
 
+        Ok(GameServer { 
 
-        Ok(GameServer {
-         //   track_override,
-           
-
-            port:27500,
-            client_max: 1,
-            client_count: 0,
-            protocol_version: net::PROTOCOL_VERSION
-
+            port:27500, 
+          
+            protocol_version: net::PROTOCOL_VERSION,
+    
+            server_session: Session::new(  
+                max_clients ,
+                vfs: Rc<Vfs>,
+                cvars: Rc<RefCell<CvarRegistry>>,
+                progs: LoadProgs,
+                models: Vec<Model>,
+                entmap: String, ) 
         })
     }
 
-    pub fn loadMap(file_path:  String) -> Result<GameServer, GameServerError> {
+    pub fn loadMap(&self, file_path:  String) -> Result<GameServer, GameServerError> {
 
         let mut map_reader = BufReader::new(file);
         let mut map_file = match vfs.open( file_path )  {
@@ -251,18 +224,16 @@ impl GameServer {
             Err(e) => return Err(GameServerError::Io(e))  
         }; 
 
-
+        
 
     }
 
 
-
-    pub fn start(&self)   {
-
-           
+    //this should now own the reference to self 
+    pub fn start( self)   {
+ 
             
-                //do this in a new thread ? 
-           
+                //do this in a new thread  
            
 
             let handle = thread::spawn(|| { 
