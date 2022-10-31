@@ -38,6 +38,7 @@ use std::{
 
 use crate::{
     common::{
+        bsp::{self},
         console::CvarRegistry,
         engine::{duration_from_f32, duration_to_f32},
         math::Hyperplane,
@@ -224,30 +225,30 @@ impl GameServer {
         */ 
   
 
+       let base_dir = default_base_dir();
+
+       let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;
  
+         
+            let mut map_file = match vfs.as_ref().open( file_path )  {
+                Ok(f) => f,
+                Err(e) => return  Err( GameServerError::MapLoadingError   )
+            };  
 
-       let vfs = Rc::new( Vfs::with_base_dir(base_dir.unwrap_or( default_base_dir())) ) ;
- 
+            let models: Vec<Model> = Vec::new() ; 
 
-        let mut map_file = match vfs.as_ref().open( file_path )  {
-            Ok(f) => f,
-            Err(e) => return  Err( GameServerError::MapLoadingError   )
-        };  
-
-        let models: Vec<Model> = Vec::new() ; 
-
-        let (mut brush_models, mut entmap) = Bsp::load(map_file).unwrap();
-        
-        let con_names = Rc::new(RefCell::new(Vec::new()));    
-        let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
-        // render::register_cvars(&cvars.borrow());
+            let (mut brush_models, mut entmap) = bsp::load(map_file).unwrap();
+            
+            let con_names = Rc::new(RefCell::new(Vec::new()));    
+            let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
+            // render::register_cvars(&cvars.borrow());
 
 
-        let progs = Progs::new();
-          
+            let prog = progs::new().unwrap();
+                
+         
 
-
-         self.server_session.load_level(  vfs , cvars, progs, brush_models, entmap ) ; 
+         self.server_session.load_level(  vfs , cvars, prog, brush_models, entmap ) ; 
 
 
           Ok( map_file )
