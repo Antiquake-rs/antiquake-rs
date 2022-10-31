@@ -199,24 +199,19 @@ impl Pak {
                 
                 for i in 0..zip.len()
                 {
-                    let mut subfile = zip.by_index(i).unwrap();
-                    println!("Filename: {}", subfile.name());
+                    let mut subfile = zip.by_index(i).unwrap(); 
 
                     let subfile_size = subfile.size(); //size when uncompressed
 
                     if !subfile.is_dir() {
-                        //let first_byte = subfile.bytes().next().unwrap()?;
-                        //println!("{}", first_byte);
-
-
+                         
                         let mut data: Vec<u8> = Vec::with_capacity(subfile_size as usize);
                         (&mut subfile)
                             .take(subfile_size as u64)
                             .read_to_end(&mut data)?;
                         
                         let file_name_key =  subfile.name().to_string();
-                        map.insert( file_name_key, data.into_boxed_slice());
-
+                        map.insert( file_name_key, data.into_boxed_slice()); 
 
                     }
 

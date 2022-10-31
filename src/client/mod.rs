@@ -61,6 +61,7 @@ use crate::{
         },
         vfs::{Vfs, VfsError},
     },
+    server::{GameServer}
 };
 
 use cgmath::Deg;
@@ -204,6 +205,15 @@ enum ConnectionKind {
         compose: Vec<u8>,
     },
 
+    // A local server for single player 
+    Local {
+        /// The [`QSocket`](crate::net::QSocket) used to communicate with the server.
+        qsock: QSocket,
+
+        /// The client's packet composition buffer.
+        compose: Vec<u8>,
+    },
+
     /// A demo server.
     Demo(DemoServer),
 }
@@ -319,6 +329,19 @@ impl Connection {
                 (msg, None, None)
             }
 
+            ConnectionKind::Local { ref mut qsock, .. } => {
+                let msg = qsock.recv_msg(match self.conn_state {
+                    // if we're in the game, don't block waiting for messages
+                    ConnectionState::Connected(_) => BlockingMode::NonBlocking,
+
+                    // otherwise, give the server some time to respond
+                    // TODO: might make sense to make this a future or something
+                    ConnectionState::SignOn(_) => BlockingMode::Timeout(Duration::seconds(5)),
+                })?;
+
+                (msg, None, None)
+            }
+
             ConnectionKind::Demo(ref mut demo_srv) => {
                 // only get the next update once we've made it all the way to
                 // the previous one
@@ -394,6 +417,7 @@ impl Connection {
                 ServerCmd::Disconnect => {
                     return Ok(match self.kind {
                         ConnectionKind::Demo(_) => NextDemo,
+                        ConnectionKind::Local { .. } => Disconnect,
                         ConnectionKind::Server { .. } => Disconnect,
                     })
                 }
@@ -870,6 +894,13 @@ impl Client {
                 cmd_playdemo(conn.clone(), vfs.clone(), input.clone(), handle.clone()),
             )
             .unwrap();
+
+        cmds.borrow_mut()
+        .insert_or_replace(
+            "loadmap",
+            cmd_loadmap(conn.clone(), vfs.clone(), input.clone(), handle.clone()),
+        )
+        .unwrap();
 
         let demo_queue = Rc::new(RefCell::new(VecDeque::new()));
         cmds.borrow_mut()
@@ -1398,6 +1429,62 @@ fn cmd_disconnect(
         }
     })
 }
+
+
+
+
+
+// load a bsp just like how we would with 'connect' 
+fn cmd_loadmap(
+    conn: Rc<RefCell<Option<Connection>>>,
+    vfs: Rc<Vfs>,
+    input: Rc<RefCell<Input>>,
+    stream: OutputStreamHandle,
+) -> Box<dyn Fn(&[&str]) -> String> {
+
+    println!("loading map");
+
+    Box::new(move |args| {
+        if args.len() != 1 {
+            return "usage: loadmap [MAPFILE]".to_owned();
+        }
+
+        let mut map_file = match vfs.open(format!("maps/{}.bsp", args[0])) {
+            Ok(f) => f,
+            Err(e) => return format!("{}", e),
+        };
+
+        //spin up a local server to use to run the level entity statefulness 
+        let local_server = match GameServer::new(&mut map_file) {
+            Ok(d) => d,
+            Err(e) => return format!("{}", e),
+        };
+
+
+        //connect to the local client somehow 
+        match connect(args[0], stream.clone()) {
+            Ok(new_conn) => {
+                conn.replace(Some(new_conn));
+                input.borrow_mut().set_focus(InputFocus::Game);
+                String::new()
+            }
+            Err(e) => format!("{}", e),
+        }
+
+
+      /*   conn.replace(Some(Connection {
+            state: ClientState::new(stream.clone()),
+            kind: ConnectionKind::Local(qsock,compose),
+            conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
+        }));
+
+        input.borrow_mut().set_focus(InputFocus::Game);
+        String::new()*/
+    })
+}
+
+
+
 
 fn cmd_playdemo(
     conn: Rc<RefCell<Option<Connection>>>,

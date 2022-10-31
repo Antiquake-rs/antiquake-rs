@@ -728,6 +728,9 @@ impl ClientRenderer {
                         ConnectionKind::Demo(_) => {
                             cl_state.demo_camera(width as f32 / height as f32, fov)
                         }
+                        ConnectionKind::Local { .. } => {
+                            cl_state.camera(width as f32 / height as f32, fov)
+                        }
                         ConnectionKind::Server { .. } => {
                             cl_state.camera(width as f32 / height as f32, fov)
                         }

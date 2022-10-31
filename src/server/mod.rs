@@ -15,6 +15,12 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+/*
+    This should use entity-component-system architecture for the entities 
+*/
+
+
 pub mod precache;
 pub mod progs;
 pub mod world;
@@ -23,6 +29,7 @@ use std::{
     cell::{Ref, RefCell},
     collections::HashMap,
     rc::Rc,
+    io::{self}
 };
 
 use crate::{
@@ -55,6 +62,15 @@ use self::{
         EntityFlags, EntitySolid, FieldAddrFloat, FieldAddrFunctionId, FieldAddrStringId, World,
     },
 };
+
+use crate::common::{
+    net::{self, NetError},
+    util::read_f32_3,
+    vfs::VirtualFile,
+};
+use io::BufReader;
+use thiserror::Error;
+
 
 use arrayvec::ArrayVec;
 use cgmath::{InnerSpace, Vector3, Zero};
@@ -124,6 +140,86 @@ impl ClientSlots {
     pub fn find_available(&mut self) -> Option<&mut ClientState> {
         let slot = self.slots.iter_mut().find(|s| s.is_none())?;
         Some(slot.insert(ClientState::Connecting))
+    }
+}
+
+
+
+
+/// An error returned by a game server.
+#[derive(Error, Debug)]
+pub enum GameServerError {
+    #[error("Invalid CD track number")]
+    InvalidCdTrack,
+    #[error("No such CD track: {0}")]
+    NoSuchCdTrack(i32),
+    #[error("Message size ({0}) exceeds maximum allowed size {}", net::MAX_MESSAGE)]
+    MessageTooLong(u32),
+    #[error("I/O error: {0}")]
+    Io(#[from] io::Error),
+    #[error("Network error: {0}")]
+    Net(#[from] NetError),
+}
+
+
+struct GameServerMessage {
+   // view_angles: Vector3<Deg<f32>>,
+   // msg_range: Range<usize>,
+}
+
+
+/// A server that yields commands from a demo file.
+pub struct GameServer {
+   // track_override: Option<u32>,
+
+    // id of next message to "send"
+    message_id: usize,
+
+    messages: Vec<GameServerMessage>,
+
+    // all message data
+    message_data: Vec<u8>,
+}
+
+impl GameServer {
+    /// Construct a new `DemoServer` from the specified demo file.
+    pub fn new(file: &mut VirtualFile) -> Result<GameServer, GameServerError> {
+        let mut map_reader = BufReader::new(file);
+
+    
+
+        let mut message_data = Vec::new();
+        let mut messages = Vec::new();
+         /*
+        // read all messages
+        while let Ok(msg_len) = dem_reader.read_u32::<LittleEndian>() {
+            // get view angles
+            let view_angles_f32 = read_f32_3(&mut dem_reader)?;
+            let view_angles = Vector3::new(
+                Deg(view_angles_f32[0]),
+                Deg(view_angles_f32[1]),
+                Deg(view_angles_f32[2]),
+            );
+
+            // read next message
+            let msg_start = message_data.len();
+            for _ in 0..msg_len {
+                message_data.push(dem_reader.read_u8()?);
+            }
+            let msg_end = message_data.len();
+
+            messages.push(GameServerMessage {
+                view_angles,
+                msg_range: msg_start..msg_end,
+            });
+        }*/
+
+        Ok(GameServer {
+         //   track_override,
+            message_id: 0,
+            messages,
+            message_data,
+        })
     }
 }
 
