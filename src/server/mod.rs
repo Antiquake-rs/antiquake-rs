@@ -177,35 +177,34 @@ struct GameServerMessage {
 /// A server that yields commands from a demo file.
 pub struct GameServer {
    // track_override: Option<u32>,
-
-    // id of next message to "send"
-    message_id: usize,
-
-    messages: Vec<GameServerMessage>,
-
-    // all message data
-    message_data: Vec<u8>,
+ 
 
     client_max: u8,
     client_count: u8,
     protocol_version: u8,
     port: u32,
 
+
+    session_persistent: SessionPersistent,
+    session_state: SessionState,
+
+
+
+
 }
 
 impl GameServer {
 
- 
-
+  
     /// Construct a new `GameServer` that loads the specified map.  This runs in a new thread ?
-    pub fn new(file:  VirtualFile) -> Result<GameServer, GameServerError> {
-        let mut map_reader = BufReader::new(file);
+    pub fn new( ) -> Result<GameServer, GameServerError> {
+        
 
     
-
+ /*
         let mut message_data = Vec::new();
         let mut messages = Vec::new();
-         /*
+        
         // read all messages
         while let Ok(msg_len) = dem_reader.read_u32::<LittleEndian>() {
             // get view angles
@@ -234,9 +233,7 @@ impl GameServer {
 
         Ok(GameServer {
          //   track_override,
-            message_id: 0,
-            messages,
-            message_data,
+           
 
             port:27500,
             client_max: 1,
@@ -244,6 +241,18 @@ impl GameServer {
             protocol_version: net::PROTOCOL_VERSION
 
         })
+    }
+
+    pub fn loadMap(file_path:  String) -> Result<GameServer, GameServerError> {
+
+        let mut map_reader = BufReader::new(file);
+        let mut map_file = match vfs.open( file_path )  {
+            Ok(f) => f,
+            Err(e) => return Err(GameServerError::Io(e))  
+        }; 
+
+
+
     }
 
 
@@ -299,6 +308,8 @@ impl GameServer {
 
     pub fn process_request(   request:Request  ) -> Result<Response, NetError>  {
 
+        println!("Server received request: {}", request.to_string());
+
         let response = match request {
 
             Request::Connect(_) => {
@@ -309,6 +320,8 @@ impl GameServer {
             Request::ServerInfo(_) => {
                 
                 // let packet = response_server_info.to_bytes().unwrap();
+
+                //need to send a  ServerCmd::ServerInfo ! 
                 return Ok(
                     Response::ServerInfo(ResponseServerInfo {
                     address: String::from("127.0.0.1"),

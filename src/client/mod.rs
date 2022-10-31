@@ -316,6 +316,9 @@ impl Connection {
     ) -> Result<ConnectionStatus, ClientError> {
         use ConnectionStatus::*;
 
+
+
+
         let (msg, demo_view_angles, track_override) = match self.kind {
             ConnectionKind::Server { ref mut qsock, .. } => {
                 let msg = qsock.recv_msg(match self.conn_state {
@@ -381,6 +384,9 @@ impl Connection {
         let mut reader = BufReader::new(msg.as_slice());
 
         while let Some(cmd) = ServerCmd::deserialize(&mut reader)? {
+
+            println!("Got server cmd {}", cmd.to_string()  );
+
             match cmd {
                 // TODO: have an error for this instead of panicking
                 // once all other commands have placeholder handlers, just error
@@ -1451,10 +1457,10 @@ fn cmd_loadmap(
         }
 
        
-        let mut map_file = match vfs.open(format!("maps/{}.bsp", args[0])) {
+      /*    let mut map_file = match vfs.open(format!("maps/{}.bsp", args[0])) {
             Ok(f) => f,
             Err(e) => return format!("{}", e),
-        };
+        };*/
 
 
         //spin up a local server to use to run the level entity statefulness 
@@ -1462,10 +1468,13 @@ fn cmd_loadmap(
         
         let local_server_result = GameServer::new(   map_file  ) ;
 
-
+        let map_name = format!("maps/{}.bsp", args[0]) ;
         
         match local_server_result {
-            Ok(srv ) => {srv.start();}
+            Ok(srv ) => {
+                srv.loadMap(map_name);
+                srv.start();
+            }
             Err(e) => {info!("{}",e);}
         }
             

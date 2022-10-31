@@ -100,6 +100,8 @@ where
 
     /// Allocates a block of memory in this dynamic uniform buffer with the
     /// specified initial value.
+    /// 
+    /// IS THIS EVER DE-ALLOCATED ? 
     #[must_use]
     pub fn allocate(&mut self, val: T) -> DynamicUniformBufferBlock<T> {
         let allocated = self.allocated.get();

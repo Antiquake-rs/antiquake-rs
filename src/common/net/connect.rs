@@ -21,6 +21,7 @@
 use std::{
     io::{BufReader, Cursor, ErrorKind},
     mem::size_of,
+    fmt,
     net::{SocketAddr, ToSocketAddrs, UdpSocket},
 };
 
@@ -238,6 +239,17 @@ impl Request {
         })
     }
 }
+
+
+
+impl fmt::Display for Request {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
+}
+
 
 impl ConnectPacket for Request {
     fn code(&self) -> u8 {

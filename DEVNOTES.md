@@ -25,7 +25,9 @@ gfx pipelines yay!!!
 
 #### Next Steps 
 - be able to load a map  by spinning up a local server on port 27500 
+- clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
+-now that client can load into their own local gameserver, make them spawn and render the map! 
 
 
 -Try to import a map from trenchbroom and see if we can load it  

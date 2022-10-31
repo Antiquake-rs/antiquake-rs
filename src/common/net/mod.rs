@@ -784,6 +784,16 @@ pub enum ServerCmd {
     FastUpdate(EntityUpdate),
 }
 
+
+impl fmt::Display for ServerCmd {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
+}
+ 
+
 impl ServerCmd {
     pub fn code(&self) -> u8 {
         let code = match *self {
