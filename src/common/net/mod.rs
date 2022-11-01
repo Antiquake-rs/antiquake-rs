@@ -652,8 +652,9 @@ pub enum ServerCmdCode {
 
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
 pub enum GameType {
-    CoOp = 0,
-    Deathmatch = 1,
+    SinglePlayer = 0,
+    CoOp = 1,
+    Deathmatch = 2,
 }
 
 #[derive(Debug, PartialEq)]

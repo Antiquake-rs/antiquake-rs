@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-mod cvars;
+ 
 pub mod demo;
 pub mod entity;
 pub mod input;
@@ -28,8 +28,7 @@ pub mod sound;
 pub mod state;
 pub mod trace;
 pub mod view;
-
-pub use self::cvars::register_cvars;
+ 
 
 use std::{
     cell::RefCell,
@@ -51,6 +50,7 @@ use crate::{
         view::{IdleVars, KickVars, MouseVars, RollVars},
     },
     common::{
+        cvars::register_cvars,
         console::{CmdRegistry, Console, ConsoleError, CvarRegistry},
         engine,
         model::ModelError,
@@ -317,7 +317,7 @@ impl Connection {
         use ConnectionStatus::*;
 
 
-
+        println!("client listening on qsock");
 
         let (msg, demo_view_angles, track_override) = match self.kind {
             ConnectionKind::Server { ref mut qsock, .. } => {
@@ -1365,6 +1365,8 @@ where
     // we're done with the connection socket, so turn it into a QSocket with the new address
     let qsock = con_sock.into_qsocket(new_addr);
 
+    println!("client: set up q socket with server");
+
     Ok(Connection {
         state: ClientState::new(stream),
         kind: ConnectionKind::Server {
@@ -1464,27 +1466,40 @@ fn cmd_loadmap(
 
 
         //spin up a local server to use to run the level entity statefulness 
-
-        
-        let local_server_result = GameServer::new() ;
-
-        let map_name = format!("maps/{}.bsp", args[0]) ;
-        
-        match local_server_result {
-            Ok(srv ) => {
-                srv.loadMap(map_name);
-                srv.start();
-            }
-            Err(e) => {info!("{}",e);}
-        }
+    
+        let input_args = args[0].to_string(); //clone for the thread 
             
+        let handle = thread::spawn(move || {       
+
+          
+
+            let local_server_result = GameServer::new() ;
+
+            let map_name = format!("maps/{}.bsp",  input_args ) ;
+            
+            match local_server_result {
+                Ok(mut srv ) => {
+
+                    let loadResult = srv.loadMap(map_name);
+
+                    match loadResult {
+                        Ok(_) =>  {srv.start();}
+                        Err(e) =>  {info!("{}",e);}
+                    }
+                
+
+                }
+                Err(e) => {info!("{}",e);}
+            }
+        });
+                
   
 
 
         let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
     
 
-          //connect to the local client using port 27500  
+      //connect to the local client using port 27500  
         match connect( addr  , stream.clone()) {
             Ok(new_conn) => {
                 conn.replace(Some(new_conn));
@@ -1493,19 +1508,7 @@ fn cmd_loadmap(
             }
             Err(e) => format!("{}", e),
         }
-
-            
-
-       
-
-      /*   conn.replace(Some(Connection {
-            state: ClientState::new(stream.clone()),
-            kind: ConnectionKind::Local(qsock,compose),
-            conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
-        }));
-
-        input.borrow_mut().set_focus(InputFocus::Game);
-        String::new()*/
+ 
     })
 }
 

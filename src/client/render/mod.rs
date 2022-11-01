@@ -55,7 +55,7 @@ mod uniform;
 mod warp;
 mod world;
 
-pub use cvars::register_cvars;
+pub use cvars::register_renderer_cvars;
 pub use error::{RenderError, RenderErrorKind};
 pub use palette::Palette;
 pub use pipeline::Pipeline;

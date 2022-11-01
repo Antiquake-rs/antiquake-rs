@@ -33,11 +33,13 @@ use std::{
     rc::Rc,
     net::{ToSocketAddrs,SocketAddr},
     io::{self},
-    fs::File
+    fs::File,
+    fmt::{self,Display} 
 };
 
 use crate::{
     common::{
+        cvars::{register_cvars},
         bsp::{self},
         console::CvarRegistry,
         engine::{duration_from_f32, duration_to_f32},
@@ -47,7 +49,7 @@ use crate::{
         vfs::{Vfs,VirtualFile},
         default_base_dir,
         net::{
-            self, NetError,
+            self, NetError, ServerCmd,  GameType, 
             connect::{ConnectSocket,ConnectListener, Request, Response, ResponseServerInfo, ResponseAccept},
             
         }, 
@@ -77,7 +79,7 @@ use self::{
  
 use io::BufReader;
 use thiserror::Error;
-
+ 
 
 use arrayvec::ArrayVec;
 use cgmath::{InnerSpace, Vector3, Zero};
@@ -85,6 +87,9 @@ use chrono::Duration;
 
 const MAX_DATAGRAM: usize = 1024;
 const MAX_LIGHTSTYLES: usize = 64;
+
+ 
+
 
 /// The state of a client's connection to the server.
 pub enum ClientState {
@@ -158,6 +163,8 @@ impl ClientSlots {
 pub enum GameServerError {
     #[error("Unable to load map")]
     MapLoadingError,
+    #[error("Unable to load progs.dat")]
+    ProgsLoadingError,
     #[error("Invalid CD track number")]
     InvalidCdTrack,
     #[error("No such CD track: {0}")]
@@ -186,7 +193,7 @@ pub struct GameServer {
     protocol_version: u8,
     port: u32,
 
-
+    serverConnectionListener: ConnectListener, 
  
     server_session: Session // may not exist yet  
 
@@ -201,6 +208,14 @@ impl GameServer {
     pub fn new( ) -> Result<GameServer, GameServerError> { 
  
  
+
+        
+        println!("Starting server on port 27500");
+        let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
+        let mut serverConnectionListener = ConnectListener::bind( addr ).unwrap();
+
+
+
         let max_clients = 1; 
 
         Ok(GameServer { 
@@ -209,11 +224,13 @@ impl GameServer {
           
             protocol_version: net::PROTOCOL_VERSION,
     
-            server_session: Session::new( max_clients )
+            server_session: Session::new( max_clients ),
+
+            serverConnectionListener:   ConnectListener::bind( addr ).unwrap() 
         })
     }
 
-    pub fn loadMap(&self, file_path:  String) -> Result< VirtualFile , GameServerError> {
+    pub fn loadMap(&mut self, file_path:  String) -> Result< (), GameServerError> {
 
     
       
@@ -235,52 +252,60 @@ impl GameServer {
                 Err(e) => return  Err( GameServerError::MapLoadingError   )
             };  
 
+            //could i also try to load a special custom progs dat file that i design myself ?
+            let mut progs_file = match vfs.as_ref().open( "progs.dat" )  {
+                Ok(f) => f,
+                Err(e) => return  Err( GameServerError::ProgsLoadingError   )
+            };  
+
             let models: Vec<Model> = Vec::new() ; 
 
             let (mut brush_models, mut entmap) = bsp::load(map_file).unwrap();
             
             let con_names = Rc::new(RefCell::new(Vec::new()));    
             let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
-            // render::register_cvars(&cvars.borrow());
+            // what is this doing and why ? 
+            register_cvars(&cvars.borrow()).unwrap();
+            
 
-
-            let prog = progs::new().unwrap();
+            //need to somehow load progs !! 
+             let prog = progs::load(progs_file).unwrap();
                 
          
 
-         self.server_session.load_level(  vfs , cvars, prog, brush_models, entmap ) ; 
+            self.server_session.load_level(  vfs , cvars, prog, brush_models, entmap ) ; 
 
-
-          Ok( map_file )
+ 
+          Ok( () )
 
     }
 
 
     //this should now own the reference to self 
-    pub fn start( self)   {
+    pub fn start( self )   {
  
             
                 //do this in a new thread  
            
+ 
 
-            let handle = thread::spawn(|| { 
-                println!("Starting server on port 27500");
-                let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
-                let mut serverConnectionListener = ConnectListener::bind( addr ).unwrap();
+                //this is the main server loop at the moment 
+                //need to send a  command to load map 
 
                 //recv_request
                 loop {
-                    let connectionResult = serverConnectionListener.recv_request(); 
+                    //make sure this is not blocking ? 
+                    let connectionResult = self.serverConnectionListener.recv_request(); 
 
                     match connectionResult {
 
                         Ok((request,socketAddr)) => {
 
-                            let response_result = GameServer::process_request(request); 
+                            let response_result = self.process_request(request,socketAddr); 
                             
                             match response_result {
-                                Ok(response) => {
-                                    let send_response_result = serverConnectionListener.send_response( response , socketAddr );
+                                Ok(response) => { 
+                                    let send_response_result = self.serverConnectionListener.send_response( response , socketAddr );
                                 },
                                 Err(_) =>  { info!("NetError -- got bad packet from client");}
 
@@ -296,26 +321,60 @@ impl GameServer {
                         }
 
                     }
+
+ 
+
+
+                    //update -- run ECS system and send messages to all clients as needed 
+                    self.update()
+                    
+
+
+
+
             }
-
-
-        });
+ 
 
     }
 
 
-    pub fn process_request(   request:Request  ) -> Result<Response, NetError>  {
+    fn register_new_client( &self, socketAddr: SocketAddr ){
+        println!(" Registering new client {}",  socketAddr  );
+
+
+        let serverInfoCmd = ServerCmd::ServerInfo {
+            protocol_version: i32(self.protocol_version),
+            max_clients: u8(self.server_session.persist.getMaxClients()),
+            game_type: GameType::SinglePlayer,
+            message: String::from("Test message"),
+            model_precache: self.server_session.level().sound_precache.items ,
+            sound_precache:self.server_session.level().model_precache.items ,
+        };
+
+        //send server info cmd
+        self.serverConnectionListener.send_response( serverInfoCmd , socketAddr );
+
+      //  self.server_session.add_client(  )  
+
+    }
+
+
+    fn process_request( &self, request:Request,socketAddr: SocketAddr  ) -> Result<Response, NetError>  {
 
         println!("Server received request: {}", request.to_string());
 
         let response = match request {
 
-            Request::Connect(_) => {
+            Request::Connect( _ ) => {    
 
+                self.register_new_client( socketAddr  );
+                //this is  going to the client and properly turning into q socket 
                 return Ok(  Response::Accept(ResponseAccept { port:27500 }) )
             },
 
             Request::ServerInfo(_) => {
+
+                // ServerCmdCode::ServerInfo
                 
                 // let packet = response_server_info.to_bytes().unwrap();
 
@@ -348,6 +407,16 @@ impl GameServer {
     }
 
 
+    fn update( &self ){
+
+        println!("server is updating");
+
+
+        //do stuff for each registered client    like tell them toload map 
+
+    }
+
+
 }
 
 /// Server state that persists between levels.
@@ -362,6 +431,12 @@ impl SessionPersistent {
             client_slots: ClientSlots::new(max_clients),
             flags: SessionFlags::empty(),
         }
+    }
+ 
+
+    pub fn getMaxClients(&self) -> usize {
+
+        return self.client_slots.limit();
     }
 
     pub fn client(&self, slot: usize) -> Option<&ClientState> {
@@ -449,16 +524,15 @@ impl Session {
     }
 
     pub fn load_level( 
-        &self,
+        &mut self,
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         progs: LoadProgs,
         models: Vec<Model>,
         entmap: String,
     )   {
-       self.state =  SessionState::Loading(SessionLoading {
-                level: LevelState::new(vfs, cvars, progs, models, entmap),
-            } );
+       self.state =  SessionState::Loading(
+              SessionLoading::new(vfs, cvars, progs, models, entmap) );
     }
 
     /// Returns the maximum number of clients allowed on the server.
@@ -490,6 +564,7 @@ impl Session {
     #[inline]
     fn level(&self) -> &LevelState {
         match self.state {
+            SessionState::Starting() => panic!("Cannot fetch level before the server loads it"),
             SessionState::Loading(ref loading) => &loading.level,
             SessionState::Active(ref active) => &active.level,
         }
@@ -498,6 +573,7 @@ impl Session {
     #[inline]
     fn level_mut(&mut self) -> &mut LevelState {
         match self.state {
+            SessionState::Starting() => panic!("Cannot fetch level before the server loads it"),
             SessionState::Loading(ref mut loading) => &mut loading.level,
             SessionState::Active(ref mut active) => &mut active.level,
         }
@@ -522,6 +598,7 @@ impl Session {
     #[inline]
     pub fn time(&self) -> Option<Duration> {
         match self.state {
+            SessionState::Starting() => None,
             SessionState::Loading(_) => None,
             SessionState::Active(ref active) => Some(active.level.time),
         }
@@ -573,6 +650,14 @@ impl LevelState {
             string_table,
         } = progs;
 
+        println!("string table {}", string_table.borrow_mut().getData() );
+     /*  println!("new level state");
+
+        let s_table = string_table.borrow();
+        let length = s_table.length();
+        
+        println!("string table length {}",length); */ 
+
         let mut sound_precache = Precache::new();
         sound_precache.precache("");
 
@@ -580,6 +665,9 @@ impl LevelState {
         model_precache.precache("");
 
         for model in models.iter() {
+
+            println!("model is {}",model.name());
+
             let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
             model_precache.precache(string_table.borrow().get(model_name).unwrap());
         }
@@ -912,7 +1000,10 @@ impl LevelState {
         self.globals
             .put_entity_id(ent_id, GlobalAddrEntity::Self_ as i16)?;
 
-        self.execute_program_by_name(classname)?;
+
+            // dont execute progs.dat program right now since some funcs are not impl 
+    //    self.execute_program_by_name(classname)?;
+
 
         self.link_entity(ent_id, true)?;
 

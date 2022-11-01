@@ -35,7 +35,7 @@ use antiquakeengine::{
         self,
         demo::{DemoServer},
         input::{Input,InputFocus},
-        render::{self,UiRenderer,GraphicsState,Extent2d,DIFFUSE_ATTACHMENT_FORMAT},
+        render::{self,UiRenderer,GraphicsState,Extent2d,register_renderer_cvars,DIFFUSE_ATTACHMENT_FORMAT},
         menu::Menu,
         Client,
     },
@@ -45,6 +45,7 @@ use antiquakeengine::{
         host::{Host, Program},
         default_base_dir,
         net::ServerCmd,
+        cvars::{register_cvars},
     }
 };
  
@@ -133,8 +134,8 @@ impl ClientProgram {
         let con_names = Rc::new(RefCell::new(Vec::new()));
 
         let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
-        client::register_cvars(&cvars.borrow()).unwrap();
-        render::register_cvars(&cvars.borrow());
+        register_cvars(&cvars.borrow()).unwrap();
+        register_renderer_cvars(&cvars.borrow());
 
         let cmds = Rc::new(RefCell::new(CmdRegistry::new(con_names)));
         // TODO: register commands as other subsystems come online

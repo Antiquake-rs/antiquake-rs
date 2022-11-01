@@ -297,7 +297,7 @@ pub struct LoadProgs {
     pub string_table: Rc<RefCell<StringTable>>,
 }
 
-//new blank progs 
+//new blank progs - fake 
 pub fn new () -> Result<LoadProgs, ProgsError> {
 
     let mut strings = Vec::new();  
@@ -317,7 +317,7 @@ pub fn new () -> Result<LoadProgs, ProgsError> {
 
     let functions_rc = Rc::new(functions);
 
-    let ent_addr_count = 0;
+    let ent_addr_count = 105;
 
     let cx = ExecutionContext::create(string_table.clone(), functions_rc.clone());
 

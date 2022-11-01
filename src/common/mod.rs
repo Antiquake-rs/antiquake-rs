@@ -22,6 +22,7 @@ pub mod alloc;
 pub mod bitset;
 pub mod bsp;
 pub mod console;
+pub mod cvars;
 pub mod engine;
 pub mod host;
 pub mod math;
@@ -34,6 +35,7 @@ pub mod sprite;
 pub mod util;
 pub mod vfs;
 pub mod wad;
+
 
 use std::path::PathBuf;
 

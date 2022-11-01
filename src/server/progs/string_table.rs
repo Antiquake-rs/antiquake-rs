@@ -19,6 +19,11 @@ impl StringTable {
         }
     }
 
+    pub fn getData(&self) -> String {
+        let data =  &self.data; 
+        return data.to_string(); 
+    }
+
     pub fn id_from_i32(&self, value: i32) -> Result<StringId, ProgsError> {
         if value < 0 {
             return Err(ProgsError::with_msg("id < 0"));
