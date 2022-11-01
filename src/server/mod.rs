@@ -351,13 +351,20 @@ impl GameServer {
             sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
         };  
 
+
+        //only 1 use of each socket addr permitted .
+        
+        let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
+        let mut new_client_conn = ConnectListener::bind( addr ).unwrap();
+
+
         //how to make this work ?  maybe make a new listener  . ? 
-        let new_client_socket = self.serverConnectionListener.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
+        let mut new_client_socket = new_client_conn.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
 
         let mut packet = Vec::new();
         serverInfoCmd.serialize(&mut packet).unwrap();
 
-        new_client_socket.send_msg_unreliable(packet.as_slice()); 
+        let send_result = new_client_socket.send_msg_unreliable(packet.as_slice()); 
 
 
         
