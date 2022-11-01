@@ -31,6 +31,11 @@ gfx pipelines yay!!!
 thread '<unnamed>' panicked at 'called `Result::unwrap()` on an `Err` value: Io(Os { code: 10048, kind: AddrInUse, message: "Only one usage of each socket address (protocol/network address/port) is normally permitted." })', src\server\mod.rs:283:82
 
 
+#### NETWORKING 
+Associating a remote address with a socket is fine clientside, but serverside it doesn't make sense.
+
+https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
+
 
 
 

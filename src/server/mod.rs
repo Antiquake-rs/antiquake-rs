@@ -135,6 +135,12 @@ impl ClientSlots {
         ClientSlots { slots }
     }
 
+    pub fn add_client(&self){
+
+
+        self.slots.push(  );
+    }
+
     /// Returns a reference to the client in a slot.
     ///
     /// If the slot is unoccupied, or if `id` is greater than `self.limit()`,
@@ -352,6 +358,9 @@ impl GameServer {
         };  
 
 
+
+        self.server_session.add_client( socketAddr )  
+
         //only 1 use of each socket addr permitted .
         
        // let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
@@ -359,7 +368,7 @@ impl GameServer {
 
 
         //how to make this work ?  maybe make a new listener  . ? 
-        let mut new_client_socket = self.serverConnectionListener.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
+      //  let mut new_client_socket = self.serverConnectionListener.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
 
         let mut packet = Vec::new();
         serverInfoCmd.serialize(&mut packet).unwrap();
