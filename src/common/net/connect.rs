@@ -553,6 +553,13 @@ impl ConnectListener {
         Ok(ConnectListener { socket })
     }
 
+
+    
+    pub fn into_qsocket(self, remote: SocketAddr) -> QSocket {
+        QSocket::new(self.socket, remote)
+    }
+    
+
     /// Receives a request and returns it along with its remote address.
     pub fn recv_request(&self) -> Result<(Request, SocketAddr), NetError> {
         println!("Server is listening for requests ");

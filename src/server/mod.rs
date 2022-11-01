@@ -343,16 +343,27 @@ impl GameServer {
 
 
         let serverInfoCmd = ServerCmd::ServerInfo {
-            protocol_version: i32(self.protocol_version),
-            max_clients: u8(self.server_session.persist.getMaxClients()),
+            protocol_version: i32::from(self.protocol_version),
+            max_clients: (self.server_session.persist.getMaxClients() as u8),
             game_type: GameType::SinglePlayer,
             message: String::from("Test message"),
-            model_precache: self.server_session.level().sound_precache.items ,
-            sound_precache:self.server_session.level().model_precache.items ,
-        };
+            model_precache:  vec![ String::from("maps/e1m1.bsp") ] ,//self.server_session.level().sound_precache.items ,
+            sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
+        };  
+
+        //how to make this work ?  maybe make a new listener  . ? 
+        let new_client_socket = self.serverConnectionListener.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
+
+        let mut packet = Vec::new();
+        serverInfoCmd.serialize(&mut packet).unwrap();
+
+        new_client_socket.send_msg_unreliable(packet.as_slice()); 
+
+
+        
 
         //send server info cmd
-        self.serverConnectionListener.send_response( serverInfoCmd , socketAddr );
+       // self.serverConnectionListener.send_response( serverInfoCmd , socketAddr );
 
       //  self.server_session.add_client(  )  
 
