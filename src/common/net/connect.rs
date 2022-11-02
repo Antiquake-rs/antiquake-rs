@@ -18,15 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+/*
+
+    Consider renaming 'ConnectListener' since it is now effectively the overall server socket for all networking.  
+
+    Could also move it out of this file to another one.
+
+*/
+
 use std::{
-    io::{BufReader, Cursor, ErrorKind},
+    io::{BufReader, Cursor, ErrorKind, Read, Write},
     mem::size_of,
     fmt,
     net::{SocketAddr, ToSocketAddrs, UdpSocket},
 };
+ 
+
 
 use crate::common::{
-    net::{NetError, QSocket, MAX_MESSAGE},
+    net::{MsgKind, NetError, QSocket, MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
     util,
 };
 
@@ -540,6 +551,11 @@ impl ConnectPacket for Response {
 /// A socket that listens for new connections or queries.
 pub struct ConnectListener {
     socket: UdpSocket,
+
+    unreliable_send_sequence:u32 ,
+ 
+    // bump send count
+    send_count:u32 ,
 }
 
 impl ConnectListener {
@@ -550,15 +566,14 @@ impl ConnectListener {
     {
         let socket = UdpSocket::bind(addr)?;
 
-        Ok(ConnectListener { socket })
+        Ok(ConnectListener { 
+            socket,
+            unreliable_send_sequence:0,
+            send_count:0
+        
+        })
     }
-
-
-    
-    pub fn into_qsocket(self, remote: SocketAddr) -> QSocket {
-        QSocket::new(self.socket, remote)
-    }
-
+ 
 
     /// Receives a request and returns it along with its remote address.
     pub fn recv_request(&self) -> Result<(Request, SocketAddr), NetError> {
@@ -637,6 +652,44 @@ impl ConnectListener {
     pub fn send_response(&self, response: Response, remote: SocketAddr) -> Result<(), NetError> {
         self.socket.send_to(&response.to_bytes()?, remote)?;
         Ok(())
+    }
+
+
+    //the server version of QSocket
+    // https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
+
+    pub fn send_msg_unreliable_to(&self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
+
+        if content.len() == 0 {
+            return Err(NetError::with_msg("Unreliable message has zero length"));
+        }
+
+        if content.len() > MAX_DATAGRAM {
+            return Err(NetError::with_msg(
+                "Unreliable message length exceeds MAX_DATAGRAM",
+            ));
+        }
+
+        let packet_len = HEADER_SIZE + content.len();
+
+        // compose the packet
+        let mut packet = Vec::with_capacity(MAX_PACKET);
+        packet.write_u16::<NetworkEndian>(MsgKind::Unreliable as u16)?;
+        packet.write_u16::<NetworkEndian>(packet_len as u16)?;
+        packet.write_u32::<NetworkEndian>(self.unreliable_send_sequence)?;
+        packet.write_all(content)?;
+
+        // increment unreliable send sequence
+        self.unreliable_send_sequence += 1;
+
+        // send the message
+        self.socket.send_to(&packet, socket_addr)?;
+
+        // bump send count
+        self.send_count += 1;
+
+        Ok(())
+
     }
 
 

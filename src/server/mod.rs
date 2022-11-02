@@ -92,20 +92,28 @@ const MAX_LIGHTSTYLES: usize = 64;
 
 
 /// The state of a client's connection to the server.
-pub enum ClientState {
+/*pub enum ClientConnectionState {
     /// The client is still connecting.
     Connecting,
 
     /// The client is active.
-    Active(ClientActive),
-}
+    Active,
+}*/
 
-pub struct ClientActive {
+pub struct ClientState {  
+
+
+    client_id: usize, 
+    
     /// If true, client may execute any command.
     privileged: bool,
 
     /// ID of the entity controlled by this client.
-    entity_id: EntityId,
+    entity_id: Option<EntityId>,
+
+    client_connected: bool,  
+
+    socket_addr: SocketAddr 
 }
 
 bitflags! {
@@ -123,30 +131,61 @@ bitflags! {
 /// A fixed-size pool of client connections.
 pub struct ClientSlots {
     /// Occupied slots are `Some`.
-    slots: Vec<Option<ClientState>>,
+    //slots: Vec< ClientState >,
+
+    limit: usize,
+
+    //client_id => clientstate 
+    slots: HashMap<usize, Option<ClientState>>
+
+
 }
 
+
+/*
+
+You will have just that one UdpSocket on the server, and use it to send traffic to all the clients.
+You use this function to do it https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
+*/
 impl ClientSlots {
     /// Creates a new pool which supports at most `limit` clients.
     pub fn new(limit: usize) -> ClientSlots {
-        let mut slots = Vec::with_capacity(limit);
-        slots.resize_with(limit, || None);
+        let mut slots = HashMap::with_capacity(limit);
+        //slots.resize_with(limit, || None);
 
-        ClientSlots { slots }
+        ClientSlots { slots, limit }
     }
 
-    pub fn add_client(&self){
+    pub fn add_client(&self, socket_addr:SocketAddr, privileged:bool) -> Result<usize, NetError>  { 
+ 
+        let client_id_result = self.find_next_available_slot_id();
 
+        match client_id_result {
+            Some(client_id) => {
 
-        self.slots.push(  );
+                let new_client_state = ClientState { 
+                    client_id, 
+                    client_connected: false,
+                    entity_id: None,
+                    socket_addr  ,
+                    privileged    
+                }; 
+        
+                self.slots.insert( client_id,  Some(new_client_state) );
+                Ok(client_id) 
+            },
+            None  => {   Err(  NetError::Other(format!( "Server could not add new client")   ) )  } 
+        }
+
+       
     }
 
     /// Returns a reference to the client in a slot.
     ///
     /// If the slot is unoccupied, or if `id` is greater than `self.limit()`,
     /// returns `None`.
-    pub fn get(&self, id: usize) -> Option<&ClientState> {
-        self.slots.get(id)?.as_ref()
+    pub fn get(&self, key: &usize) -> Option<&ClientState> {
+        self.slots.get(key)?.as_ref()
     }
 
     /// Returns the maximum number of simultaneous clients.
@@ -154,10 +193,18 @@ impl ClientSlots {
         self.slots.len()
     }
 
-    /// Finds an available connection slot for a new client.
-    pub fn find_available(&mut self) -> Option<&mut ClientState> {
-        let slot = self.slots.iter_mut().find(|s| s.is_none())?;
-        Some(slot.insert(ClientState::Connecting))
+    
+    pub fn find_next_available_slot_id(&mut self) -> Option< usize > {
+        //let slot = self.slots.iter_mut().find(|s| s.is_none())?;
+        //Some(slot.insert(ClientState::Connecting))
+
+        //loop through each one to find one that is none and return the id 
+
+        let length = self.slots.len();
+
+        if(self.limit <= length) {return None;}
+
+        return Some(length);
     }
 }
 
@@ -359,7 +406,9 @@ impl GameServer {
 
 
 
-        self.server_session.add_client( socketAddr )  
+         
+
+        self.server_session.persist.client_slots.add_client( socketAddr , true );
 
         //only 1 use of each socket addr permitted .
         
@@ -373,7 +422,11 @@ impl GameServer {
         let mut packet = Vec::new();
         serverInfoCmd.serialize(&mut packet).unwrap();
 
-        let send_result = new_client_socket.send_msg_unreliable(packet.as_slice()); 
+        let send_result =  self.serverConnectionListener.send_msg_unreliable_to( packet.as_slice() , socketAddr );
+
+ 
+
+      //  let send_result = self.serverConnectionListener.send_msg_unreliable(packet.as_slice()); 
 
 
         
@@ -433,6 +486,8 @@ impl GameServer {
 
     }
 
+    
+
 
     fn update( &self ){
 
@@ -466,7 +521,7 @@ impl SessionPersistent {
         return self.client_slots.limit();
     }
 
-    pub fn client(&self, slot: usize) -> Option<&ClientState> {
+    pub fn client(&self, slot: &usize) -> Option<&ClientState> {
         self.client_slots.get(slot)
     }
 }
@@ -568,8 +623,8 @@ impl Session {
     }
 
     #[inline]
-    pub fn client(&self, slot: usize) -> Option<&ClientState> {
-        self.persist.client(slot)
+    pub fn client(&self, slot: &usize) -> Option<&ClientState> {
+        self.persist.client(&slot)
     }
 
     pub fn precache_sound(&mut self, name_id: StringId) {
@@ -1177,7 +1232,7 @@ impl LevelState {
             ProgsError::with_msg(format!("Invalid client entity ID: {:?}", ent_id))
         })?;
 
-        if clients.get(client_id).is_none() {
+        if clients.get(&client_id).is_none() {
             // No client in this slot.
             return Ok(());
         }
