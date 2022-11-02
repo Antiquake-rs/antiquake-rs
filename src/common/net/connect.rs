@@ -655,6 +655,46 @@ impl ConnectListener {
     }
 
 
+    pub fn send_server_info_to(&self, serverInfoCmd:ServerCmd::ServerInfo,   socket_addr: SocketAddr   ){ 
+
+        
+        let mut packet = Vec::new();
+        serverInfoCmd.serialize(&mut packet).unwrap();
+        send_msg_unreliable_to( packet.as_slice() , socket_addr );
+
+    }
+    
+
+    //need a way to broadcast this too 
+    pub fn send_fast_update(&self  ){
+
+        let entity_update = EntityUpdate {
+
+            ent_id: 0, //for now 
+            pub model_id: None,
+            pub frame_id: None,
+            pub colormap: None,
+            pub skin_id: None,
+            pub effects: None,
+            pub origin_x: None,
+            pub pitch: None,
+            pub origin_y: None,
+            pub yaw: None,
+            pub origin_z: None,
+            pub roll: None,
+            pub no_lerp: bool,
+
+        };
+
+        let serverInfoCmd = ServerCmd::FastUpdate(entity_update) 
+ 
+        let mut packet = Vec::new();
+        serverInfoCmd.serialize(&mut packet).unwrap();
+        send_msg_unreliable( packet.as_slice()   );
+
+    }
+
+
     //the server version of QSocket
     // https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
 
@@ -684,6 +724,40 @@ impl ConnectListener {
 
         // send the message
         self.socket.send_to(&packet, socket_addr)?;
+
+        // bump send count
+        self.send_count += 1;
+
+        Ok(())
+
+    }
+
+    pub fn send_msg_unreliable_multicast(&mut self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
+
+        if content.len() == 0 {
+            return Err(NetError::with_msg("Unreliable message has zero length"));
+        }
+
+        if content.len() > MAX_DATAGRAM {
+            return Err(NetError::with_msg(
+                "Unreliable message length exceeds MAX_DATAGRAM",
+            ));
+        }
+
+        let packet_len = HEADER_SIZE + content.len();
+
+        // compose the packet
+        let mut packet = Vec::with_capacity(MAX_PACKET);
+        packet.write_u16::<NetworkEndian>(MsgKind::Unreliable as u16)?;
+        packet.write_u16::<NetworkEndian>(packet_len as u16)?;
+        packet.write_u32::<NetworkEndian>(self.unreliable_send_sequence)?;
+        packet.write_all(content)?;
+
+        // increment unreliable send sequence
+        self.unreliable_send_sequence += 1;
+
+        // send the message
+        self.socket.send(&packet)?;
 
         // bump send count
         self.send_count += 1;

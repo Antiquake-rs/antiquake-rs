@@ -648,6 +648,7 @@ pub enum ServerCmdCode {
     CdTrack = 32,
     SellScreen = 33,
     Cutscene = 34,
+    FastUpdate = 35   //is this right ?
 }
 
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
@@ -833,7 +834,7 @@ impl ServerCmd {
             ServerCmd::SellScreen => ServerCmdCode::SellScreen,
             ServerCmd::Cutscene { .. } => ServerCmdCode::Cutscene,
             // TODO: figure out a more elegant way of doing this
-            ServerCmd::FastUpdate(_) => panic!("FastUpdate has no code"),
+            ServerCmd::FastUpdate(_) => ServerCmdCode::FastUpdate,
         };
 
         code as u8
@@ -1462,6 +1463,35 @@ impl ServerCmd {
 
                 ServerCmd::Cutscene { text }
             }
+
+            //reference ServerCmdCode::SignOnStage  
+            //this is the parsing step on client side
+            ServerCmdCode::FastUpdate  =>    { 
+
+                println!("handling servercmdcode::FastUpdate");
+                let entity_update = EntityUpdate{ 
+
+                    ent_id: 0, //for now 
+                    model_id: None,
+                    frame_id: None,
+                    colormap: None,
+                    skin_id: None,
+                    effects: None,
+                    origin_x: None,
+                    pitch: None,
+                    origin_y: None,
+                    yaw: None,
+                    origin_z: None,
+                    roll: None,
+                    no_lerp: true,
+        
+
+                }
+
+                ServerCmd::FastUpdate(ent),
+
+             }
+             
         };
 
         Ok(Some(cmd))
@@ -1844,7 +1874,15 @@ impl ServerCmd {
             }
 
             // TODO
-            ServerCmd::FastUpdate(_) => unimplemented!(),
+            ServerCmd::FastUpdate(_) => {
+
+
+                println!("performing fast update");
+
+
+                //there is some other fast update code somewhere ... 
+
+             },
         }
 
         Ok(())

@@ -228,6 +228,9 @@ pub struct Connection {
     kind: ConnectionKind,
 }
 
+
+
+//this is the next step !!! 
 impl Connection {
     fn handle_signon(
         &mut self,
@@ -430,6 +433,9 @@ impl Connection {
                 }
 
                 ServerCmd::FastUpdate(ent_update) => {
+
+                    println!("got first update - handling sinon");
+
                     // first update signals the last sign-on stage
                     self.handle_signon(SignOnStage::Done, gfx_state)?;
 

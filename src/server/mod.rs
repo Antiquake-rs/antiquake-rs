@@ -395,6 +395,12 @@ impl GameServer {
         println!(" Registering new client {}",  socketAddr  );
 
 
+        
+        let persist =  &mut self.server_session.persist;
+        let add_client_result = persist.client_slots.add_client( socketAddr , true );
+
+
+
         let serverInfoCmd = ServerCmd::ServerInfo {
             protocol_version: i32::from(self.protocol_version),
             max_clients: (self.server_session.persist.getMaxClients() as u8),
@@ -402,29 +408,18 @@ impl GameServer {
             message: String::from("Test message"),
             model_precache:  vec![ String::from("maps/e1m1.bsp") ] ,//self.server_session.level().sound_precache.items ,
             sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
-        };  
-
-
-
-         
-        let persist =  &mut self.server_session.persist;
-        let add_client_result = persist.client_slots.add_client( socketAddr , true );
-
-        //only 1 use of each socket addr permitted .
-        
-       // let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
-       // let mut new_client_conn = ConnectListener::bind( addr ).unwrap();
-
-
-        //how to make this work ?  maybe make a new listener  . ? 
-      //  let mut new_client_socket = self.serverConnectionListener.into_qsocket(socketAddr); //QSocket::new(   , socketAddr )   
-
-        let mut packet = Vec::new();
-        serverInfoCmd.serialize(&mut packet).unwrap();
-
-        let send_result =  self.serverConnectionListener.send_msg_unreliable_to( packet.as_slice() , socketAddr );
-
+        };   
  
+  
+        let send_result =  self.serverConnectionListener.send_server_info_to( ,serverInfoCmd  socketAddr  )  
+        
+ 
+
+
+
+        let send_fast_updateresult =  self.serverConnectionListener.send_fast_update(   );
+
+        
 
       //  let send_result = self.serverConnectionListener.send_msg_unreliable(packet.as_slice()); 
 
