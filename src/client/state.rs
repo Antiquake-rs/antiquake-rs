@@ -728,6 +728,8 @@ impl ClientState {
         roll_vars: RollVars,
         bob_vars: BobVars,
     ) {
+        
+        
         self.view.calc_final_angles(
             self.time,
             self.intermission.as_ref(),
@@ -742,6 +744,9 @@ impl ClientState {
             self.velocity,
             bob_vars,
         );
+
+
+
     }
 
     /// Spawn an entity with the given ID, also spawning any uninitialized

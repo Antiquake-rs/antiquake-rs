@@ -29,7 +29,7 @@ pub mod world;
 use std::{
     thread::{self},
     cell::{Ref, RefCell},
-    collections::HashMap,
+    collections::{HashMap,VecDeque},
     rc::Rc,
     net::{ToSocketAddrs,SocketAddr},
     io::{self},
@@ -49,8 +49,8 @@ use crate::{
         vfs::{Vfs,VirtualFile},
         default_base_dir,
         net::{
-            self, NetError, ServerCmd,  GameType, 
-            connect::{ConnectSocket,ConnectListener, Request, Response, ResponseServerInfo, ResponseAccept},
+            self, NetError, ServerCmd,  GameType,  SignOnStage,
+            connect::{ConnectSocket,ConnectListener,ServerQSocket, Request, Response, ResponseServerInfo, ResponseAccept},
             
         }, 
         util::read_f32_3, 
@@ -58,7 +58,7 @@ use crate::{
     server::{
         progs::{functions::FunctionKind, GlobalAddrFunction},
         world::{FieldAddrEntityId, FieldAddrVector, MoveKind},
-        net::{ ServerCmdCode::SignOnStage }
+       // net::{ ServerCmdCode::SignOnStage }
     },
 };
 
@@ -80,10 +80,10 @@ use self::{
  
 use io::BufReader;
 use thiserror::Error;
- 
+  
 
 use arrayvec::ArrayVec;
-use cgmath::{InnerSpace, Vector3, Zero};
+use cgmath::{InnerSpace, Vector3, Zero, Deg};
 use chrono::Duration;
 
 const MAX_DATAGRAM: usize = 1024;
@@ -248,6 +248,8 @@ pub struct GameServer {
     port: u32,
 
     serverConnectionListener: ConnectListener, 
+
+    serverQSockets: HashMap<usize, ServerQSocket> ,
  
     server_session: Session // may not exist yet  
 
@@ -280,7 +282,9 @@ impl GameServer {
     
             server_session: Session::new( max_clients ),
 
-            serverConnectionListener 
+            serverConnectionListener ,
+
+            serverQSockets: HashMap::with_capacity(max_clients )
         })
     }
 
@@ -400,19 +404,77 @@ impl GameServer {
         let persist =  &mut self.server_session.persist;
         let add_client_result = persist.client_slots.add_client( socketAddr , true );
 
+        match add_client_result{
+            Ok(client_id)=> {
+                //is this the best way to do this ? 
+                self.serverQSockets.insert(client_id , ServerQSocket::new( socketAddr ));
+                 
 
+                let serverInfoCmd = ServerCmd::ServerInfo {
+                    protocol_version: i32::from(self.protocol_version),
+                    max_clients: (self.server_session.persist.getMaxClients() as u8),
+                    game_type: GameType::SinglePlayer,
+                    message: String::from("Test message"),
+                    model_precache:  vec![ String::from("maps/e1m1.bsp") ] ,//self.server_session.level().sound_precache.items ,
+                    sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
+                };   
+                
+                let srvQSocket_option = self.serverQSockets.get_mut(&client_id);
 
-        let serverInfoCmd = ServerCmd::ServerInfo {
-            protocol_version: i32::from(self.protocol_version),
-            max_clients: (self.server_session.persist.getMaxClients() as u8),
-            game_type: GameType::SinglePlayer,
-            message: String::from("Test message"),
-            model_precache:  vec![ String::from("maps/e1m1.bsp") ] ,//self.server_session.level().sound_precache.items ,
-            sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
-        };   
+                match srvQSocket_option {
+                    Some(srvQSocket) => {
+                        let sock = &mut self.serverConnectionListener.socket;
+                        let send_result =  srvQSocket.send_server_cmd( sock, serverInfoCmd  );  
+                        println!("sent server info cmd to client ");
+                    }
+                    None => { println!("Could not get  qsocket") } 
+                }
+
+                     
  
-  
-        let send_result =  self.serverConnectionListener.send_server_cmd_to(  serverInfoCmd ,  socketAddr  );  
+                },
+              
+            
+            
+            
+               Err(_) => { println!("error finding new client id") }
+        }
+
+   
+
+
+      //  let pdata = net::PlayerData { view_height: (), ideal_pitch: (), punch_pitch: (), velocity_x: (), punch_yaw: (), velocity_y: (), punch_roll: (), velocity_z: (), items: (), on_ground: (), in_water: (), weapon_frame: (), armor: (), weapon: (), health: (), ammo: (), ammo_shells: (), ammo_nails: (), ammo_rockets: (), ammo_cells: (), active_weapon: () }
+
+       // let playerDataCmd = ServerCmd::PlayerData(pdata)
+          
+        
+      // let send_spawn_result =  self.serverConnectionListener.send_server_cmd_to(  playerDataCmd ,  socketAddr  );  
+
+
+
+ /* 
+
+        let serverSpawnCmd = ServerCmd::SpawnBaseline {
+             ent_id:0,
+            model_id:0,
+            frame_id:0,
+            colormap:0,
+            skin_id:0,
+            origin: Vector3::new(0.0,0.0,0.0),
+            angles:Vector3::new(Deg(0.0),Deg(0.0),Deg(0.0)),
+        };   
+        let send_spawn_result =  self.serverConnectionListener.send_server_cmd_to(  serverSpawnCmd ,  socketAddr  );  
+ 
+
+
+        //need to give entities to the client !!! 
+        //https://github.com/id-Software/Quake/blob/master/QW/server/sv_user.c
+
+        let serverSignonCmd = ServerCmd::SignOnStage {
+            stage: SignOnStage::Done
+        };   
+        let send_signon_result =  self.serverConnectionListener.send_server_cmd_to(  serverSignonCmd ,  socketAddr  );  
+*/
 
         
     /* 
@@ -499,8 +561,20 @@ impl GameServer {
 
         println!("server is updating");
 
+        
+
         let send_fast_updateresult =  self.serverConnectionListener.send_fast_update(   );
         //do stuff for each registered client    like tell them toload map 
+
+
+        //self.serverConnectionListener.update(); //send reliable packets that are queued up 
+    
+        //self.serverQSockets.iter
+    
+
+        for (_, sock) in self.serverQSockets.iter_mut() {
+            let update_result = sock.update(&mut self.serverConnectionListener.socket);
+        }
 
     }
 

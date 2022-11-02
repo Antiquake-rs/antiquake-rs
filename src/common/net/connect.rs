@@ -32,6 +32,8 @@ use std::{
     mem::size_of,
     fmt,
     net::{SocketAddr, ToSocketAddrs, UdpSocket},
+
+    collections::{HashMap,VecDeque},
 };
  
 
@@ -548,14 +550,219 @@ impl ConnectPacket for Response {
     }
 }
 
-/// A socket that listens for new connections or queries.
-pub struct ConnectListener {
-    socket: UdpSocket,
 
-    unreliable_send_sequence:u32 ,
- 
-    // bump send count
-    send_count:u32 ,
+
+
+//one of these exists per client -- used for reliable messaging to them 
+pub struct ServerQSocket {
+    
+    remote: SocketAddr, 
+
+    //copied from qsocket 
+    unreliable_send_sequence: u32,
+    unreliable_recv_sequence: u32,
+
+    ack_sequence: u32,
+
+    send_sequence: u32,
+    send_queue: VecDeque<Box<[u8]>>,
+    send_cache: Box<[u8]>,
+    send_next: bool,
+    send_count: usize,
+    resend_count: usize,
+
+    recv_sequence: u32,
+    recv_buf: [u8; MAX_MESSAGE],
+
+}
+
+impl ServerQSocket {
+
+    pub fn new(remote:SocketAddr) ->  ServerQSocket {
+        return ServerQSocket{
+
+            remote, 
+
+            unreliable_send_sequence: 0,
+            unreliable_recv_sequence: 0,
+
+            ack_sequence: 0,
+
+            send_sequence: 0,
+            send_queue: VecDeque::new(),
+            send_cache: Box::new([]),
+            send_count: 0,
+            send_next: false,
+            resend_count: 0,
+
+            recv_sequence: 0,
+            recv_buf: [0; MAX_MESSAGE],
+
+        };
+    }
+
+
+
+    pub fn can_send(&self) -> bool {
+        self.send_queue.is_empty() && self.send_cache.is_empty()
+    }
+
+    /// Begin sending a reliable message over this socket.
+    pub fn begin_send_msg(&mut self, socket: &mut UdpSocket, msg: &[u8]) -> Result<(), NetError> {
+        // make sure all reliable messages have been ACKed in their entirety
+        if !self.send_queue.is_empty() {
+            return Err(NetError::with_msg(
+                "begin_send_msg: previous message unacknowledged",
+            ));
+        }
+
+        // empty messages are an error
+        if msg.len() == 0 {
+            return Err(NetError::with_msg(
+                "begin_send_msg: Input data has zero length",
+            ));
+        }
+
+        // check upper message length bound
+        if msg.len() > MAX_MESSAGE {
+            return Err(NetError::with_msg(
+                "begin_send_msg: Input data exceeds MAX_MESSAGE",
+            ));
+        }
+
+        // split the message into chunks and enqueue them
+        for chunk in msg.chunks(MAX_DATAGRAM) {
+            self.send_queue
+                .push_back(chunk.to_owned().into_boxed_slice());
+        }
+
+        // send the first chunk
+        self.send_msg_next(socket)?;
+
+        Ok(())
+    }
+
+    /// Resend the last reliable message packet.
+    pub fn resend_msg(&mut self,  socket:&mut UdpSocket) -> Result<(), NetError> {
+        if self.send_cache.is_empty() {
+            Err(NetError::with_msg("Attempted resend with empty send cache"))
+        } else {
+            socket.send_to(&self.send_cache, self.remote)?;
+            self.resend_count += 1;
+
+            Ok(())
+        }
+    }
+
+    /// Send the next segment of a reliable message.
+    pub fn send_msg_next(&mut self, socket:&mut UdpSocket) -> Result<(), NetError> {
+        // grab the first chunk in the queue
+        let content = self
+            .send_queue
+            .pop_front()
+            .expect("Send queue is empty (this is a bug)");
+
+        // if this was the last chunk, set the EOM flag
+        let msg_kind = match self.send_queue.is_empty() {
+            true => MsgKind::ReliableEom, //end of message 
+            false => MsgKind::Reliable,
+        };
+
+        // compose the packet
+        let mut compose = Vec::with_capacity(MAX_PACKET);
+        compose.write_u16::<NetworkEndian>(msg_kind as u16)?;
+        compose.write_u16::<NetworkEndian>((HEADER_SIZE + content.len()) as u16)?;
+        compose.write_u32::<NetworkEndian>(self.send_sequence)?;
+        compose.write_all(&content)?;
+
+        // store packet to send cache
+        self.send_cache = compose.into_boxed_slice();
+
+        // increment send sequence
+        self.send_sequence += 1;
+
+        // send the composed packet
+        socket.send_to(&self.send_cache, self.remote)?;
+
+        // TODO: update send time
+        // bump send count
+        self.send_count += 1;
+
+        // don't send the next chunk until this one gets ACKed
+        self.send_next = false;
+
+        Ok(())
+    }
+
+
+    pub fn send_msg_unreliable(&mut self,  socket:&mut UdpSocket, content: &[u8]) -> Result<(), NetError> {
+        if content.len() == 0 {
+            return Err(NetError::with_msg("Unreliable message has zero length"));
+        }
+
+        if content.len() > MAX_DATAGRAM {
+            return Err(NetError::with_msg(
+                "Unreliable message length exceeds MAX_DATAGRAM",
+            ));
+        }
+
+        let packet_len = HEADER_SIZE + content.len();
+
+        // compose the packet
+        let mut packet = Vec::with_capacity(MAX_PACKET);
+        packet.write_u16::<NetworkEndian>(MsgKind::Unreliable as u16)?;
+        packet.write_u16::<NetworkEndian>(packet_len as u16)?;
+        packet.write_u32::<NetworkEndian>(self.unreliable_send_sequence)?;
+        packet.write_all(content)?;
+
+        // increment unreliable send sequence
+        self.unreliable_send_sequence += 1;
+
+        // send the message
+        socket.send_to(&packet, self.remote)?;
+
+        // bump send count
+        self.send_count += 1;
+
+        Ok(())
+    }
+
+
+    pub fn update(&mut self , socket: &mut UdpSocket) -> Result<(),NetError> {
+
+        if self.send_next {
+            self.send_msg_next(socket)?;
+
+        }
+
+        Ok(())
+        
+    }
+
+    pub fn send_server_cmd(&mut self, socket: &mut UdpSocket, serverCmd:ServerCmd   )  -> Result<(),NetError> { 
+
+        
+        let mut packet = Vec::new();
+        serverCmd.serialize(&mut packet).unwrap();
+        let msg_sent = self.begin_send_msg( socket, packet.as_slice());
+        return msg_sent;
+    }
+    
+
+
+}
+
+/// A socket that listens for new connections or queries.
+/// 
+/// maybe extend this on top of qsocket ? 
+pub struct ConnectListener {
+     pub socket: UdpSocket, 
+
+    unreliable_send_sequence: u32,
+    unreliable_recv_sequence: u32,
+
+    send_count:usize, 
+
 }
 
 impl ConnectListener {
@@ -567,13 +774,16 @@ impl ConnectListener {
         let socket = UdpSocket::bind(addr)?;
 
         Ok(ConnectListener { 
-            socket,
-            unreliable_send_sequence:0,
-            send_count:0
-        
+            socket, 
+            
+          unreliable_send_sequence: 0,
+            unreliable_recv_sequence: 0,
+            send_count: 0,
         })
     }
  
+    
+
 
     /// Receives a request and returns it along with its remote address.
     pub fn recv_request(&self) -> Result<(Request, SocketAddr), NetError> {
@@ -646,6 +856,15 @@ impl ConnectListener {
             }
         };
 
+
+
+
+
+        //if got an ACK from a client, send to proper q sock so it knows 
+
+
+
+
         Ok((request, remote))
     }
 
@@ -654,16 +873,6 @@ impl ConnectListener {
         Ok(())
     }
 
-
-    pub fn send_server_cmd_to(&mut self, serverCmd:ServerCmd,   socket_addr: SocketAddr   )  -> Result<(),NetError> { 
-
-        
-        let mut packet = Vec::new();
-        serverCmd.serialize(&mut packet).unwrap();
-        let msg_sent = self.send_msg_unreliable_to( packet.as_slice() , socket_addr );
-        return msg_sent;
-    }
-    
 
     //need a way to broadcast this too 
     pub fn send_fast_update(&mut self  ) -> Result<(),NetError>{
@@ -692,45 +901,15 @@ impl ConnectListener {
         serverInfoCmd.serialize(&mut packet).unwrap();
         let msg_sent = self.send_msg_unreliable_multicast( packet.as_slice()   );
         return msg_sent;
+    
+    
     }
 
 
     //the server version of QSocket
     // https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
 
-    pub fn send_msg_unreliable_to(&mut self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
-
-        if content.len() == 0 {
-            return Err(NetError::with_msg("Unreliable message has zero length"));
-        }
-
-        if content.len() > MAX_DATAGRAM {
-            return Err(NetError::with_msg(
-                "Unreliable message length exceeds MAX_DATAGRAM",
-            ));
-        }
-
-        let packet_len = HEADER_SIZE + content.len();
-
-        // compose the packet
-        let mut packet = Vec::with_capacity(MAX_PACKET);
-        packet.write_u16::<NetworkEndian>(MsgKind::Unreliable as u16)?;
-        packet.write_u16::<NetworkEndian>(packet_len as u16)?;
-        packet.write_u32::<NetworkEndian>(self.unreliable_send_sequence)?;
-        packet.write_all(content)?;
-
-        // increment unreliable send sequence
-        self.unreliable_send_sequence += 1;
-
-        // send the message
-        self.socket.send_to(&packet, socket_addr)?;
-
-        // bump send count
-        self.send_count += 1;
-
-        Ok(())
-
-    }
+    
 
     pub fn send_msg_unreliable_multicast(&mut self,  content: &[u8] ) -> Result<(),NetError>{
 
@@ -756,6 +935,7 @@ impl ConnectListener {
         // increment unreliable send sequence
         self.unreliable_send_sequence += 1;
 
+        println!("send_msg_unreliable_multicast");
         // send the message
         self.socket.send(&packet)?;
 

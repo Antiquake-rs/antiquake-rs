@@ -23,10 +23,35 @@ cargo run --debug --bin quake-client
 gfx pipelines yay!!!
 
 
+
 #### Next Steps 
+- support netquake 
 - be able to load a map  by spinning up a local server on port 27500 
 - clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
+
+
+Server needs to be using the msg_send cache with reliable packet stream 
+Client needs to be sending 'MsgKind::Ack '
+
+        //if got an ACK from a client, send to proper q sock so it knows 
+
+        client's  pub fn recv_msg(&mut self, block: BlockingMode has ack 
+
+        servers does not 
+
+        also there is a recv buffer !
+        
+
+
+
+
+https://fabiensanglard.net/quakeSource/quakeSourceNetWork.php
+
+
+need clients 'self.entities' to be populates !!
+
+-fix client state.rs >  fn update_listener , fn calc_final_view
 
 - need this to fire :  ServerCmd::FastUpdate(ent_update) => { 
 

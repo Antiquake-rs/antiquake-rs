@@ -239,6 +239,8 @@ impl Connection {
     ) -> Result<(), ClientError> {
         use SignOnStage::*;
 
+        println!("client handle_signon");
+
         let new_conn_state = match self.conn_state {
             // TODO: validate stage transition
             ConnectionState::SignOn(ref mut _stage) => {
@@ -319,8 +321,8 @@ impl Connection {
     ) -> Result<ConnectionStatus, ClientError> {
         use ConnectionStatus::*;
 
-
-        println!("client listening on qsock");
+ 
+        println!("client parsing server msg ");
 
         let (msg, demo_view_angles, track_override) = match self.kind {
             ConnectionKind::Server { ref mut qsock, .. } => {
@@ -330,6 +332,7 @@ impl Connection {
 
                     // otherwise, give the server some time to respond
                     // TODO: might make sense to make this a future or something
+                    //this is why the game window seems laggy while loading in 
                     ConnectionState::SignOn(_) => BlockingMode::Timeout(Duration::seconds(5)),
                 })?;
 
@@ -381,10 +384,13 @@ impl Connection {
 
         // no data available at this time
         if msg.is_empty() {
+            println!("msg from server was empty");
             return Ok(Maintain);
         }
 
         let mut reader = BufReader::new(msg.as_slice());
+
+        println!("msg from server was Some");
 
         while let Some(cmd) = ServerCmd::deserialize(&mut reader)? {
 
@@ -434,7 +440,7 @@ impl Connection {
 
                 ServerCmd::FastUpdate(ent_update) => {
 
-                    println!("got first update - handling sinon");
+                    println!("got fast update - handling sinon");
 
                     // first update signals the last sign-on stage
                     self.handle_signon(SignOnStage::Done, gfx_state)?;

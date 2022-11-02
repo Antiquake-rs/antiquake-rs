@@ -1877,7 +1877,7 @@ impl ServerCmd {
             ServerCmd::FastUpdate(_) => {
 
 
-                println!("performing fast update");
+                println!("serializing fast update");
 
 
                 //there is some other fast update code somewhere ... 
@@ -2135,7 +2135,7 @@ impl QSocket {
 
         // if this was the last chunk, set the EOM flag
         let msg_kind = match self.send_queue.is_empty() {
-            true => MsgKind::ReliableEom,
+            true => MsgKind::ReliableEom, //end of message 
             false => MsgKind::Reliable,
         };
 
