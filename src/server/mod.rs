@@ -156,7 +156,7 @@ impl ClientSlots {
         ClientSlots { slots, limit }
     }
 
-    pub fn add_client(&self, socket_addr:SocketAddr, privileged:bool) -> Result<usize, NetError>  { 
+    pub fn add_client(&mut self, socket_addr:SocketAddr, privileged:bool) -> Result<usize, NetError>  { 
  
         let client_id_result = self.find_next_available_slot_id();
 
@@ -279,7 +279,7 @@ impl GameServer {
     
             server_session: Session::new( max_clients ),
 
-            serverConnectionListener:   ConnectListener::bind( addr ).unwrap() 
+            serverConnectionListener 
         })
     }
 
@@ -335,7 +335,7 @@ impl GameServer {
 
 
     //this should now own the reference to self 
-    pub fn start( self )   {
+    pub fn start( &mut self )   {
  
             
                 //do this in a new thread  
@@ -391,7 +391,7 @@ impl GameServer {
     }
 
 
-    fn register_new_client( &self, socketAddr: SocketAddr ){
+    fn register_new_client( &mut self, socketAddr: SocketAddr ){
         println!(" Registering new client {}",  socketAddr  );
 
 
@@ -407,8 +407,8 @@ impl GameServer {
 
 
          
-
-        self.server_session.persist.client_slots.add_client( socketAddr , true );
+        let persist =  &mut self.server_session.persist;
+        let add_client_result = persist.client_slots.add_client( socketAddr , true );
 
         //only 1 use of each socket addr permitted .
         
@@ -439,7 +439,7 @@ impl GameServer {
     }
 
 
-    fn process_request( &self, request:Request,socketAddr: SocketAddr  ) -> Result<Response, NetError>  {
+    fn process_request( &mut self, request:Request,socketAddr: SocketAddr  ) -> Result<Response, NetError>  {
 
         println!("Server received request: {}", request.to_string());
 

@@ -658,7 +658,7 @@ impl ConnectListener {
     //the server version of QSocket
     // https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
 
-    pub fn send_msg_unreliable_to(&self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
+    pub fn send_msg_unreliable_to(&mut self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
 
         if content.len() == 0 {
             return Err(NetError::with_msg("Unreliable message has zero length"));

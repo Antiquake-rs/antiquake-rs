@@ -497,6 +497,10 @@ impl Connection {
                     model_precache,
                     sound_precache,
                 } => {
+
+                    //this is the gold mine we need 
+                    println!("CLIENT PROCESSING SERVERCMD::SERVERINFO");
+
                     // check protocol version
                     if protocol_version != net::PROTOCOL_VERSION as i32 {
                         Err(ClientError::UnrecognizedProtocol(protocol_version))?;
@@ -759,6 +763,9 @@ impl Connection {
                 }
             }
         }
+
+
+        println!("Client has loaded map");
 
         Ok(Maintain)
     }
