@@ -40,7 +40,7 @@ gfx pipelines yay!!!
 Associating a remote address with a socket is fine clientside, but serverside it doesn't make sense.
 
 https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to
-
+Reference the real quake server code : https://github.com/id-Software/Quake/blob/master/QW/server/sv_main.c
 
 
 
