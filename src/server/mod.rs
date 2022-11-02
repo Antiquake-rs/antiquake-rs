@@ -50,7 +50,7 @@ use crate::{
         default_base_dir,
         net::{
             self, NetError, ServerCmd,  GameType,  SignOnStage,
-            connect::{ConnectSocket,ConnectListener,ServerQSocket, Request, Response, ResponseServerInfo, ResponseAccept},
+            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, Request, Response, ResponseServerInfo, ResponseAccept},
             
         }, 
         util::read_f32_3, 
@@ -247,10 +247,9 @@ pub struct GameServer {
     protocol_version: u8,
     port: u32,
 
-    serverConnectionListener: ConnectListener, 
+    serverConnectionManager: ServerConnectionManager, 
 
-    serverQSockets: HashMap<usize, ServerQSocket> ,
- 
+   
     server_session: Session // may not exist yet  
 
 
@@ -268,7 +267,7 @@ impl GameServer {
         
         println!("Starting server on port 27500");
         let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
-        let mut serverConnectionListener = ConnectListener::bind( addr ).unwrap();
+        let mut serverConnectionManager = ServerConnectionManager::bind( addr ).unwrap();
 
 
 
@@ -282,9 +281,8 @@ impl GameServer {
     
             server_session: Session::new( max_clients ),
 
-            serverConnectionListener ,
+            serverConnectionManager 
 
-            serverQSockets: HashMap::with_capacity(max_clients )
         })
     }
 

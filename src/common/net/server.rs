@@ -51,6 +51,9 @@ pub const CONNECT_PROTOCOL_VERSION: u8 = 3;
 const CONNECT_CONTROL: i32 = 1 << 31;
 const CONNECT_LENGTH_MASK: i32 = 0x0000FFFF;
 
+/*
+
+
 pub trait ConnectPacket {
     /// Returns the numeric value of this packet's code.
     fn code(&self) -> u8;
@@ -549,7 +552,7 @@ impl ConnectPacket for Response {
         }
     }
 }
-
+*/
 
 
 
@@ -755,8 +758,11 @@ impl ServerQSocket {
 /// A socket that listens for new connections or queries.
 /// 
 /// maybe extend this on top of qsocket ? 
-pub struct ConnectListener {
-     pub socket: UdpSocket, 
+pub struct ServerConnectionManager {
+    pub socket: UdpSocket, //the server only has a single bound UDP socket 
+
+    serverQSockets: HashMap<usize, ServerQSocket> , //hold msg buffers for each client 
+ 
 
     unreliable_send_sequence: u32,
     unreliable_recv_sequence: u32,
@@ -765,7 +771,7 @@ pub struct ConnectListener {
 
 }
 
-impl ConnectListener {
+impl ServerConnectionManager {
     /// Creates a `ConnectListener` from the given address.
     pub fn bind<A>(addr: A) -> Result<ConnectListener, NetError>
     where
@@ -775,10 +781,17 @@ impl ConnectListener {
 
         Ok(ConnectListener { 
             socket, 
-            
-          unreliable_send_sequence: 0,
+
+            serverQSockets: HashMap::with_capacity(max_clients ),
+
+
+            //counters for multicast stuff 
+            unreliable_send_sequence: 0,
             unreliable_recv_sequence: 0,
             send_count: 0,
+
+
+
         })
     }
  
@@ -867,6 +880,15 @@ impl ConnectListener {
 
         Ok((request, remote))
     }
+
+
+    
+    pub fn recv_msg(&mut self, block: BlockingMode) -> Result<Vec<u8>, NetError> {
+
+    }
+
+
+
 
     pub fn send_response(&self, response: Response, remote: SocketAddr) -> Result<(), NetError> {
         self.socket.send_to(&response.to_bytes()?, remote)?;
