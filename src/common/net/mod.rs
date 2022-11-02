@@ -1486,9 +1486,9 @@ impl ServerCmd {
                     no_lerp: true,
         
 
-                }
+                };
 
-                ServerCmd::FastUpdate(ent),
+                ServerCmd::FastUpdate(entity_update) 
 
              }
              

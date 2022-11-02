@@ -28,7 +28,12 @@ gfx pipelines yay!!!
 - clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
 
-thread '<unnamed>' panicked at 'called `Result::unwrap()` on an `Err` value: Io(Os { code: 10048, kind: AddrInUse, message: "Only one usage of each socket address (protocol/network address/port) is normally permitted." })', src\server\mod.rs:283:82
+- need this to fire :  ServerCmd::FastUpdate(ent_update) => { 
+
+    src/client/mod 430 
+
+
+ 
 
 
 #### NETWORKING 

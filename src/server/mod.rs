@@ -58,6 +58,7 @@ use crate::{
     server::{
         progs::{functions::FunctionKind, GlobalAddrFunction},
         world::{FieldAddrEntityId, FieldAddrVector, MoveKind},
+        net::{ ServerCmdCode::SignOnStage }
     },
 };
 
@@ -362,8 +363,7 @@ impl GameServer {
                                 },
                                 Err(_) =>  { info!("NetError -- got bad packet from client");}
 
-                            }
-
+                            } 
                         
 
                             continue;
@@ -375,7 +375,8 @@ impl GameServer {
 
                     }
 
- 
+                  
+
 
 
                     //update -- run ECS system and send messages to all clients as needed 
@@ -411,13 +412,23 @@ impl GameServer {
         };   
  
   
-        let send_result =  self.serverConnectionListener.send_server_info_to( ,serverInfoCmd  socketAddr  )  
+        let send_result =  self.serverConnectionListener.send_server_cmd_to(  serverInfoCmd ,  socketAddr  );  
+
         
+    /* 
+        pub enum SignOnStage {
+            Not = 0,
+            Prespawn = 1,
+            ClientInfo = 2,
+            Begin = 3,
+            Done = 4,
+        }*/
+
+
+        //send a bunch of these
+       // let signOnStageCmd = ServerCmd::SignOnStage({stage:SignOnStage::ClientInfo}) ;
  
-
-
-
-        let send_fast_updateresult =  self.serverConnectionListener.send_fast_update(   );
+       // let signon_first =  self.serverConnectionListener.send_server_cmd_to(  serverInfoCmd ,  socketAddr  );  
 
         
 
@@ -484,11 +495,11 @@ impl GameServer {
     
 
 
-    fn update( &self ){
+    fn update( &mut self ){
 
         println!("server is updating");
 
-
+        let send_fast_updateresult =  self.serverConnectionListener.send_fast_update(   );
         //do stuff for each registered client    like tell them toload map 
 
     }

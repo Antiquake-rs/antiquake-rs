@@ -37,7 +37,7 @@ use std::{
 
 
 use crate::common::{
-    net::{MsgKind, NetError, QSocket, MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
+    net::{MsgKind, NetError, QSocket,ServerCmd,EntityUpdate, MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
     util,
 };
 
@@ -655,43 +655,43 @@ impl ConnectListener {
     }
 
 
-    pub fn send_server_info_to(&self, serverInfoCmd:ServerCmd::ServerInfo,   socket_addr: SocketAddr   ){ 
+    pub fn send_server_cmd_to(&mut self, serverCmd:ServerCmd,   socket_addr: SocketAddr   )  -> Result<(),NetError> { 
 
         
         let mut packet = Vec::new();
-        serverInfoCmd.serialize(&mut packet).unwrap();
-        send_msg_unreliable_to( packet.as_slice() , socket_addr );
-
+        serverCmd.serialize(&mut packet).unwrap();
+        let msg_sent = self.send_msg_unreliable_to( packet.as_slice() , socket_addr );
+        return msg_sent;
     }
     
 
     //need a way to broadcast this too 
-    pub fn send_fast_update(&self  ){
+    pub fn send_fast_update(&mut self  ) -> Result<(),NetError>{
 
         let entity_update = EntityUpdate {
 
             ent_id: 0, //for now 
-            pub model_id: None,
-            pub frame_id: None,
-            pub colormap: None,
-            pub skin_id: None,
-            pub effects: None,
-            pub origin_x: None,
-            pub pitch: None,
-            pub origin_y: None,
-            pub yaw: None,
-            pub origin_z: None,
-            pub roll: None,
-            pub no_lerp: bool,
+            model_id: None,
+            frame_id: None,
+            colormap: None,
+            skin_id: None,
+            effects: None,
+            origin_x: None,
+            pitch: None,
+            origin_y: None,
+            yaw: None,
+            origin_z: None,
+            roll: None,
+            no_lerp: true,
 
         };
 
-        let serverInfoCmd = ServerCmd::FastUpdate(entity_update) 
+        let serverInfoCmd = ServerCmd::FastUpdate(entity_update);
  
         let mut packet = Vec::new();
         serverInfoCmd.serialize(&mut packet).unwrap();
-        send_msg_unreliable( packet.as_slice()   );
-
+        let msg_sent = self.send_msg_unreliable_multicast( packet.as_slice()   );
+        return msg_sent;
     }
 
 
@@ -732,7 +732,7 @@ impl ConnectListener {
 
     }
 
-    pub fn send_msg_unreliable_multicast(&mut self,  content: &[u8] , socket_addr: SocketAddr) -> Result<(),NetError>{
+    pub fn send_msg_unreliable_multicast(&mut self,  content: &[u8] ) -> Result<(),NetError>{
 
         if content.len() == 0 {
             return Err(NetError::with_msg("Unreliable message has zero length"));
