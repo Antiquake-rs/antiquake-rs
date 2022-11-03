@@ -358,6 +358,7 @@ impl GameServer {
                         Ok((msg, specialServerAction)) =>  {
 
 
+                            //ultimately,  should just put the specialaction encoded into the 'msg' and deserialize it in here 
                             match specialServerAction {
                                 Some(action) => {
 
@@ -369,10 +370,12 @@ impl GameServer {
                             }
 
                             if(!msg.is_empty()){
+                                println!("Server is about to deserialize a message from a connected client {:02X?}", msg.clone().as_slice() );
+
+
                                 let mut reader = BufReader::new(msg.as_slice());
 
-
-
+                               
                                 //deserialize the msg and handle it !
 
 

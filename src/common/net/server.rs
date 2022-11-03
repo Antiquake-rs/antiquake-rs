@@ -984,6 +984,8 @@ impl ServerConnectionManager {
           let mut reader = BufReader::new(&self.recv_buf[..packet_len]);
 
 
+          //All packets start with a 4-byte header. The first 2 bytes is the packet type. The next 2 bytes is the packet length, including the header. 
+
           let msg_kind_code = reader.read_u16::<NetworkEndian>()?;
           let msg_kind = match MsgKind::from_u16(msg_kind_code) {
               Some(f) => f,
@@ -1021,10 +1023,7 @@ impl ServerConnectionManager {
 
           } else {
               sequence = 0;
-
-
-              //is this right ? what is in here 
-             // control = reader.read_i16::<NetworkEndian>()?;
+             //dont need to do anything.  
           }
 
 
@@ -1054,9 +1053,7 @@ impl ServerConnectionManager {
                     }
                 };
 
-
-                println!(  "Server processing ctl msg ! {} ", request_code  );
-
+ 
                 let server_action_result =  self.handle_control_request(&mut reader, request_code, remote );
                 
                 match server_action_result {
@@ -1073,6 +1070,10 @@ impl ServerConnectionManager {
             //non-ctl messages are processed by the qsocket we are maintaining for that client!! 
             _ => {
 
+
+                println!("Server handling non- ctl message ! ");
+
+                
                 let client_id_result = self.get_client_id_from_address( remote );
  
                 match client_id_result {
