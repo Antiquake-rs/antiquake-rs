@@ -360,6 +360,8 @@ impl GameServer {
 
                             match specialServerAction {
                                 Some(action) => {
+
+                                        println!("Server doing  special action ");
                                        let process_result = self.process_special_server_action(action); 
                                      
                                 }

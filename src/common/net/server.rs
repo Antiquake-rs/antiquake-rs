@@ -97,6 +97,18 @@ pub trait ConnectPacket {
     }
 }
 
+
+
+
+impl fmt::Display for RequestCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
+}
+
+
 #[derive(Debug, FromPrimitive)]
 pub enum RequestCode {
     Connect = 1,
@@ -619,7 +631,7 @@ impl ServerQSocket {
     */
     pub fn handle_client_msg( &mut self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence: u32, msg: &mut Vec<u8>,  msg_kind:MsgKind , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
-        println!("Sever QSocket handle client msg");
+        println!("Server QSocket handle client msg");
 
         match msg_kind {
 
@@ -984,40 +996,56 @@ impl ServerConnectionManager {
           };
 
 
-          if packet_len < HEADER_SIZE {
-            // TODO: increment short packet count
-            debug!("short packet");
-            continue;
-          }
-
-          let field_len = reader.read_u16::<NetworkEndian>()?;
-          if field_len as usize != packet_len {
-              return Err(NetError::InvalidData(format!(
-                  "Length field and actual length differ ({} != {})",
-                  field_len, packet_len
-              )));
-          }
+        
 
           let sequence;
-          let control :i32; 
+          let control :i16; 
           if msg_kind != MsgKind::Ctl {
               sequence = reader.read_u32::<NetworkEndian>()?;
               control = 0;
+
+              if packet_len < HEADER_SIZE {
+                // TODO: increment short packet count
+                debug!("short packet");
+                continue;
+              }
+    
+              let field_len = reader.read_u16::<NetworkEndian>()?;
+              if field_len as usize != packet_len {
+                  return Err(NetError::InvalidData(format!(
+                      "Length field and actual length differ ({} != {})",
+                      field_len, packet_len
+                  )));
+              }
+
           } else {
               sequence = 0;
 
-              control = reader.read_i32::<NetworkEndian>()?;
+
+              //is this right ? what is in here 
+              control = reader.read_i16::<NetworkEndian>()?;
           }
 
 
           match msg_kind {
             // handle control messages in this scope since the client is not connected 
             MsgKind::Ctl =>{
+
+                println!( "Server processing ctl msg !"  );
                 
                 let request_byte = reader.read_u8()?;
                 let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
                     Some(r) => r,
                     None => {
+
+
+                        println!(
+                           
+                                "error with request code {}",
+                                request_byte
+                             
+
+                        );
                         return Err(NetError::InvalidData(format!(
                             "request code {}",
                             request_byte
@@ -1025,10 +1053,15 @@ impl ServerConnectionManager {
                     }
                 };
 
+
+                println!(  "Server processing ctl msg ! {} ", request_code  );
+
                 let server_action_result =  self.handle_control_request(&mut reader, request_code, remote );
                 
                 match server_action_result {
                     Ok(server_action) => {
+
+                        
                         return Ok( (msg, server_action) ) 
                     }
                     Err(e) => return Err( e )
@@ -1047,21 +1080,47 @@ impl ServerConnectionManager {
 
                         //we do this to ultimately build the msg  vec<u8> 
 
-                        let control_flow_result = &mut self
+                       /*  let control_flow_result = self
                         .handle_connected_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind, client_id, &self.socket);
-                        
-                        match control_flow_result {
+                            */
 
-                           Ok(control_flow) => {
-                             match control_flow {
 
-                                SocketReadControlFlow::ReadMore => { continue; } //append more to msg (the mut vec)
-                                SocketReadControlFlow::FinishReading => { break; } // break out -- we have built the msg fully now -- time to parse it !  
-    
-                            }}
-                            Err(_) => return Err(NetError::Other(format!("Could not build msg using udp socket read")))
+                        //put this into a subroutine ?? 
 
+                        let client_q_socket = self.serverQSockets.get_mut(&client_id); 
+
+                        match client_q_socket {
+                            Some( q_socket) => {
+
+                                let socket = &self.socket; 
+                
+                                let control_flow_result= q_socket.handle_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind , socket);
+                
+                               // return Ok(None)
+
+                               match control_flow_result {
+
+                                Ok(control_flow) => {
+                                  match control_flow {
+     
+                                     SocketReadControlFlow::ReadMore => { continue; } //append more to msg (the mut vec)
+                                     SocketReadControlFlow::FinishReading => { break; } // break out -- we have built the msg fully now -- time to parse it !  
+         
+                                 }}
+                                 Err(_) => return Err(NetError::Other(format!("Could not build msg using udp socket read")))
+     
+                             }
+
+                            }
+                            None =>   return Err(NetError::Other(format!("error handling connected client msg - could not get their q socket ")))
+                
                         }
+                
+                        //return Err(NetError::Other(format!("error handling connected client msg ")))
+
+
+
+                    
                        
 
                     },
@@ -1145,8 +1204,8 @@ impl ServerConnectionManager {
     }
 
 
-
-    fn handle_connected_client_msg(&mut self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence:u32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32 , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
+/*
+    fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence:u32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32 , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
       
 
@@ -1168,7 +1227,7 @@ impl ServerConnectionManager {
 
         //figure out the client id -- figure out the qsocket to use 
 
-    }
+    }*/
 
 
     pub fn send_response(&self, response: Response, remote: SocketAddr) -> Result<(), NetError> {
@@ -1192,9 +1251,11 @@ impl ServerConnectionManager {
 
 
 
-    pub fn get_client_id_from_address(&self,socket_addr:SocketAddr) -> Option<&i32> {
+    pub fn get_client_id_from_address(&self,socket_addr:SocketAddr) -> Option<i32> {
 
-        return self.clientRemoteAddrs.get(&socket_addr);
+        let result = self.clientRemoteAddrs.get(&socket_addr).copied();
+
+       return result ;
 
     }
 
