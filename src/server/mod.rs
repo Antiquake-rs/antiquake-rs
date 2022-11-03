@@ -351,8 +351,27 @@ impl GameServer {
                 //recv_request
                 loop {
                     //make sure this is not blocking ? 
-                    let recvMsgResult = self.serverConnectionManager.recv_msg(); 
+                    let msg_result  = self.serverConnectionManager.recv_msg(); 
 
+                    let msg = match msg_result {
+
+                        Ok(msg) => msg ,
+                        NetError => { println!("Net error reading packet ")  } 
+
+                    }?;
+
+
+                    let mut reader = BufReader::new(msg.as_slice());
+
+                    //deserialize it ! 
+
+                    //if its a control packet we do something ! 
+                    //  while let Some(cmd) = ServerCmd::deserialize(&mut reader)? {
+
+          
+                        
+
+                    /* 
                     match recvMsgResult {
                         Ok(specialServerAction)=>{
 
@@ -379,6 +398,9 @@ impl GameServer {
                         }
                     }
 
+
+
+                    */
                    
                   
 

@@ -604,6 +604,121 @@ impl ServerQSocket {
     }
 
 
+    /*
+
+    what is the client sending us after they connect? 
+
+    do they ask for serverinfo ?
+     
+    look in the client code 
+
+    then what are they sending us after we give them client info ? 
+
+    there should be back and forth back and forth 
+    
+    */
+    pub fn handle_client_msg( &self,  reader:&mut BufReader<&[u8]>, len:usize, sequence: i32, msg: &mut Vec<u8>,  msg_kind:MsgKind , socket: UdpSocket ) -> Result<ControlFlow, NerError> {
+
+        println!("Sever QSocket handle client msg");
+
+        match msg_kind {
+
+            MsgKind::Ctl => { /* do nothing as this is invalid  */  }
+
+            MsgKind::Unreliable => {
+                // we've received a newer datagram, ignore
+                if sequence < self.unreliable_recv_sequence {
+                    println!("Stale datagram with sequence # {}", sequence);
+                  //  break;
+                    return Ok(ControlFlow::FinishReading)
+                }
+
+                // we've skipped some datagrams, count them as dropped
+                if sequence > self.unreliable_recv_sequence {
+                    let drop_count = sequence - self.unreliable_recv_sequence;
+                    println!(
+                        "Dropped {} packet(s) ({} -> {})",
+                        drop_count, sequence, self.unreliable_recv_sequence
+                    );
+                }
+
+                self.unreliable_recv_sequence = sequence + 1;
+
+                // copy the rest of the packet into the message buffer and return
+                reader.read_to_end(&mut msg)?;
+
+                return Ok(ControlFlow::FinishReading)
+               // return Ok(msg);
+            }
+
+            MsgKind::Ack => {
+                if sequence != self.send_sequence - 1 {
+                    println!("Stale ACK received");
+                  
+                } else if sequence != self.ack_sequence {
+                    println!("Duplicate ACK received");
+                    
+                } else {
+                    self.ack_sequence += 1;
+                    if self.ack_sequence != self.send_sequence {
+                        return Err(NetError::with_msg("ACK sequencing error"));
+                    }
+
+                    // our last reliable message has been acked
+                    if self.send_queue.is_empty() {
+                        // the whole message is through, clear the send cache
+                        self.send_cache = Box::new([]);
+                    } else {
+                        // send the next chunk before returning
+                        self.send_next = true;
+                    }
+
+                    
+                }
+
+
+                //is this right??? 
+                return Ok(ControlFlow::FinishReading)
+            }
+
+            // TODO: once we start reading a reliable message, don't allow other packets until
+            // we have the whole thing
+            MsgKind::Reliable | MsgKind::ReliableEom => {
+                // send ack message and increment self.recv_sequence
+                let mut ack_buf: [u8; HEADER_SIZE] = [0; HEADER_SIZE];
+                let mut ack_curs = Cursor::new(&mut ack_buf[..]);
+                ack_curs.write_u16::<NetworkEndian>(MsgKind::Ack as u16)?;
+                ack_curs.write_u16::<NetworkEndian>(HEADER_SIZE as u16)?;
+                ack_curs.write_u32::<NetworkEndian>(sequence)?;
+                self.socket.send_to(ack_curs.into_inner(), remote)?;
+
+                // if this was a duplicate, drop it
+                if sequence != self.recv_sequence {
+                    println!("Duplicate message received");
+                  //  continue;
+                    return Ok(ControlFlow::ReadMore)
+                }
+
+                self.recv_sequence += 1;
+                reader.read_to_end(&mut msg)?;
+
+                // if this is the last chunk of a reliable message, break out and return
+                if msg_kind == MsgKind::ReliableEom {
+                  //  break;
+                  return Ok(ControlFlow::FinishReading)
+                }
+
+                return Ok(ControlFlow::ReadMore)
+            }
+
+        }
+
+
+      
+
+
+    }
+
 
     pub fn can_send(&self) -> bool {
         self.send_queue.is_empty() && self.send_cache.is_empty()
@@ -819,79 +934,140 @@ impl ServerConnectionManager {
     
 
 
+    pub enum SocketReadControlFlow {
+
+        ReadMore,
+        FinishReading
+
+    }
+
+
+
     //the server keeps calling this which pops data off of its udp sockets buffer 
-    pub fn recv_msg(&self) -> Result<Option<SpecialServerAction>,NetError> {
+    pub fn recv_msg(&self) -> Result<(Vec<u8>, Option<SpecialServerAction>) ,NetError> {
+
+        let mut msg = Vec::new();
 
 
-        let mut recv_buf = [0u8; MAX_MESSAGE];
-        let (len, remote) = self.socket.recv_from(&mut recv_buf)?;
-        let mut reader = BufReader::new(&recv_buf[..len]);
-
-        let control = reader.read_i32::<NetworkEndian>()?;
-
-        // TODO: figure out what a control value of -1 means
-        if control == -1 {
-            return Err(NetError::with_msg("Control value is -1"));
-        }
+        loop {
+      
+          let (len, remote) = self.socket.recv_from(&mut recv_buf)?;
+          let mut reader = BufReader::new(&recv_buf[..len]);
 
 
-        let is_connect_request_packet = ((control & !CONNECT_LENGTH_MASK) == CONNECT_CONTROL); 
+          let msg_kind_code = reader.read_u16::<NetworkEndian>()?;
+          let msg_kind = match MsgKind::from_u16(msg_kind_code) {
+              Some(f) => f,
+              None => {
+                  return Err(NetError::InvalidData(format!(
+                      "Invalid message kind: {}",
+                      msg_kind_code
+                  )))
+              }
+          };
 
 
-        if(is_connect_request_packet == true){
+          if packet_len < HEADER_SIZE {
+            // TODO: increment short packet count
+            debug!("short packet");
+            continue;
+          }
 
-            // high 4 bits must be 0x8000 (CONNECT_CONTROL)
-            if control & !CONNECT_LENGTH_MASK != CONNECT_CONTROL {
-                return Err(NetError::InvalidData(format!(
-                    "control value {:X}",
-                    control & !CONNECT_LENGTH_MASK
-                )));
+          let field_len = reader.read_u16::<NetworkEndian>()?;
+          if field_len as usize != packet_len {
+              return Err(NetError::InvalidData(format!(
+                  "Length field and actual length differ ({} != {})",
+                  field_len, packet_len
+              )));
+          }
+
+          let sequence;
+          let control :i32; 
+          if msg_kind != MsgKind::Ctl {
+              sequence = reader.read_u32::<NetworkEndian>()?;
+              control = 0;
+          } else {
+              sequence = 0;
+
+              control = reader.read_i32::<NetworkEndian>()?;
+          }
+
+
+
+
+          match msg_kind {
+            // handle control messages in this scope since the client is not connected 
+            MsgKind::Ctl =>{
+                
+                let request_byte = reader.read_u8()?;
+                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
+                    Some(r) => r,
+                    None => {
+                        return Err(NetError::InvalidData(format!(
+                            "request code {}",
+                            request_byte
+                        )))
+                    }
+                };
+
+                let server_action_result =  self.handle_control_request(&mut reader, request_code, remote )
+                
+                match server_action_result {
+                    Ok(server_action) => {
+                        return Ok( (msg, server_action) ) 
+                    }
+                    Err(e) => return Err( e )
+                }
+               
             }
 
-            // low 4 bits must be total length of packet
-            let control_len = (control & CONNECT_LENGTH_MASK) as usize;
-            if control_len != len {
-                return Err(NetError::InvalidData(format!(
-                    "Actual packet length ({}) differs from header value ({})",
-                    len, control_len,
-                )));
+            //non-ctl messages are processed by that clients socket !! 
+            _ => {
+
+                let client_id_result = self.get_client_id_from_address( remote );
+ 
+                match client_id_result {
+                    Some(client_id) => {
+                       /* let handle_result = self
+                        .handle_connected_client_msg(&mut reader, len, msg_kind, sequence,  client_id);
+                        
+                        return handle_result*/ 
+
+
+                        let control_flow = self
+                        .handle_connected_client_msg(&mut reader, len, &mut msg, msg_kind, sequence,  client_id);
+                    
+
+                        match control_flow {
+
+                            ControlFlow::ReadMore => { continue; } //append more to msg 
+                            ControlFlow::FinishReading => { break; } // break out and do the update loop stuff 
+
+                        }
+
+                    },
+                    None => {Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
+                }
+
             }
-
-            let handle_result = self.handle_connect_request(&mut reader, len, remote);
-            return handle_result
-        }else{
-
 
            
-        //if we get another type of message, the server q socket handles it  ! 
-
-
-        //if got an ACK from a client, send to proper q sock so it knows 
-            let client_id_result = self.get_client_id_from_address( remote );
- 
-            match client_id_result {
-                Some(client_id) => {
-                    let handle_result = self.handle_connected_client_msg(&mut reader, len, client_id);
-                    return handle_result
-                },
-                None => {Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
-            }
-
-
-            
         }
-        //if we see that the packet is a connect request, we handle it in recv_request 
 
 
-        //if we see that it is not a connect request (someone alrdy connected), we send it to the appropriate ServerQSocket to process! 
+        
+        }   //loop 
 
+    
+
+        return Ok((msg, None))
 
     }
 
 
     /// Receives a request and returns it along with its remote address.
-    fn handle_connect_request(&self, reader:&mut BufReader<&[u8]>, len:usize, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
-        println!("Server handle connect request");
+    fn handle_control_request(&self, reader:&mut BufReader<&[u8]>, request_code:RequestCode, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
+        println!("Server handle control request");
         // Original engine receives connection requests in `net_message`,
         // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
        /* let mut recv_buf = [0u8; MAX_MESSAGE];
@@ -903,16 +1079,7 @@ impl ServerConnectionManager {
 
        
         // validate request code
-        let request_byte = reader.read_u8()?;
-        let request_code = match RequestCode::from_u8(request_byte) {
-            Some(r) => r,
-            None => {
-                return Err(NetError::InvalidData(format!(
-                    "request code {}",
-                    request_byte
-                )))
-            }
-        };
+      
 
         ///if its a simple connect request, then we connect 
         let request = match request_code {
@@ -960,9 +1127,22 @@ impl ServerConnectionManager {
 
 
 
-    fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, len:usize, client_id:&i32  ) -> Result<(Option<SpecialServerAction>), NetError> {
+    fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, len:usize, sequence:i32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32  ) -> Result<(Option<SpecialServerAction>), NetError> {
 
-        println!("Server handle client msg");
+      
+
+        let client_q_socket = self.serverQSockets.get(client_id); 
+
+        match client_q_socket {
+            Some(q_socket) => {
+
+                q_socket.handle_client_msg( reader, len, sequence, msg, msg_kind , self.socket);
+
+                Ok(None)
+            }
+            None =>   return Err(NetError::Other(format!("error handling connected client msg - could not get their q socket ")))
+
+        }
 
         Err(NetError::Other(format!("error handling connected client msg ")))
 
