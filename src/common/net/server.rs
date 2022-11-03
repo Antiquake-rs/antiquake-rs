@@ -996,34 +996,35 @@ impl ServerConnectionManager {
           };
 
 
-        
+          if packet_len < HEADER_SIZE {
+            // TODO: increment short packet count
+            debug!("short packet");
+            continue;
+          }
+
+          let field_len = reader.read_u16::<NetworkEndian>()?;
+          if field_len as usize != packet_len {
+              return Err(NetError::InvalidData(format!(
+                  "Length field and actual length differ ({} != {})",
+                  field_len, packet_len
+              )));
+          }
+
 
           let sequence;
-          let control :i16; 
+         // let control :i16; 
           if msg_kind != MsgKind::Ctl {
               sequence = reader.read_u32::<NetworkEndian>()?;
-              control = 0;
+             // control = 0;
 
-              if packet_len < HEADER_SIZE {
-                // TODO: increment short packet count
-                debug!("short packet");
-                continue;
-              }
-    
-              let field_len = reader.read_u16::<NetworkEndian>()?;
-              if field_len as usize != packet_len {
-                  return Err(NetError::InvalidData(format!(
-                      "Length field and actual length differ ({} != {})",
-                      field_len, packet_len
-                  )));
-              }
+            
 
           } else {
               sequence = 0;
 
 
               //is this right ? what is in here 
-              control = reader.read_i16::<NetworkEndian>()?;
+             // control = reader.read_i16::<NetworkEndian>()?;
           }
 
 
