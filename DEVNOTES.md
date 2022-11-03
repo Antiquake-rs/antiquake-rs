@@ -63,6 +63,39 @@ the server expects some specific clc replies at various points.
 then it'll start sending some unreliables mixed with the odd reliable. woo. easy, right?...
 
 
+Connecting...(attempt 2 of 3)
+Server handle connect request
+server is updating
+serializing fast update
+send_msg_unreliable_multicast
+Connecting...(attempt 3 of 3)
+Server handle connect request
+server is updating
+serializing fast update
+send_msg_unreliable_multicast
+Connecting...(attempt 1 of 3)
+Server handle connect request
+Starting server on port 27500
+server is updating
+serializing fast update
+send_msg_unreliable_multicast
+thread '<unnamed>' panicked at 'called `Result::unwrap()` on an `Err` value: Io(Os { code: 98, kind: AddrInUse, message: "Address already in use" })', src/server/mod.rs:270:94
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Connecting...(attempt 2 of 3)
+Server handle connect request
+server is updating
+serializing fast update
+send_msg_unreliable_multicast
+Connecting...(attempt 3 of 3)
+Server handle connect request
+server is updating
+serializing fast update
+send_msg_unreliable_multicast
+
+
+
+
+
 https://fabiensanglard.net/quakeSource/quakeSourceNetWork.php
 
 

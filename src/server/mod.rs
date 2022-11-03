@@ -50,7 +50,7 @@ use crate::{
         default_base_dir,
         net::{
             self, NetError, ServerCmd,  GameType,  SignOnStage,
-            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, Request, Response, ResponseServerInfo, ResponseAccept},
+            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, Request, Response, ResponseServerInfo, ResponseAccept, SpecialServerAction},
             
         }, 
         util::read_f32_3, 
@@ -104,7 +104,7 @@ const MAX_LIGHTSTYLES: usize = 64;
 pub struct ClientState {  
 
 
-    client_id: u32, 
+    client_id: i32, 
     
     /// If true, client may execute any command.
     privileged: bool,
@@ -137,7 +137,7 @@ pub struct ClientSlots {
     limit: usize,
 
     //client_id => clientstate 
-    slots: HashMap<usize, Option<ClientState>>
+    slots: HashMap<i32, Option<ClientState>>
 
 
 }
@@ -157,7 +157,7 @@ impl ClientSlots {
         ClientSlots { slots, limit }
     }
 
-    pub fn add_client(&mut self, socket_addr:SocketAddr, privileged:bool) -> Result<u32, NetError>  { 
+    pub fn add_client(&mut self, socket_addr:SocketAddr, privileged:bool) -> Result<i32, NetError>  { 
  
         let client_id_result = self.find_next_available_slot_id();
 
@@ -185,7 +185,7 @@ impl ClientSlots {
     ///
     /// If the slot is unoccupied, or if `id` is greater than `self.limit()`,
     /// returns `None`.
-    pub fn get(&self, key: &usize) -> Option<&ClientState> {
+    pub fn get(&self, key: &i32) -> Option<&ClientState> {
         self.slots.get(key)?.as_ref()
     }
 
@@ -195,7 +195,7 @@ impl ClientSlots {
     }
 
     
-    pub fn find_next_available_slot_id(&mut self) -> Option< u32  > {
+    pub fn find_next_available_slot_id(&mut self) -> Option< i32  > {
         //let slot = self.slots.iter_mut().find(|s| s.is_none())?;
         //Some(slot.insert(ClientState::Connecting))
 
@@ -205,7 +205,7 @@ impl ClientSlots {
 
         if(self.limit <= length) {return None;}
 
-        return Some(length as u32);
+        return Some(length as i32);
     }
 }
 
@@ -262,12 +262,12 @@ impl GameServer {
     /// Construct a new `GameServer` that loads the specified map.  This runs in a new thread ?
     pub fn new( ) -> Result<GameServer, GameServerError> { 
  
- 
+        let max_clients = 1; 
 
         
         println!("Starting server on port 27500");
         let mut addr = SocketAddr::from(([127, 0, 0, 1], 27500)) ;
-        let mut serverConnectionManager = ServerConnectionManager::bind( addr ).unwrap();
+        let mut serverConnectionManager = ServerConnectionManager::bind( addr ,max_clients ).unwrap();
 
 
 
@@ -351,32 +351,35 @@ impl GameServer {
                 //recv_request
                 loop {
                     //make sure this is not blocking ? 
-                    let connectionResult = self.serverConnectionManager.recv_request(); 
+                    let recvMsgResult = self.serverConnectionManager.recv_msg(); 
 
-                    match connectionResult {
+                    match recvMsgResult {
+                        Ok(specialServerAction)=>{
 
-                        Ok((request,socketAddr)) => {
+                            match specialServerAction {
 
-                            let response_result = self.process_request(request,socketAddr); 
-                            
-                            match response_result {
-                                Ok(response) => { 
-                                    let send_response_result = self.serverConnectionManager.send_response( response , socketAddr );
-                                },
-                                Err(_) =>  { info!("NetError -- got bad packet from client");}
+                                Some(action) => { 
+        
+                                    let process_result = self.process_special_server_action(action); 
+                                     
+        
+                                    //continue;
+                                }
+                                None => {
+                                    //todo 
+                                   // info!("NetError -- got bad packet from client");
+                                }
+        
+                            }
+        
 
-                            } 
-                        
-
-                            continue;
-                        }
+                        },
                         Err(_) => {
-                            //todo 
-                            info!("NetError -- got bad packet from client");
+                            println!("Net error during rcv msg");
                         }
-
                     }
 
+                   
                   
 
 
@@ -394,7 +397,7 @@ impl GameServer {
     }
 
 
-    fn register_new_client( &mut self, socketAddr: SocketAddr ) -> Result<u32,NetError> {
+    fn register_new_client( &mut self, socketAddr: SocketAddr ) -> Result<i32,NetError> {
         println!(" Registering new client {}",  socketAddr  );
 
 
@@ -405,8 +408,10 @@ impl GameServer {
         match add_client_result{
             Ok(client_id)=> {
                 //is this the best way to do this ? 
+                //maybe we do this in a method in the ServerConnectManager
+                //need to be very careful of these maps remaining valid as players leave and join 
                 self.serverConnectionManager.serverQSockets.insert(client_id , ServerQSocket::new( socketAddr ));
-                 
+                self.serverConnectionManager.clientRemoteAddrs.insert(  socketAddr, client_id) ; 
 
                 let serverInfoCmd = ServerCmd::ServerInfo {
                     protocol_version: i32::from(self.protocol_version),
@@ -428,7 +433,7 @@ impl GameServer {
 
                         let client_port = GameServer::get_client_port_from_client_id( &client_id  );
 
-                        Ok(client_port)
+                        return Ok(client_port)
                     }
                     None => { println!("Could not get  qsocket") } 
                 }
@@ -440,7 +445,7 @@ impl GameServer {
             
             
             
-               Err(_) => { Err(NetError::Other(format!("Could not register new client"))) }
+               Err(_) => {return Err(NetError::Other(format!("Could not register new client"))) }
         }
 
         
@@ -512,14 +517,44 @@ impl GameServer {
 
 
 
-    fn get_client_port_from_client_id(client_id:&u32) -> u32{
-        return 27500 + 1 + client_id 
+    fn get_client_port_from_client_id(client_id:&i32) -> i32{
+        return 27500
     }
 
-    fn process_request( &mut self, request:Request,socketAddr: SocketAddr  ) -> Result<Response, NetError>  {
+    fn process_special_server_action( &mut self, action:SpecialServerAction  ) -> Result< (), NetError>  {
 
-        println!("Server received request: {}", request.to_string());
+        println!("Server special action : {}", action.to_string());
 
+        match action {
+            SpecialServerAction::RegisterClient(socket_addr,game_name,proto_ver) => {
+
+                let client_port_result = self.register_new_client( socket_addr  );
+
+
+                match client_port_result {
+                    Ok(client_port) => { 
+                        
+                        let response = Response::Accept(ResponseAccept { port:client_port } );
+                        
+                        //this is kind of spaghetti ? 
+                        let send_response_result = self.serverConnectionManager.send_response( response , socket_addr );
+                  
+                        Ok(())
+                     }
+                    NetError => { return Err(NetError::Other(format!("Could not register new client")))}
+                }
+
+              
+                
+
+            },
+            DisconnectClient => {
+                Ok(())
+            }
+
+        }
+
+        /*
         let response = match request {
 
             Request::Connect( _ ) => {    
@@ -527,8 +562,8 @@ impl GameServer {
                 let client_port_result = self.register_new_client( socketAddr  );
 
                 match client_port_result {
-                    Ok(client_port) => { return Ok(  Response::Accept(ResponseAccept { port:client_port }) ) }
-                    Err => return Err(NetError::Other(format!("Could not register new client")))
+                    Ok(client_port) => {  return Ok(  Response::Accept(ResponseAccept { port:client_port }) ) }
+                    NetError => { return Err(NetError::Other(format!("Could not register new client")))}
                 }
 
                 //this is  going to the client and properly turning into q socket 
@@ -564,7 +599,7 @@ impl GameServer {
             },
             
 
-        };
+        };*/
 
 
     }
@@ -576,20 +611,9 @@ impl GameServer {
 
         println!("server is updating");
 
-        
+        self.serverConnectionManager.update();
 
-        let send_fast_updateresult =  self.serverConnectionManager.send_fast_update(   );
-        //do stuff for each registered client    like tell them toload map 
-
-
-        //self.serverConnectionListener.update(); //send reliable packets that are queued up 
-    
-        //self.serverQSockets.iter
-    
-
-        for (_, sock) in self.serverQSockets.iter_mut() {
-            let update_result = sock.update(&mut self.serverConnectionManager.socket);
-        }
+       
 
     }
 
@@ -616,7 +640,7 @@ impl SessionPersistent {
         return self.client_slots.limit();
     }
 
-    pub fn client(&self, slot: &usize) -> Option<&ClientState> {
+    pub fn client(&self, slot: &i32) -> Option<&ClientState> {
         self.client_slots.get(slot)
     }
 }
@@ -718,7 +742,7 @@ impl Session {
     }
 
     #[inline]
-    pub fn client(&self, slot: &usize) -> Option<&ClientState> {
+    pub fn client(&self, slot: &i32) -> Option<&ClientState> {
         self.persist.client(&slot)
     }
 
@@ -1327,7 +1351,7 @@ impl LevelState {
             ProgsError::with_msg(format!("Invalid client entity ID: {:?}", ent_id))
         })?;
 
-        if clients.get(&client_id).is_none() {
+        if clients.get(&(client_id as i32)).is_none() {
             // No client in this slot.
             return Ok(());
         }

@@ -754,54 +754,75 @@ impl ServerQSocket {
 
 }
 
+
+impl fmt::Display for SpecialServerAction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
+}
+
+
+#[derive(Debug)]
+pub enum SpecialServerAction {
+
+    RegisterClient(SocketAddr, String, u8),
+    DisconnectClient, 
+    
+
+}
+
 /// A socket that listens for new connections or queries.
 /// 
 /// maybe extend this on top of qsocket ? 
 pub struct ServerConnectionManager {
     pub socket: UdpSocket, //the server only has a single bound UDP socket 
 
-    pub serverQSockets: HashMap<u32, ServerQSocket> , //hold msg buffers for each client 
- 
+    pub serverQSockets: HashMap<i32, ServerQSocket> , //hold msg buffers for each client 
+    pub clientRemoteAddrs: HashMap<SocketAddr, i32> ,
 
     unreliable_send_sequence: u32,
     unreliable_recv_sequence: u32,
 
     send_count:usize, 
+    max_clients: usize
 
 }
 
 impl ServerConnectionManager {
     /// Creates a `ConnectListener` from the given address.
-    pub fn bind<A>(addr: A) -> Result<ConnectListener, NetError>
+    pub fn bind<A>(addr: A, max_clients:usize) -> Result<ServerConnectionManager, NetError>
     where
         A: ToSocketAddrs,
     {
         let socket = UdpSocket::bind(addr)?;
 
-        Ok(ConnectListener { 
+        
+
+        Ok(ServerConnectionManager { 
             socket, 
 
             serverQSockets: HashMap::with_capacity(max_clients ),
+            clientRemoteAddrs: HashMap::with_capacity(max_clients),
 
 
             //counters for multicast stuff 
             unreliable_send_sequence: 0,
             unreliable_recv_sequence: 0,
             send_count: 0,
-
+            max_clients,
 
 
         })
     }
- 
     
 
 
-    /// Receives a request and returns it along with its remote address.
-    pub fn recv_request(&self) -> Result<(Request, SocketAddr), NetError> {
-        println!("Server is listening for requests ");
-        // Original engine receives connection requests in `net_message`,
-        // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
+    //the server keeps calling this which pops data off of its udp sockets buffer 
+    pub fn recv_msg(&self) -> Result<Option<SpecialServerAction>,NetError> {
+
+
         let mut recv_buf = [0u8; MAX_MESSAGE];
         let (len, remote) = self.socket.recv_from(&mut recv_buf)?;
         let mut reader = BufReader::new(&recv_buf[..len]);
@@ -813,23 +834,74 @@ impl ServerConnectionManager {
             return Err(NetError::with_msg("Control value is -1"));
         }
 
-        // high 4 bits must be 0x8000 (CONNECT_CONTROL)
-        if control & !CONNECT_LENGTH_MASK != CONNECT_CONTROL {
-            return Err(NetError::InvalidData(format!(
-                "control value {:X}",
-                control & !CONNECT_LENGTH_MASK
-            )));
-        }
 
-        // low 4 bits must be total length of packet
-        let control_len = (control & CONNECT_LENGTH_MASK) as usize;
-        if control_len != len {
-            return Err(NetError::InvalidData(format!(
-                "Actual packet length ({}) differs from header value ({})",
-                len, control_len,
-            )));
-        }
+        let is_connect_request_packet = ((control & !CONNECT_LENGTH_MASK) == CONNECT_CONTROL); 
 
+
+        if(is_connect_request_packet == true){
+
+            // high 4 bits must be 0x8000 (CONNECT_CONTROL)
+            if control & !CONNECT_LENGTH_MASK != CONNECT_CONTROL {
+                return Err(NetError::InvalidData(format!(
+                    "control value {:X}",
+                    control & !CONNECT_LENGTH_MASK
+                )));
+            }
+
+            // low 4 bits must be total length of packet
+            let control_len = (control & CONNECT_LENGTH_MASK) as usize;
+            if control_len != len {
+                return Err(NetError::InvalidData(format!(
+                    "Actual packet length ({}) differs from header value ({})",
+                    len, control_len,
+                )));
+            }
+
+            let handle_result = self.handle_connect_request(&mut reader, len, remote);
+            return handle_result
+        }else{
+
+
+           
+        //if we get another type of message, the server q socket handles it  ! 
+
+
+        //if got an ACK from a client, send to proper q sock so it knows 
+            let client_id_result = self.get_client_id_from_address( remote );
+ 
+            match client_id_result {
+                Some(client_id) => {
+                    let handle_result = self.handle_connected_client_msg(&mut reader, len, client_id);
+                    return handle_result
+                },
+                None => {Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
+            }
+
+
+            
+        }
+        //if we see that the packet is a connect request, we handle it in recv_request 
+
+
+        //if we see that it is not a connect request (someone alrdy connected), we send it to the appropriate ServerQSocket to process! 
+
+
+    }
+
+
+    /// Receives a request and returns it along with its remote address.
+    fn handle_connect_request(&self, reader:&mut BufReader<&[u8]>, len:usize, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
+        println!("Server handle connect request");
+        // Original engine receives connection requests in `net_message`,
+        // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
+       /* let mut recv_buf = [0u8; MAX_MESSAGE];
+        let (len, remote) = self.socket.recv_from(&mut recv_buf)?;
+        let mut reader = BufReader::new(&recv_buf[..len]);
+        */
+
+       // let control = reader.read_i32::<NetworkEndian>()?;
+
+       
         // validate request code
         let request_byte = reader.read_u8()?;
         let request_code = match RequestCode::from_u8(request_byte) {
@@ -845,50 +917,59 @@ impl ServerConnectionManager {
         ///if its a simple connect request, then we connect 
         let request = match request_code {
             RequestCode::Connect => {
-                let game_name = util::read_cstring(&mut reader).unwrap();
+                let game_name = util::read_cstring( reader).unwrap();
                 let proto_ver = reader.read_u8()?;
-                Request::Connect(RequestConnect {
+               /*  Request::Connect(RequestConnect {
                     game_name,
                     proto_ver,
-                })
+                })*/
+                 
+                return Ok(Some( SpecialServerAction::RegisterClient( remote, game_name, proto_ver )) )
             }
 
             RequestCode::ServerInfo => {
-                let game_name = util::read_cstring(&mut reader).unwrap();
-                Request::ServerInfo(RequestServerInfo { game_name })
+                let game_name = util::read_cstring( reader).unwrap();
+                //Request::ServerInfo(RequestServerInfo { game_name })
+
+                return Ok(None)
             }
 
             RequestCode::PlayerInfo => {
                 let player_id = reader.read_u8()?;
-                Request::PlayerInfo(RequestPlayerInfo { player_id })
+               // Request::PlayerInfo(RequestPlayerInfo { player_id })
+
+               return Ok(None)
             }
 
             RequestCode::RuleInfo => {
-                let prev_cvar = util::read_cstring(&mut reader).unwrap();
-                Request::RuleInfo(RequestRuleInfo { prev_cvar })
+                let prev_cvar = util::read_cstring( reader).unwrap();
+                //Request::RuleInfo(RequestRuleInfo { prev_cvar })
+
+
+                return Ok(None)
             }
         };
 
 
 
-        //if we get another type of message, the server q socket handles it  ! 
-
-
-        //if got an ACK from a client, send to proper q sock so it knows 
 
 
 
-
-        Ok((request, remote))
+ 
     }
 
 
-    
-    pub fn recv_msg(&mut self, block: BlockingMode) -> Result<Vec<u8>, NetError> {
+
+    fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, len:usize, client_id:&i32  ) -> Result<(Option<SpecialServerAction>), NetError> {
+
+        println!("Server handle client msg");
+
+        Err(NetError::Other(format!("error handling connected client msg ")))
+
+
+        //figure out the client id -- figure out the qsocket to use 
 
     }
-
-
 
 
     pub fn send_response(&self, response: Response, remote: SocketAddr) -> Result<(), NetError> {
@@ -896,6 +977,27 @@ impl ServerConnectionManager {
         Ok(())
     }
 
+
+
+    pub fn update(&mut self) {
+        let send_fast_updateresult =  self.send_fast_update(   );
+        //do stuff for each registered client    like tell them toload map 
+
+ 
+
+        for (_, sock) in self.serverQSockets.iter_mut() {
+            let update_result = sock.update(&mut self.socket);
+        }
+
+    }
+
+
+
+    pub fn get_client_id_from_address(&self,socket_addr:SocketAddr) -> Option<&i32> {
+
+        return self.clientRemoteAddrs.get(&socket_addr);
+
+    }
 
     //need a way to broadcast this too 
     pub fn send_fast_update(&mut self  ) -> Result<(),NetError>{
