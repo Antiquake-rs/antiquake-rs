@@ -617,20 +617,24 @@ impl ServerQSocket {
     there should be back and forth back and forth 
     
     */
-    pub fn handle_client_msg( &self,  reader:&mut BufReader<&[u8]>, len:usize, sequence: i32, msg: &mut Vec<u8>,  msg_kind:MsgKind , socket: UdpSocket ) -> Result<ControlFlow, NerError> {
+    pub fn handle_client_msg( &mut self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence: u32, msg: &mut Vec<u8>,  msg_kind:MsgKind , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
         println!("Sever QSocket handle client msg");
 
         match msg_kind {
 
-            MsgKind::Ctl => { /* do nothing as this is invalid  */  }
+            MsgKind::Ctl => { 
+
+                //should never happen 
+                return Ok(SocketReadControlFlow::FinishReading)
+             }
 
             MsgKind::Unreliable => {
                 // we've received a newer datagram, ignore
                 if sequence < self.unreliable_recv_sequence {
                     println!("Stale datagram with sequence # {}", sequence);
                   //  break;
-                    return Ok(ControlFlow::FinishReading)
+                    return Ok(SocketReadControlFlow::FinishReading)
                 }
 
                 // we've skipped some datagrams, count them as dropped
@@ -645,9 +649,9 @@ impl ServerQSocket {
                 self.unreliable_recv_sequence = sequence + 1;
 
                 // copy the rest of the packet into the message buffer and return
-                reader.read_to_end(&mut msg)?;
+                reader.read_to_end( msg)?;
 
-                return Ok(ControlFlow::FinishReading)
+                return Ok(SocketReadControlFlow::FinishReading)
                // return Ok(msg);
             }
 
@@ -678,7 +682,7 @@ impl ServerQSocket {
 
 
                 //is this right??? 
-                return Ok(ControlFlow::FinishReading)
+                return Ok(SocketReadControlFlow::FinishReading)
             }
 
             // TODO: once we start reading a reliable message, don't allow other packets until
@@ -690,25 +694,25 @@ impl ServerQSocket {
                 ack_curs.write_u16::<NetworkEndian>(MsgKind::Ack as u16)?;
                 ack_curs.write_u16::<NetworkEndian>(HEADER_SIZE as u16)?;
                 ack_curs.write_u32::<NetworkEndian>(sequence)?;
-                self.socket.send_to(ack_curs.into_inner(), remote)?;
+                socket.send_to(ack_curs.into_inner(), self.remote)?;
 
                 // if this was a duplicate, drop it
                 if sequence != self.recv_sequence {
                     println!("Duplicate message received");
                   //  continue;
-                    return Ok(ControlFlow::ReadMore)
+                    return Ok(SocketReadControlFlow::ReadMore)
                 }
 
                 self.recv_sequence += 1;
-                reader.read_to_end(&mut msg)?;
+                reader.read_to_end( msg)?;
 
                 // if this is the last chunk of a reliable message, break out and return
                 if msg_kind == MsgKind::ReliableEom {
                   //  break;
-                  return Ok(ControlFlow::FinishReading)
+                  return Ok(SocketReadControlFlow::FinishReading)
                 }
 
-                return Ok(ControlFlow::ReadMore)
+                return Ok(SocketReadControlFlow::ReadMore)
             }
 
         }
@@ -888,6 +892,17 @@ pub enum SpecialServerAction {
 
 }
 
+
+
+pub enum SocketReadControlFlow {
+
+    ReadMore,
+    FinishReading
+
+}
+
+
+
 /// A socket that listens for new connections or queries.
 /// 
 /// maybe extend this on top of qsocket ? 
@@ -897,11 +912,19 @@ pub struct ServerConnectionManager {
     pub serverQSockets: HashMap<i32, ServerQSocket> , //hold msg buffers for each client 
     pub clientRemoteAddrs: HashMap<SocketAddr, i32> ,
 
+
+    max_clients: usize,
+
+
     unreliable_send_sequence: u32,
     unreliable_recv_sequence: u32,
 
     send_count:usize, 
-    max_clients: usize
+
+    recv_sequence: u32,
+    recv_buf: [u8; MAX_MESSAGE],
+
+    
 
 }
 
@@ -920,13 +943,16 @@ impl ServerConnectionManager {
 
             serverQSockets: HashMap::with_capacity(max_clients ),
             clientRemoteAddrs: HashMap::with_capacity(max_clients),
-
+            max_clients,
 
             //counters for multicast stuff 
             unreliable_send_sequence: 0,
             unreliable_recv_sequence: 0,
-            send_count: 0,
-            max_clients,
+            send_count: 0, 
+
+            recv_sequence: 0,
+
+            recv_buf: [0; MAX_MESSAGE],
 
 
         })
@@ -934,25 +960,16 @@ impl ServerConnectionManager {
     
 
 
-    pub enum SocketReadControlFlow {
-
-        ReadMore,
-        FinishReading
-
-    }
-
-
-
     //the server keeps calling this which pops data off of its udp sockets buffer 
-    pub fn recv_msg(&self) -> Result<(Vec<u8>, Option<SpecialServerAction>) ,NetError> {
+    pub fn recv_msg(&mut self) -> Result<(Vec<u8>, Option<SpecialServerAction>) ,NetError> {
 
         let mut msg = Vec::new();
 
 
         loop {
       
-          let (len, remote) = self.socket.recv_from(&mut recv_buf)?;
-          let mut reader = BufReader::new(&recv_buf[..len]);
+          let (packet_len, remote) = self.socket.recv_from(&mut self.recv_buf)?;
+          let mut reader = BufReader::new(&self.recv_buf[..packet_len]);
 
 
           let msg_kind_code = reader.read_u16::<NetworkEndian>()?;
@@ -993,8 +1010,6 @@ impl ServerConnectionManager {
           }
 
 
-
-
           match msg_kind {
             // handle control messages in this scope since the client is not connected 
             MsgKind::Ctl =>{
@@ -1010,7 +1025,7 @@ impl ServerConnectionManager {
                     }
                 };
 
-                let server_action_result =  self.handle_control_request(&mut reader, request_code, remote )
+                let server_action_result =  self.handle_control_request(&mut reader, request_code, remote );
                 
                 match server_action_result {
                     Ok(server_action) => {
@@ -1021,32 +1036,36 @@ impl ServerConnectionManager {
                
             }
 
-            //non-ctl messages are processed by that clients socket !! 
+            //non-ctl messages are processed by the qsocket we are maintaining for that client!! 
             _ => {
 
                 let client_id_result = self.get_client_id_from_address( remote );
  
                 match client_id_result {
                     Some(client_id) => {
-                       /* let handle_result = self
-                        .handle_connected_client_msg(&mut reader, len, msg_kind, sequence,  client_id);
                         
-                        return handle_result*/ 
 
+                        //we do this to ultimately build the msg  vec<u8> 
 
-                        let control_flow = self
-                        .handle_connected_client_msg(&mut reader, len, &mut msg, msg_kind, sequence,  client_id);
-                    
+                        let control_flow_result = &mut self
+                        .handle_connected_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind, client_id, &self.socket);
+                        
+                        match control_flow_result {
 
-                        match control_flow {
+                           Ok(control_flow) => {
+                             match control_flow {
 
-                            ControlFlow::ReadMore => { continue; } //append more to msg 
-                            ControlFlow::FinishReading => { break; } // break out and do the update loop stuff 
+                                SocketReadControlFlow::ReadMore => { continue; } //append more to msg (the mut vec)
+                                SocketReadControlFlow::FinishReading => { break; } // break out -- we have built the msg fully now -- time to parse it !  
+    
+                            }}
+                            Err(_) => return Err(NetError::Other(format!("Could not build msg using udp socket read")))
 
                         }
+                       
 
                     },
-                    None => {Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
+                    None => {return Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
                 }
 
             }
@@ -1127,18 +1146,18 @@ impl ServerConnectionManager {
 
 
 
-    fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, len:usize, sequence:i32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32  ) -> Result<(Option<SpecialServerAction>), NetError> {
+    fn handle_connected_client_msg(&mut self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence:u32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32 , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
       
 
-        let client_q_socket = self.serverQSockets.get(client_id); 
+        let client_q_socket = self.serverQSockets.get_mut(client_id); 
 
         match client_q_socket {
-            Some(q_socket) => {
+            Some( q_socket) => {
 
-                q_socket.handle_client_msg( reader, len, sequence, msg, msg_kind , self.socket);
+                return q_socket.handle_client_msg( reader, packet_len, sequence, msg, msg_kind , socket);
 
-                Ok(None)
+               // return Ok(None)
             }
             None =>   return Err(NetError::Other(format!("error handling connected client msg - could not get their q socket ")))
 

@@ -51,6 +51,10 @@ $ cargo run --release --bin quake-client -- --demo <demo_file>
 
 This works for demos in the PAK archives (e.g. `demo1.dem`) or any demos you happen to have placed in the `id1` directory.
 
+
+https://www.gamers.org/dEngine/quake/QDP/qnp.html#connection_req
+
+
 #### Feature checklist
 
 - Networking
