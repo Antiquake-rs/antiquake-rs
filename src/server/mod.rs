@@ -373,6 +373,10 @@ impl GameServer {
                                 println!("Server is about to deserialize a message from a connected client {:02X?}", msg.clone().as_slice() );
 
 
+                                ///Server is about to deserialize a message from a connected client [03, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
+
+
+                                
                                 let mut reader = BufReader::new(msg.as_slice());
 
                                
