@@ -51,7 +51,7 @@ pub const CONNECT_PROTOCOL_VERSION: u8 = 3;
 const CONNECT_CONTROL: i32 = 1 << 31;
 const CONNECT_LENGTH_MASK: i32 = 0x0000FFFF;
 
-/*
+ 
 
 
 pub trait ConnectPacket {
@@ -552,7 +552,6 @@ impl ConnectPacket for Response {
         }
     }
 }
-*/
 
 
 
@@ -761,7 +760,7 @@ impl ServerQSocket {
 pub struct ServerConnectionManager {
     pub socket: UdpSocket, //the server only has a single bound UDP socket 
 
-    serverQSockets: HashMap<usize, ServerQSocket> , //hold msg buffers for each client 
+    pub serverQSockets: HashMap<u32, ServerQSocket> , //hold msg buffers for each client 
  
 
     unreliable_send_sequence: u32,
@@ -843,6 +842,7 @@ impl ServerConnectionManager {
             }
         };
 
+        ///if its a simple connect request, then we connect 
         let request = match request_code {
             RequestCode::Connect => {
                 let game_name = util::read_cstring(&mut reader).unwrap();
@@ -871,6 +871,7 @@ impl ServerConnectionManager {
 
 
 
+        //if we get another type of message, the server q socket handles it  ! 
 
 
         //if got an ACK from a client, send to proper q sock so it knows 

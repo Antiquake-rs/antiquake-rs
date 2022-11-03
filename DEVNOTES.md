@@ -48,6 +48,21 @@ Client needs to be sending 'MsgKind::Ack '
 
 
 
+Spoike
+ — 
+Yesterday at 5:26 PM
+it uses a different server udp socket for each client, instead of the one the user origonally connected to. which is stupid and breaks nats
+so yeah, client sends ccreq_connect packet, server responds to let the client know which server port to accept packets from (complete poop.)
+the server then starts throwing some reliables at you.
+and expects some acks.
+Spoike
+ — 
+Yesterday at 5:44 PM
+those reliables have various svc stuff
+the server expects some specific clc replies at various points.
+then it'll start sending some unreliables mixed with the odd reliable. woo. easy, right?...
+
+
 https://fabiensanglard.net/quakeSource/quakeSourceNetWork.php
 
 

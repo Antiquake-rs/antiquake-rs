@@ -104,7 +104,7 @@ const MAX_LIGHTSTYLES: usize = 64;
 pub struct ClientState {  
 
 
-    client_id: usize, 
+    client_id: u32, 
     
     /// If true, client may execute any command.
     privileged: bool,
@@ -157,7 +157,7 @@ impl ClientSlots {
         ClientSlots { slots, limit }
     }
 
-    pub fn add_client(&mut self, socket_addr:SocketAddr, privileged:bool) -> Result<usize, NetError>  { 
+    pub fn add_client(&mut self, socket_addr:SocketAddr, privileged:bool) -> Result<u32, NetError>  { 
  
         let client_id_result = self.find_next_available_slot_id();
 
@@ -195,7 +195,7 @@ impl ClientSlots {
     }
 
     
-    pub fn find_next_available_slot_id(&mut self) -> Option< usize > {
+    pub fn find_next_available_slot_id(&mut self) -> Option< u32  > {
         //let slot = self.slots.iter_mut().find(|s| s.is_none())?;
         //Some(slot.insert(ClientState::Connecting))
 
@@ -205,7 +205,7 @@ impl ClientSlots {
 
         if(self.limit <= length) {return None;}
 
-        return Some(length);
+        return Some(length as u32);
     }
 }
 
@@ -351,7 +351,7 @@ impl GameServer {
                 //recv_request
                 loop {
                     //make sure this is not blocking ? 
-                    let connectionResult = self.serverConnectionListener.recv_request(); 
+                    let connectionResult = self.serverConnectionManager.recv_request(); 
 
                     match connectionResult {
 
@@ -361,7 +361,7 @@ impl GameServer {
                             
                             match response_result {
                                 Ok(response) => { 
-                                    let send_response_result = self.serverConnectionListener.send_response( response , socketAddr );
+                                    let send_response_result = self.serverConnectionManager.send_response( response , socketAddr );
                                 },
                                 Err(_) =>  { info!("NetError -- got bad packet from client");}
 
@@ -394,7 +394,7 @@ impl GameServer {
     }
 
 
-    fn register_new_client( &mut self, socketAddr: SocketAddr ){
+    fn register_new_client( &mut self, socketAddr: SocketAddr ) -> Result<u32,NetError> {
         println!(" Registering new client {}",  socketAddr  );
 
 
@@ -405,7 +405,7 @@ impl GameServer {
         match add_client_result{
             Ok(client_id)=> {
                 //is this the best way to do this ? 
-                self.serverQSockets.insert(client_id , ServerQSocket::new( socketAddr ));
+                self.serverConnectionManager.serverQSockets.insert(client_id , ServerQSocket::new( socketAddr ));
                  
 
                 let serverInfoCmd = ServerCmd::ServerInfo {
@@ -417,13 +417,18 @@ impl GameServer {
                     sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
                 };   
                 
-                let srvQSocket_option = self.serverQSockets.get_mut(&client_id);
+                let srvQSocket_option = self.serverConnectionManager.serverQSockets.get_mut(&client_id);
 
                 match srvQSocket_option {
                     Some(srvQSocket) => {
-                        let sock = &mut self.serverConnectionListener.socket;
+                        let sock = &mut self.serverConnectionManager.socket;
                         let send_result =  srvQSocket.send_server_cmd( sock, serverInfoCmd  );  
                         println!("sent server info cmd to client ");
+
+
+                        let client_port = GameServer::get_client_port_from_client_id( &client_id  );
+
+                        Ok(client_port)
                     }
                     None => { println!("Could not get  qsocket") } 
                 }
@@ -435,10 +440,11 @@ impl GameServer {
             
             
             
-               Err(_) => { println!("error finding new client id") }
+               Err(_) => { Err(NetError::Other(format!("Could not register new client"))) }
         }
 
-   
+        
+        Err(NetError::Other(format!("Could not register new client")))
 
 
       //  let pdata = net::PlayerData { view_height: (), ideal_pitch: (), punch_pitch: (), velocity_x: (), punch_yaw: (), velocity_y: (), punch_roll: (), velocity_z: (), items: (), on_ground: (), in_water: (), weapon_frame: (), armor: (), weapon: (), health: (), ammo: (), ammo_shells: (), ammo_nails: (), ammo_rockets: (), ammo_cells: (), active_weapon: () }
@@ -505,6 +511,11 @@ impl GameServer {
     }
 
 
+
+    fn get_client_port_from_client_id(client_id:&u32) -> u32{
+        return 27500 + 1 + client_id 
+    }
+
     fn process_request( &mut self, request:Request,socketAddr: SocketAddr  ) -> Result<Response, NetError>  {
 
         println!("Server received request: {}", request.to_string());
@@ -513,9 +524,15 @@ impl GameServer {
 
             Request::Connect( _ ) => {    
 
-                self.register_new_client( socketAddr  );
+                let client_port_result = self.register_new_client( socketAddr  );
+
+                match client_port_result {
+                    Ok(client_port) => { return Ok(  Response::Accept(ResponseAccept { port:client_port }) ) }
+                    Err => return Err(NetError::Other(format!("Could not register new client")))
+                }
+
                 //this is  going to the client and properly turning into q socket 
-                return Ok(  Response::Accept(ResponseAccept { port:27500 }) )
+                
             },
 
             Request::ServerInfo(_) => {
@@ -561,7 +578,7 @@ impl GameServer {
 
         
 
-        let send_fast_updateresult =  self.serverConnectionListener.send_fast_update(   );
+        let send_fast_updateresult =  self.serverConnectionManager.send_fast_update(   );
         //do stuff for each registered client    like tell them toload map 
 
 
@@ -571,7 +588,7 @@ impl GameServer {
     
 
         for (_, sock) in self.serverQSockets.iter_mut() {
-            let update_result = sock.update(&mut self.serverConnectionListener.socket);
+            let update_result = sock.update(&mut self.serverConnectionManager.socket);
         }
 
     }

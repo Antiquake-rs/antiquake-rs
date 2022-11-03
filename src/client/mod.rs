@@ -56,7 +56,7 @@ use crate::{
         model::ModelError,
         net::{
             self,
-            connect::{ConnectSocket, Request, Response, CONNECT_PROTOCOL_VERSION},
+            server::{ConnectSocket, Request, Response, CONNECT_PROTOCOL_VERSION},
             BlockingMode, ClientCmd, ClientStat, ColorShift, EntityEffects, EntityState, GameType,
             NetError, PlayerColor, QSocket, ServerCmd, SignOnStage,
         },

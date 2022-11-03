@@ -20,7 +20,7 @@
 
 // TODO: need to figure out an equivalence relation for read_/write_coord and read_/write_angle
 
-pub mod connect;
+pub mod server;
 
 use std::{
     collections::VecDeque,
