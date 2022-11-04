@@ -6,6 +6,7 @@ use crate::{
   common::vfs::VirtualFile,
   server::progs::string_table::{StringTable},
   server::progs::globals::{Globals},
+  server::scripts::{ScriptingContext},
 };
 
 
@@ -22,6 +23,7 @@ use std::{
 
 pub struct Slime {
   //  pub cx: ExecutionContext,
+    pub script_context: ScriptingContext,
     pub globals: Globals,
     pub entity_def: Rc<EntityTypeDef>,
     pub string_table: Rc<RefCell<StringTable>>,
@@ -87,6 +89,8 @@ impl Slime{
     //how do we populate ? 
     //parse w serde ?? 
 
+    let script_context = ScriptingContext::new( ); 
+
 
     let entity_def = Rc::new(EntityTypeDef::new(
       string_table.clone(),
@@ -101,6 +105,6 @@ impl Slime{
       addrs.into_boxed_slice(),
   );
 
-    Ok(Slime{globals,entity_def,string_table})
+    Ok(Slime{script_context,globals,entity_def,string_table})
   }
 }

@@ -392,7 +392,7 @@ impl ToString for BindTarget {
                         ElementState::Pressed => "+",
                         ElementState::Released => "-",
                     }
-                    + &action.to_string()
+                    + (&action.to_string()).as_str() //fix for 'smartstring' issue
             }
 
             BindTarget::ConsoleInput { ref text } => format!("\"{}\"", text.to_owned()),

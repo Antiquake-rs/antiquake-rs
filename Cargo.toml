@@ -60,7 +60,8 @@ uluru = "2"
 
 
 ##this is for extras 
-zip = "0.6.3"
+zip = "0.6.3" 
+rlua = "0.19.4"
 
 [dev-dependencies]
 bitflags = "1"

@@ -22,10 +22,11 @@
 
 
 pub mod precache;
-pub mod progs;
+pub mod progs; //deprecated
 pub mod world; 
 pub mod levelstate;
 pub mod slime;
+pub mod scripts;
 
 use std::{
     thread::{self},
@@ -944,6 +945,8 @@ pub enum SessionState {
     /// server is loading a level.
     Loading(SessionLoading),
 
+    Preparing(), //handoff between loading and active 
+
     /// The server is active (in-game).
     Active(SessionActive),
 }
@@ -1058,8 +1061,26 @@ impl Session {
         //prep for precaching 
         self.state =  SessionState::Loading(  SessionLoading::new(vfs, cvars, slime, brush_models, entmap) );
 
-   
+        
 
+
+  
+
+
+        //set self state to preparing to do the handoff of the level to active 
+        let loaded_state = std::mem::replace(&mut self.state, SessionState::Preparing());
+
+        let session_active_opt = match loaded_state {
+            SessionState::Loading(state) => Some(state.finishLoading()),
+            _ => None,
+            };
+
+        let session_active = match session_active_opt {
+            Some(act) => act,
+            None => panic!("Could not finish loading level")
+        };
+
+        self.state = SessionState::Active( session_active );
 
             //precache !! map and  brush and entity models for sure 
 
@@ -1136,6 +1157,7 @@ impl Session {
         match self.state {
             SessionState::Starting() => None,
             SessionState::Loading(ref loading) => Some(&loading.level),
+            SessionState::Preparing() => None,
             SessionState::Active(ref active) => Some(&active.level),
         }
     }
@@ -1145,6 +1167,7 @@ impl Session {
         match self.state {
             SessionState::Starting() => None,
             SessionState::Loading(ref mut loading) => Some(&mut loading.level),
+            SessionState::Preparing() => None,
             SessionState::Active(ref mut active) => Some(&mut active.level),
         }
     }
@@ -1184,6 +1207,7 @@ impl Session {
         match self.state {
             SessionState::Starting() => None,
             SessionState::Loading(_) => None,
+            SessionState::Preparing() => None,
             SessionState::Active(ref active) => Some(active.level.get_time()),
         }
     }

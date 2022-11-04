@@ -41,7 +41,8 @@ use crate::{
     server::slime::{
         Slime
     },
-    server::{ClientSlots}
+    server::{ClientSlots},
+    server::scripts::{ScriptingContext},
 };
 
 
@@ -78,6 +79,7 @@ pub struct LevelState {
     ///
     /// This includes the program counter, call stack, and local variables.
    // cx: ExecutionContext,
+    script_context: ScriptingContext,
 
     /// Global values for QuakeC bytecode.
     globals: Globals,
@@ -101,7 +103,7 @@ impl LevelState {
     ) -> LevelState {
 
         let Slime {
-            //globals 
+            script_context,
             globals,
             entity_def,
             string_table,
@@ -110,13 +112,13 @@ impl LevelState {
         println!("string table {}", string_table.borrow_mut().getData() );
         
 
-         
+        
 
         let mut sound_precache = Precache::new();
        // sound_precache.precache("");
 
 
-
+        //any model you want to use including bsp MUST be precached 
 
         let mut model_precache = Precache::new();
        // model_precache.precache("");
@@ -124,6 +126,7 @@ impl LevelState {
 
         for model in models.iter() {
             //why is this crashing ?  oh the string table is not long enough to match what its in models 
+           //how was this loaded before ? 
             //why is the map bsp not in this ??
 
             println!("model is {}",model.name());
@@ -153,6 +156,7 @@ impl LevelState {
             time: Duration::zero(),
 
           //  cx,
+            script_context,
             globals,
             world,
 
@@ -181,6 +185,8 @@ impl LevelState {
         self.sound_precache.precache(&*name);
     }
 
+
+    //this is run by the progs.dat or slime ! 
     #[inline]
     pub fn precache_model(&mut self, name_id: StringId) {
         let name = Ref::map(self.string_table.borrow(), |this| {
@@ -512,8 +518,10 @@ impl LevelState {
             .put_entity_id(ent_id, GlobalAddrEntity::Self_ as i16)?;
 
 
-            // dont execute progs.dat program right now since some funcs are not impl 
-    //    self.execute_program_by_name(classname)?;
+         // dont execute progs.dat program right now since some funcs are not impl 
+    
+        //this populates the precache !!! 
+        self.execute_script_by_name(classname)?;
 
 
         self.link_entity(ent_id, true)?;
@@ -561,6 +569,30 @@ impl LevelState {
 
         Ok(())
     }
+
+
+
+
+    pub fn execute_script_by_name<S>(&mut self, name: S) -> Result<(), ProgsError>
+    where
+        S: AsRef<str>,
+    {
+
+        //use rhai for this  ! 
+
+        println!("execute script by name");
+
+
+        let context = &self.script_context;
+
+        let eval_result = context.evaluate_build_level();
+
+       // let func_id = self.script_context.find_function_by_name(name)?;
+      //  self.execute_program(func_id)?;
+        Ok(())
+    }
+
+
 /* 
     pub fn think(&mut self, ent_id: EntityId, frame_time: Duration) -> Result<(), ProgsError> {
         let ent = self.world.entity_mut(ent_id)?;
