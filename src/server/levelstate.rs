@@ -123,6 +123,7 @@ impl LevelState {
 
 
         for model in models.iter() {
+            //why is this crashing ?  oh the string table is not long enough to match what its in models 
             //why is the map bsp not in this ??
 
             println!("model is {}",model.name());

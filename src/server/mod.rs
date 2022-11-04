@@ -316,7 +316,13 @@ impl GameServer {
          
 
 
-            self.server_session.load_level(  vfs , map_file_name, slime_file_name /* cvars, prog,  all_models, entmap */ ) ; 
+          let loaded_result = self.server_session.load_level(  vfs , map_file_name, slime_file_name /* cvars, prog,  all_models, entmap */ ) ; 
+
+          match loaded_result {
+
+            Ok(_) => {println!("Server loaded level")}
+            Err( error ) => {panic!("{}", error )}
+          }
 
  
           Ok( () )
@@ -547,6 +553,7 @@ impl GameServer {
                         let level_state = match level_state_opt {
                             Some(lvl) => lvl, 
                             None => {
+                                println!("Cannot give level data before level loads");
                                 return Err(NetError::InvalidData(format!(
                                     "Cannot give level data before level loads" 
                                 )))
@@ -1034,8 +1041,7 @@ impl Session {
 
         let slime = Slime::load(slime_file).unwrap();
             
-
-
+ 
 
         let con_names = Rc::new(RefCell::new(Vec::new()));    
 
@@ -1066,8 +1072,9 @@ impl Session {
             */
  
 
+        //FIX ME LATER 
 
-         self.finishLoading();
+        //    self.state =  SessionState::Active(self.finishLoading());
 
          Ok(())
 
@@ -1076,7 +1083,7 @@ impl Session {
        /// Completes the loading process.
     ///
     /// This consumes the `ServerLoading` and returns a `ServerActive`.
-    pub fn finishLoading(&mut self)   {
+  /* pub fn finishLoading( &self)  -> SessionActive {
 
         let session_active_opt = match &self.state {
             SessionState::Starting() => None,
@@ -1092,10 +1099,10 @@ impl Session {
         };
  
 
-        self.state = SessionState::Active( session_active );
-
+        //self.state = SessionState::Active( session_active );
+        return session_active
         
-    }
+    }*/  
 
 
     /// Returns the maximum number of clients allowed on the server.
