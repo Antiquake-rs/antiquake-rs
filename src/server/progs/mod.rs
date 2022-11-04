@@ -96,7 +96,7 @@
 pub mod functions;
 pub mod globals;
 mod ops;
-mod string_table;
+pub mod string_table;
 
 use std::{
     cell::RefCell,

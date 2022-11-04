@@ -25,6 +25,7 @@ pub mod precache;
 pub mod progs;
 pub mod world; 
 pub mod levelstate;
+pub mod slime;
 
 use std::{
     thread::{self},
@@ -74,7 +75,10 @@ use self::{
     world::{ 
       World,
     },
-    levelstate::{LevelState}
+    levelstate::{LevelState},
+    slime::{
+        Slime
+    },
 };
  
 use io::BufReader;
@@ -215,6 +219,8 @@ pub enum GameServerError {
     MapLoadingError,
     #[error("Unable to load progs.dat")]
     ProgsLoadingError,
+    #[error("Unable to load slime.json")]
+    SlimeLoadingError,
     #[error("Invalid CD track number")]
     InvalidCdTrack,
     #[error("No such CD track: {0}")]
@@ -282,52 +288,21 @@ impl GameServer {
         })
     }
 
-    pub fn loadMap(&mut self, file_path:  String) -> Result< (), GameServerError> {
+    pub fn loadMap(&mut self, map_file_name:  String) -> Result< (), GameServerError> {
 
-    
-      
-        /*   
-        cvars: Rc<RefCell<CvarRegistry>>,
-        progs: LoadProgs,
-        models: Vec<Model>,
-        entmap: String,
-        */ 
+     
   
+       let slime_file_name = String::from("slime.json");
+
 
        let base_dir = default_base_dir();
+
+ 
 
        let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;
  
          //// do we have to load map here ?  waste since world does it too.. ?
-            let mut map_file = match vfs.as_ref().open( file_path )  {
-                Ok(f) => f,
-                Err(e) => return  Err( GameServerError::MapLoadingError   )
-            };  
-
-            //could i also try to load a special custom progs dat file that i design myself ?
-            let mut progs_file = match vfs.as_ref().open( "progs.dat" )  {
-                Ok(f) => f,
-                Err(e) => return  Err( GameServerError::ProgsLoadingError   )
-            };  
-
-            let models: Vec<Model> = Vec::new() ; 
-
-            let (mut brush_models, mut entmap) = bsp::load(map_file).unwrap();
-            
-            let con_names = Rc::new(RefCell::new(Vec::new()));    
-            let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
-            // what is this doing and why ? 
-            register_cvars(&cvars.borrow()).unwrap();
-            
-
-            //need to somehow load progs !! 
-             let prog = progs::load(progs_file).unwrap();
-                
-
-
-             let map_name = String::from("maps/dm6.bsp") ; //for now 
-
-            let mut all_models:Vec<Model> = Vec::new();
+          
 
             //add map to the world 
          /*   all_models.push(Model{
@@ -338,13 +313,10 @@ impl GameServer {
             }  ); */
 
 
-            /// is the world loading everything it needs ???  
-            /// i should be able to suck stuff out of the world to give to client -- pretty easily 
-            
-            all_models.append(&mut brush_models);
+         
 
 
-            self.server_session.load_level(  vfs , cvars, prog,  all_models, entmap ) ; 
+            self.server_session.load_level(  vfs , map_file_name, slime_file_name /* cvars, prog,  all_models, entmap */ ) ; 
 
  
           Ok( () )
@@ -895,6 +867,39 @@ impl GameServer {
 
 }
 
+
+
+
+/*
+
+
+MOVE ALL BELOW TO A FILE NAMED SESSION 
+
+*/
+
+
+#[derive(Error, Debug)]
+pub enum SessionError {
+    #[error("Unable to load map")]
+    MapLoadingError,
+    #[error("Unable to load progs.dat")]
+    ProgsLoadingError,
+    #[error("Unable to load slime.json")]
+    SlimeLoadingError,
+    #[error("Invalid CD track number")]
+    InvalidCdTrack,
+    #[error("No such CD track: {0}")]
+    NoSuchCdTrack(i32),
+    #[error("Message size ({0}) exceeds maximum allowed size {}", net::MAX_MESSAGE)]
+    MessageTooLong(u32),
+    #[error("I/O error: {0}")]
+    Io(#[from] io::Error),
+    #[error("Network error: {0}")]
+    Net(#[from] NetError),
+}
+
+
+
 /// Server state that persists between levels.
 pub struct SessionPersistent {
     client_slots: ClientSlots,
@@ -945,13 +950,15 @@ impl SessionLoading {
     pub fn new(
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
-        progs: LoadProgs,
+        slime: Slime,
        
         models: Vec<Model>,
         entmap: String,
     ) -> SessionLoading {
+
+        //are these still the best inputs ? 
         SessionLoading {
-            level: LevelState::new(vfs, cvars, progs,    models, entmap),
+            level: LevelState::new(vfs, cvars, slime, models, entmap),
         }
     }
 
@@ -971,12 +978,13 @@ impl SessionLoading {
         self.level.precache_model(name_id)
     }
 
-    /// Completes the loading process.
-    ///
+     
     /// This consumes the `ServerLoading` and returns a `ServerActive`.
-    pub fn finish(self) -> SessionActive {
+    pub fn finishLoading(self) -> SessionActive {
         SessionActive { level: self.level }
     }
+
+ 
 }
 
 /// State specific to an active (in-game) server.
@@ -1003,15 +1011,92 @@ impl Session {
     pub fn load_level( 
         &mut self,
         vfs: Rc<Vfs>,
-        cvars: Rc<RefCell<CvarRegistry>>,
-        progs: LoadProgs,
+        map_file_name: String,
+        slime_file_name: String, 
+ 
+    ) -> Result<(),SessionError> {
+      
+            
+        let mut map_file = match vfs.as_ref().open( map_file_name )  {
+            Ok(f) => f,
+            Err(e) => return  Err( SessionError::MapLoadingError   )
+        };  
+
+
+        let (mut brush_models, mut entmap) = bsp::load(map_file).unwrap();
+            
+              
+        //could i also try to load a special custom progs dat file that i design myself ?
+        let mut slime_file = match vfs.as_ref().open( "slime.json" )  {
+            Ok(f) => f,
+            Err(e) => return  Err( SessionError::SlimeLoadingError   )
+        };  
+
+        let slime = Slime::load(slime_file).unwrap();
+            
+
+
+
+        let con_names = Rc::new(RefCell::new(Vec::new()));    
+
+        //populate cvars from slime ??
+
+        let cvars = Rc::new(RefCell::new(CvarRegistry::new(con_names.clone())));
+        // what is this doing and why ? 
+        register_cvars(&cvars.borrow()).unwrap();
         
-        models: Vec<Model>,
-        entmap: String,
-    )   {
-       self.state =  SessionState::Loading(
-              SessionLoading::new(vfs, cvars, progs,   models, entmap) );
+
+
+        //do i need to give the level more than just brushmodels ? how does it get entity models..? the progs slime ? 
+
+        //prep for precaching 
+        self.state =  SessionState::Loading(  SessionLoading::new(vfs, cvars, slime, brush_models, entmap) );
+
+   
+
+
+            //precache !! map and  brush and entity models for sure 
+
+            //how does precaching work !? how do i get the map in there 
+        /*
+          self.precache_model(map_file_name);
+  
+          //get these from the slime ? 
+          self.precache_sound("player/death1.wav");
+            */
+ 
+
+
+         self.finishLoading();
+
+         Ok(())
+
     }
+
+       /// Completes the loading process.
+    ///
+    /// This consumes the `ServerLoading` and returns a `ServerActive`.
+    pub fn finishLoading(&mut self)   {
+
+        let session_active_opt = match &self.state {
+            SessionState::Starting() => None,
+            SessionState::Loading(state) => Some(state.finishLoading()),
+            SessionState::Active(state) => None
+            };
+            
+            //self.state.finishLoading();
+
+        let session_active = match session_active_opt {
+            Some(act) => act,
+            None => panic!("Could not finish loading level")
+        };
+ 
+
+        self.state = SessionState::Active( session_active );
+
+        
+    }
+
 
     /// Returns the maximum number of clients allowed on the server.
     pub fn max_clients(&self) -> usize {

@@ -38,6 +38,9 @@ use crate::{
         EntityFieldAddr, EntityId, ExecutionContext, FunctionId, GlobalAddrEntity, GlobalAddrFloat,
         Globals, LoadProgs, Opcode, ProgsError, StringId, StringTable,
     },
+    server::slime::{
+        Slime
+    },
     server::{ClientSlots}
 };
 
@@ -74,7 +77,7 @@ pub struct LevelState {
     /// QuakeC bytecode execution context.
     ///
     /// This includes the program counter, call stack, and local variables.
-    cx: ExecutionContext,
+   // cx: ExecutionContext,
 
     /// Global values for QuakeC bytecode.
     globals: Globals,
@@ -91,17 +94,18 @@ impl LevelState {
     pub fn new(
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
-        progs: LoadProgs,
+        slime: Slime,
        
         models: Vec<Model>,
         entmap: String,
     ) -> LevelState {
-        let LoadProgs {
-            cx,
+
+        let Slime {
+            //globals 
             globals,
             entity_def,
             string_table,
-        } = progs;
+        } = slime;
 
         println!("string table {}", string_table.borrow_mut().getData() );
         
@@ -132,6 +136,9 @@ impl LevelState {
         let world = World::create(models, entity_def.clone(), string_table.clone()).unwrap();
       
 
+     
+        //add to me from slime ? 
+
         let mut level = LevelState {
             vfs,
             cvars,
@@ -144,7 +151,7 @@ impl LevelState {
             entmap: entmap.to_owned(),
             time: Duration::zero(),
 
-            cx,
+          //  cx,
             globals,
             world,
 
@@ -234,6 +241,10 @@ impl LevelState {
     }
 
     /// Execute a QuakeC function in the VM.
+    /// 
+    /// we can do this in Rhai instead of QuakeC 
+
+    /* 
     pub fn execute_program(&mut self, f: FunctionId) -> Result<(), ProgsError> {
         let mut runaway = 100000;
 
@@ -454,7 +465,7 @@ impl LevelState {
         self.execute_program(func_id)?;
         Ok(())
     }
-
+*/
     /// Link an entity into the `World`.
     ///
     /// If `touch_triggers` is `true`, this will invoke the touch function of
@@ -466,9 +477,10 @@ impl LevelState {
     ) -> Result<(), ProgsError> {
         self.world.link_entity(ent_id)?;
 
-        if touch_triggers {
+      /* //add this back in !  
+       if touch_triggers {
             self.touch_triggers(ent_id)?;
-        }
+        }*/ 
 
         Ok(())
     }
@@ -548,7 +560,7 @@ impl LevelState {
 
         Ok(())
     }
-
+/* 
     pub fn think(&mut self, ent_id: EntityId, frame_time: Duration) -> Result<(), ProgsError> {
         let ent = self.world.entity_mut(ent_id)?;
         let think_time = duration_from_f32(ent.load(FieldAddrFloat::NextThink)?);
@@ -1041,9 +1053,14 @@ impl LevelState {
 
         Ok(())
     }
+*/
+
+
+
+
 
     // QuakeC instructions ====================================================
-
+/* 
     pub fn op_return(&mut self, a: i16, b: i16, c: i16) -> Result<(), ProgsError> {
         let val1 = self.globals.get_bytes(a)?;
         let val2 = self.globals.get_bytes(b)?;
@@ -1428,4 +1445,6 @@ impl LevelState {
         // TODO: write to server signon packet
         Ok(())
     }
+
+    */
 }
