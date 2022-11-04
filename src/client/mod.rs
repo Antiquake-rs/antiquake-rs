@@ -252,6 +252,7 @@ impl Connection {
                         }
                         ClientInfo => {
                             // TODO: fill in client info here
+                            // is this right ?
                             ClientCmd::StringCmd {
                                 cmd:  String::from("clientinfo"), //format!("name \"{}\"\n", "clientinfo"),
                             }

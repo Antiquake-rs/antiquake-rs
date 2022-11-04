@@ -3,9 +3,9 @@ use std::ops::Range;
 use arrayvec::{ArrayString, ArrayVec};
 
 /// Maximum permitted length of a precache path.
-const MAX_PRECACHE_PATH: usize = 64;
+pub const MAX_PRECACHE_PATH: usize = 64;
 
-const MAX_PRECACHE_ENTRIES: usize = 256;
+pub const MAX_PRECACHE_ENTRIES: usize = 256;
 
 /// A list of resources to be loaded before entering the game.
 ///
@@ -52,6 +52,11 @@ impl Precache {
             .find(|&(_, item)| item == target.as_ref())?;
         Some(idx)
     }
+ 
+    pub fn get_data(&self) -> Vec<&str> { 
+        return self.iter().collect() 
+    }
+
 
     /// Adds an item to the precache.
     ///

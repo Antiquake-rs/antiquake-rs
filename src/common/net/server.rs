@@ -37,10 +37,11 @@ use std::{
 };
  
 
-
+ 
 use crate::common::{
-    net::{MsgKind, NetError, QSocket,ServerCmd,EntityUpdate, MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
+    net::{MsgKind, NetError, QSocket,ServerCmd,EntityUpdate, ButtonFlags, read_angle,  MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
     util,
+    engine
 };
 
 use byteorder::{LittleEndian, NetworkEndian, ReadBytesExt, WriteBytesExt};
@@ -51,7 +52,7 @@ pub const CONNECT_PROTOCOL_VERSION: u8 = 3;
 const CONNECT_CONTROL: i32 = 1 << 31;
 const CONNECT_LENGTH_MASK: i32 = 0x0000FFFF;
 
- 
+use cgmath::{Deg, Vector3, Zero};
 
 
 pub trait ConnectPacket {
@@ -574,6 +575,17 @@ impl fmt::Display for ClientPacket {
     }
 }
 
+#[derive(Debug,   )]
+pub struct RequestClientMove {
+    send_time: Duration,
+    angles: Vector3<Deg<f32>>,
+    fwd_move: i16,
+    side_move: i16,
+    up_move: i16,
+    button_flags: ButtonFlags,
+    impulse: u8,
+} 
+
 
 
 #[derive(Debug,   )]
@@ -582,7 +594,7 @@ pub enum ClientPacket {
     ServerInfo(RequestServerInfo),
     PlayerInfo(RequestPlayerInfo),
     RuleInfo(RequestRuleInfo),
-    ClientPhysicsState, 
+    ClientPhysicsState(RequestClientMove), 
     
 }
 
@@ -1278,9 +1290,42 @@ impl ServerConnectionManager {
              },
 
              MsgKind::Unreliable  =>{ 
-                println!("Server got unreliable packet");
-              
-                return Ok(Some(ClientPacket::ClientPhysicsState))
+                //assume its client phys 
+
+                //read the cstring 
+
+                let send_time = engine::duration_from_f32((&mut reader).read_f32::<LittleEndian>()?);
+                let angles = Vector3::new(
+                    read_angle(&mut reader)?,
+                    read_angle(&mut reader)?,
+                    read_angle(&mut reader)?,
+                );
+                let fwd_move = reader.read_i16::<LittleEndian>()?;
+                let side_move = reader.read_i16::<LittleEndian>()?;
+                let up_move = reader.read_i16::<LittleEndian>()?;
+                let button_flags_val = reader.read_u8()?;
+                let button_flags = match ButtonFlags::from_bits(button_flags_val) {
+                    Some(bf) => bf,
+                    None => {
+                        return Err(NetError::InvalidData(format!(
+                            "Invalid value for button flags: {}",
+                            button_flags_val
+                        )))
+                    }
+                };
+                let impulse = reader.read_u8()?; 
+             
+
+                return Ok(Some(ClientPacket::ClientPhysicsState( RequestClientMove {
+                    send_time ,
+                    angles,
+                    fwd_move,
+                    side_move,
+                    up_move,
+                    button_flags,
+                    impulse,
+
+                }  )))
              }, 
 
 

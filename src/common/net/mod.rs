@@ -1600,6 +1600,7 @@ impl ServerCmd {
                 writer.write(message.as_bytes())?;
                 writer.write_u8(0)?;
 
+                //is this correct ? 
                 for model_name in model_precache.iter() {
                     writer.write(model_name.as_bytes())?;
                     writer.write_u8(0)?;

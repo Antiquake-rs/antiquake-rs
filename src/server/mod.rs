@@ -32,11 +32,12 @@ use std::{
     net::{ToSocketAddrs,SocketAddr},
     io::{self, BufRead},
     fs::File,
-    fmt::{self,Display} 
+    fmt::{self,Display},
+    ops::Range
 };
 
 use num::FromPrimitive;
-
+use arrayvec::ArrayString;
 
 use byteorder::{LittleEndian, NetworkEndian, ReadBytesExt, WriteBytesExt};
 
@@ -47,7 +48,7 @@ use crate::{
         console::CvarRegistry,
         engine::{duration_from_f32, duration_to_f32},
         math::Hyperplane,
-        model::Model,
+        model::{Model,ModelFlags,ModelKind},
         parse,
         vfs::{Vfs,VirtualFile},
         default_base_dir,
@@ -66,7 +67,7 @@ use crate::{
 };
 
 use self::{
-    precache::Precache,
+    precache::{Precache,MAX_PRECACHE_ENTRIES,MAX_PRECACHE_PATH},
     progs::{
         globals::{
             GLOBAL_ADDR_ARG_0, GLOBAL_ADDR_ARG_1, GLOBAL_ADDR_ARG_2, GLOBAL_ADDR_ARG_3,
@@ -305,7 +306,7 @@ impl GameServer {
 
        let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;
  
-         
+         //// do we have to load map here ?  waste since world does it too.. ?
             let mut map_file = match vfs.as_ref().open( file_path )  {
                 Ok(f) => f,
                 Err(e) => return  Err( GameServerError::MapLoadingError   )
@@ -330,9 +331,28 @@ impl GameServer {
             //need to somehow load progs !! 
              let prog = progs::load(progs_file).unwrap();
                 
-         
 
-            self.server_session.load_level(  vfs , cvars, prog, brush_models, entmap ) ; 
+
+             let map_name = String::from("maps/dm6.bsp") ; //for now 
+
+            let mut all_models:Vec<Model> = Vec::new();
+
+            //add map to the world 
+         /*   all_models.push(Model{
+                name: map_name,
+                kind: ModelKind::None,
+                flags: ModelFlags::empty()
+
+            }  ); */
+
+
+            /// is the world loading everything it needs ???  
+            /// i should be able to suck stuff out of the world to give to client -- pretty easily 
+            
+            all_models.append(&mut brush_models);
+
+
+            self.server_session.load_level(  vfs , cvars, prog,  all_models, entmap ) ; 
 
  
           Ok( () )
@@ -454,15 +474,10 @@ impl GameServer {
             }
 
            
-
-            //act based on the client packet we got 
+ 
         }else{
             return Ok((None, socket_addr))
-        }
-
-                
-
-
+        } 
 
         
     }
@@ -514,82 +529,16 @@ impl GameServer {
 
              
                 return Ok(client_id)
-
-  
  
-                },
-              
-            
-            
+ 
+                }, 
+             
             
                Err(_) => {return Err(NetError::Other(format!("Could not register new client"))) }
         }
-
-        
-      //  Err(NetError::Other(format!("Could not register new client")))
-
-
-      //  let pdata = net::PlayerData { view_height: (), ideal_pitch: (), punch_pitch: (), velocity_x: (), punch_yaw: (), velocity_y: (), punch_roll: (), velocity_z: (), items: (), on_ground: (), in_water: (), weapon_frame: (), armor: (), weapon: (), health: (), ammo: (), ammo_shells: (), ammo_nails: (), ammo_rockets: (), ammo_cells: (), active_weapon: () }
-
-       // let playerDataCmd = ServerCmd::PlayerData(pdata)
-          
-        
-      // let send_spawn_result =  self.serverConnectionListener.send_server_cmd_to(  playerDataCmd ,  socketAddr  );  
-
-
-
- /* 
-
-        let serverSpawnCmd = ServerCmd::SpawnBaseline {
-             ent_id:0,
-            model_id:0,
-            frame_id:0,
-            colormap:0,
-            skin_id:0,
-            origin: Vector3::new(0.0,0.0,0.0),
-            angles:Vector3::new(Deg(0.0),Deg(0.0),Deg(0.0)),
-        };   
-        let send_spawn_result =  self.serverConnectionListener.send_server_cmd_to(  serverSpawnCmd ,  socketAddr  );  
  
 
-
-        //need to give entities to the client !!! 
-        //https://github.com/id-Software/Quake/blob/master/QW/server/sv_user.c
-
-        let serverSignonCmd = ServerCmd::SignOnStage {
-            stage: SignOnStage::Done
-        };   
-        let send_signon_result =  self.serverConnectionListener.send_server_cmd_to(  serverSignonCmd ,  socketAddr  );  
-*/
-
-        
-    /* 
-        pub enum SignOnStage {
-            Not = 0,
-            Prespawn = 1,
-            ClientInfo = 2,
-            Begin = 3,
-            Done = 4,
-        }*/
-
-
-        //send a bunch of these
-       // let signOnStageCmd = ServerCmd::SignOnStage({stage:SignOnStage::ClientInfo}) ;
  
-       // let signon_first =  self.serverConnectionListener.send_server_cmd_to(  serverInfoCmd ,  socketAddr  );  
-
-        
-
-      //  let send_result = self.serverConnectionListener.send_msg_unreliable(packet.as_slice()); 
-
-
-        
-
-        //send server info cmd
-       // self.serverConnectionListener.send_response( serverInfoCmd , socketAddr );
-
-      //  self.server_session.add_client(  )  
-
     }
 
 
@@ -627,16 +576,42 @@ impl GameServer {
                         //send signon value 
 
 
+
+
+                        let level_state_opt = self.server_session.level(); 
+
+                        let level_state = match level_state_opt {
+                            Some(lvl) => lvl, 
+                            None => {
+                                return Err(NetError::InvalidData(format!(
+                                    "Cannot give level data before level loads" 
+                                )))
+                            }
+
+                        };
+
+                        println!("models are");
+                        let mut world_models:Vec<String> = level_state.get_all_world_model_names() ; 
+
+                        println!("sounds are");
+                        /*let mut sound_precache:Vec<String> = level_state.get_sound_precache_data().iter().map(
+                            
+                            |&s|  {println!("{}",s);  s.into()}
+                        ).collect(); */
+ 
                                 
                         let serverInfoCmd = ServerCmd::ServerInfo {
                             protocol_version: i32::from(self.protocol_version),
                             max_clients: (self.server_session.persist.getMaxClients() as u8),
                             game_type: GameType::SinglePlayer,
                             message: String::from("Test message"),
-                            model_precache:  vec![ String::from("maps/e1m1.bsp") ] ,//self.server_session.level().sound_precache.items ,
-                            sound_precache:  vec![ ] //self.server_session.level().model_precache.items ,
+                            model_precache : world_models, 
+                            sound_precache : vec![String::from("player/death1.wav"), String::from("player/death2.wav")]   
                         };    
  
+
+                        println!("sending server cmd {}", serverInfoCmd.to_string()  );
+
 
                         let send_client_serverinfo_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
 
@@ -645,18 +620,6 @@ impl GameServer {
                         
                         );
                         
-
-
-                        let spawnBaselineCmd = ServerCmd::SpawnBaseline {
-                            ent_id:0,
-                            model_id:0,
-                            frame_id:0,
-                            colormap:0,
-                            skin_id:0,
-                            origin: Vector3::new(0.0,0.0,0.0),
-                            angles:Vector3::new(Deg(0.0),Deg(0.0),Deg(0.0)),
-                        };    
- 
 
 
                         //Got server cmd CdTrack { track: 5, loop_: 5 }
@@ -694,6 +657,8 @@ impl GameServer {
 
                  },
                 ClientPacket::RuleInfo( request_rule_info ) => { 
+                    //the client is asking us for all of the rules of the match -- we give tham and step them thru signon 
+
                     let prev_cvar = request_rule_info.prev_cvar;
 
                     let client_id_result = self.serverConnectionManager.get_client_id_from_address( socket_addr  ) ; 
@@ -710,7 +675,23 @@ impl GameServer {
  
                     };
 
+                    let level_state_opt = self.server_session.level(); 
+
+                    let level_state = match level_state_opt {
+                        Some(lvl) => lvl, 
+                        None => {
+                            return Err(NetError::InvalidData(format!(
+                                "Cannot give level data before level loads" 
+                            )))
+                        }
+
+                    };
+
+
                     match prev_cvar.as_str() {
+
+                        
+                      
 
                         "prespawn" => {
                             // we should send out tons of stuff 
@@ -720,6 +701,36 @@ impl GameServer {
                             /// give SpawnStaticSound 
                             /// give SpawnStatic
                             /// give SpawnBaseline 
+                           
+
+
+                            //for each entity 
+
+                    /*        let entities_list:Vec<HashMap<&str, &str>> = level_state.get_entity_list() ;
+
+
+                            for entity in entity_list {
+                                level.spawn_entity_from_map(entity).unwrap();
+                            }
+                            
+                            let mapped = entities_list.iter().map(|ent|
+ 
+                                
+                                for (key, value) in  ent {
+                                    println!("{} / {}", key, value);
+                                }
+                            );*/ 
+
+ 
+                          /*   let spawnBaselineCmd = ServerCmd::SpawnBaseline {
+                                ent_id,
+                                model_id,
+                                frame_id,
+                                colormap,
+                                skin_id,
+                                origin,
+                                angles,
+                            };   */
 
 
                             let signonCmd = ServerCmd::SignOnStage {
@@ -749,6 +760,21 @@ impl GameServer {
                                 get playerdata 
                                  
                             */
+
+                            //give light maps
+                            for id in 0..64 {
+                                
+                                let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+    
+                                    ServerCmd::LightStyle {
+                                       id,
+                                       value: String::from("") //what do we put here ?
+                                    }   ,
+                                    client_id 
+                                
+                                );
+
+                            }
 
 
                             let signonCmd = ServerCmd::SignOnStage {
@@ -928,11 +954,12 @@ impl SessionLoading {
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         progs: LoadProgs,
+       
         models: Vec<Model>,
         entmap: String,
     ) -> SessionLoading {
         SessionLoading {
-            level: LevelState::new(vfs, cvars, progs, models, entmap),
+            level: LevelState::new(vfs, cvars, progs,    models, entmap),
         }
     }
 
@@ -986,11 +1013,12 @@ impl Session {
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         progs: LoadProgs,
+        
         models: Vec<Model>,
         entmap: String,
     )   {
        self.state =  SessionState::Loading(
-              SessionLoading::new(vfs, cvars, progs, models, entmap) );
+              SessionLoading::new(vfs, cvars, progs,   models, entmap) );
     }
 
     /// Returns the maximum number of clients allowed on the server.
@@ -1020,36 +1048,50 @@ impl Session {
     }
 
     #[inline]
-    fn level(&self) -> &LevelState {
+    fn level(&self) -> Option< &LevelState > {
         match self.state {
-            SessionState::Starting() => panic!("Cannot fetch level before the server loads it"),
-            SessionState::Loading(ref loading) => &loading.level,
-            SessionState::Active(ref active) => &active.level,
+            SessionState::Starting() => None,
+            SessionState::Loading(ref loading) => Some(&loading.level),
+            SessionState::Active(ref active) => Some(&active.level),
         }
     }
 
     #[inline]
-    fn level_mut(&mut self) -> &mut LevelState {
+    fn level_mut(&mut self) -> Option< &mut LevelState > {
         match self.state {
-            SessionState::Starting() => panic!("Cannot fetch level before the server loads it"),
-            SessionState::Loading(ref mut loading) => &mut loading.level,
-            SessionState::Active(ref mut active) => &mut active.level,
+            SessionState::Starting() => None,
+            SessionState::Loading(ref mut loading) => Some(&mut loading.level),
+            SessionState::Active(ref mut active) => Some(&mut active.level),
         }
     }
 
     #[inline]
     pub fn sound_id(&self, name_id: StringId) -> Option<usize> {
-        self.level().sound_id(name_id)
+ 
+   
+        self.level()?.sound_id(name_id)
+
     }
 
     #[inline]
     pub fn model_id(&self, name_id: StringId) -> Option<usize> {
-        self.level().model_id(name_id)
+
+        self.level()?.model_id(name_id)
+
     }
 
     #[inline]
     pub fn set_lightstyle(&mut self, index: usize, val: StringId) {
-        self.level_mut().set_lightstyle(index, val);
+        match  self.level_mut() {
+            Some(lvl) => {
+
+                lvl.set_lightstyle(index, val);
+            },
+            None => { debug!( "Cannot set light style on a null level " ); }
+
+        }
+        
+
     }
 
     /// Returns the amount of time the current level has been active.
@@ -1073,6 +1115,9 @@ pub struct LevelState {
     sound_precache: Precache,
     model_precache: Precache,
     lightstyles: [StringId; MAX_LIGHTSTYLES],
+
+
+    entmap: String,
 
     /// Amount of time the current level has been active.
     time: Duration,
@@ -1098,6 +1143,7 @@ impl LevelState {
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         progs: LoadProgs,
+       
         models: Vec<Model>,
         entmap: String,
     ) -> LevelState {
@@ -1109,20 +1155,22 @@ impl LevelState {
         } = progs;
 
         println!("string table {}", string_table.borrow_mut().getData() );
-     /*  println!("new level state");
-
-        let s_table = string_table.borrow();
-        let length = s_table.length();
         
-        println!("string table length {}",length); */ 
+
+         
 
         let mut sound_precache = Precache::new();
-        sound_precache.precache("");
+       // sound_precache.precache("");
+
+
+
 
         let mut model_precache = Precache::new();
-        model_precache.precache("");
+       // model_precache.precache("");
+
 
         for model in models.iter() {
+            //why is the map bsp not in this ??
 
             println!("model is {}",model.name());
 
@@ -1130,8 +1178,10 @@ impl LevelState {
             model_precache.precache(string_table.borrow().get(model_name).unwrap());
         }
 
+        
+
         let world = World::create(models, entity_def.clone(), string_table.clone()).unwrap();
-        let entity_list = parse::entities(&entmap).unwrap();
+      
 
         let mut level = LevelState {
             vfs,
@@ -1140,6 +1190,9 @@ impl LevelState {
             sound_precache,
             model_precache,
             lightstyles: [StringId(0); MAX_LIGHTSTYLES],
+            
+
+            entmap: entmap.to_owned(),
             time: Duration::zero(),
 
             cx,
@@ -1148,6 +1201,8 @@ impl LevelState {
 
             datagram: ArrayVec::new(),
         };
+
+        let entity_list = parse::entities(&entmap).unwrap();
 
         for entity in entity_list {
             level.spawn_entity_from_map(entity).unwrap();
@@ -1189,8 +1244,39 @@ impl LevelState {
     }
 
     #[inline]
-    pub fn set_lightstyle(&mut self, index: usize, val: StringId) {
+    pub fn set_lightstyle(&mut self, index: usize, val: StringId)   {
         self.lightstyles[index] = val;
+    }
+
+
+ /*    pub fn get_entity_list(&self) ->  Vec<&Entity>   {
+
+      // let entity_list:Vec<&Entity> = Vec::new();   
+
+       let entity_id_list = self.world.list_entities(); 
+
+       let  entity_list:Vec<&Entity> = entity_id_list.iter().map( |id|   self.world.entity(  id  )   );
+ 
+       return entity_list; 
+
+    }*/
+
+    pub fn get_all_world_model_names(&self) ->  Vec<String>   {
+         
+        return self.world.get_model_names();
+
+    }
+
+
+    pub fn get_model_precache_data(&self) ->  Vec<&str> {
+
+        return self.model_precache.get_data( )
+    }
+
+    
+    pub fn get_sound_precache_data(&self) ->  Vec<&str> {
+
+        return self.sound_precache.get_data( )
     }
 
     /// Execute a QuakeC function in the VM.
