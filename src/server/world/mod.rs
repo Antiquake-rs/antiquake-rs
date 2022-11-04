@@ -266,6 +266,12 @@ impl World {
         })
     }
 
+    pub fn get_model_names(&self) -> Vec<String>{
+        return self.models.iter().map(
+            |s|  {println!("world model: {}",s.name());  String::from(s.name() ) } 
+        ).collect(); 
+    }
+
     pub fn add_model(&mut self, vfs: &Vfs, name_id: StringId) -> Result<(), ProgsError> {
         let strs = self.string_table.borrow();
         let name = strs.get(name_id).unwrap();

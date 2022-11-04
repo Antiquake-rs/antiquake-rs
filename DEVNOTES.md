@@ -29,6 +29,12 @@ gfx pipelines yay!!!
 - be able to load a map  by spinning up a local server on port 27500 
 - clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
+ ServerCmd::LightStyle 
+
+
+
+connect to fitzquake and spy on what they sendme
+
 
 
 Server needs to be using the msg_send cache with reliable packet stream 
@@ -63,40 +69,24 @@ the server expects some specific clc replies at various points.
 then it'll start sending some unreliables mixed with the odd reliable. woo. easy, right?...
 
 
-Connecting...(attempt 2 of 3)
-Server handle connect request
-server is updating
-serializing fast update
-send_msg_unreliable_multicast
-Connecting...(attempt 3 of 3)
-Server handle connect request
-server is updating
-serializing fast update
-send_msg_unreliable_multicast
-Connecting...(attempt 1 of 3)
-Server handle connect request
-Starting server on port 27500
-server is updating
-serializing fast update
-send_msg_unreliable_multicast
-thread '<unnamed>' panicked at 'called `Result::unwrap()` on an `Err` value: Io(Os { code: 98, kind: AddrInUse, message: "Address already in use" })', src/server/mod.rs:270:94
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-Connecting...(attempt 2 of 3)
-Server handle connect request
-server is updating
-serializing fast update
-send_msg_unreliable_multicast
-Connecting...(attempt 3 of 3)
-Server handle connect request
-server is updating
-serializing fast update
-send_msg_unreliable_multicast
+ 
+
+WHERE I AM  STUCK : 
+src/client/mod 1377 happens 
+  Ok(Connection {
+        state: ClientState::new(stream),
+        kind: ConnectionKind::Server {
+            qsock,
+            compose: Vec::new(),
+        },
+        conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
+    })
 
 
-
-
+https://www.gamers.org/dEngine/quake/QDP/qnp.html#connection_req
 
 https://fabiensanglard.net/quakeSource/quakeSourceNetWork.php
+
 
 
 need clients 'self.entities' to be populates !!
@@ -108,7 +98,23 @@ need clients 'self.entities' to be populates !!
     src/client/mod 430 
 
 
- 
+ Connection {
+            state: ref cl_state,
+
+
+
+Client is trying todo first render pass and getting 
+
+' panicked at 'send_msg_unreliable_multicast
+called `Result::unwrap()` on an `Err` value: NoSuchLightmapAnimation(0)', src\client\render\mod.rs:753:58
+
+Some(Connection {
+            state: ref cl_state,
+            ref conn_state,
+            ref kind,
+
+the connection's cl_state  data is not all filled in yet 
+
 
 
 #### NETWORKING 

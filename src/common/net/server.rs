@@ -37,10 +37,11 @@ use std::{
 };
  
 
-
+ 
 use crate::common::{
-    net::{MsgKind, NetError, QSocket,ServerCmd,EntityUpdate, MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
+    net::{MsgKind, NetError, QSocket,ServerCmd,EntityUpdate, ButtonFlags, read_angle,  MAX_MESSAGE, MAX_PACKET , HEADER_SIZE, MAX_DATAGRAM},
     util,
+    engine
 };
 
 use byteorder::{LittleEndian, NetworkEndian, ReadBytesExt, WriteBytesExt};
@@ -51,7 +52,7 @@ pub const CONNECT_PROTOCOL_VERSION: u8 = 3;
 const CONNECT_CONTROL: i32 = 1 << 31;
 const CONNECT_LENGTH_MASK: i32 = 0x0000FFFF;
 
- 
+use cgmath::{Deg, Vector3, Zero};
 
 
 pub trait ConnectPacket {
@@ -99,7 +100,7 @@ pub trait ConnectPacket {
 
 
 
-
+ 
 impl fmt::Display for RequestCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -565,6 +566,37 @@ impl ConnectPacket for Response {
     }
 }
 
+ 
+
+impl fmt::Display for ClientPacket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+       
+    }
+}
+
+#[derive(Debug,   )]
+pub struct RequestClientMove {
+    send_time: Duration,
+    angles: Vector3<Deg<f32>>,
+    fwd_move: i16,
+    side_move: i16,
+    up_move: i16,
+    button_flags: ButtonFlags,
+    impulse: u8,
+} 
+
+
+
+#[derive(Debug,   )]
+pub enum ClientPacket {
+    Connect(RequestConnect),
+    ServerInfo(RequestServerInfo),
+    PlayerInfo(RequestPlayerInfo),
+    RuleInfo(RequestRuleInfo),
+    ClientPhysicsState(RequestClientMove), 
+    
+}
 
 
 //one of these exists per client -- used for reliable messaging to them 
@@ -587,6 +619,10 @@ pub struct ServerQSocket {
 
     recv_sequence: u32,
     recv_buf: [u8; MAX_MESSAGE],
+
+    compose: Vec<u8>,
+
+
 
 }
 
@@ -612,6 +648,9 @@ impl ServerQSocket {
             recv_sequence: 0,
             recv_buf: [0; MAX_MESSAGE],
 
+             /// The client's packet composition buffer.
+            compose: Vec::new(),
+
         };
     }
 
@@ -631,7 +670,7 @@ impl ServerQSocket {
     */
     pub fn handle_client_msg( &mut self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence: u32, msg: &mut Vec<u8>,  msg_kind:MsgKind , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
-        println!("Server QSocket handle client msg");
+        println!("Server QSocket handle client msg of kind {} with sequence {}",msg_kind, sequence);
 
         match msg_kind {
 
@@ -788,7 +827,7 @@ impl ServerQSocket {
     }
 
     /// Send the next segment of a reliable message.
-    pub fn send_msg_next(&mut self, socket:&mut UdpSocket) -> Result<(), NetError> {
+      fn send_msg_next(&mut self, socket:&mut UdpSocket) -> Result<(), NetError> {
         // grab the first chunk in the queue
         let content = self
             .send_queue
@@ -863,16 +902,31 @@ impl ServerQSocket {
 
     pub fn update(&mut self , socket: &mut UdpSocket) -> Result<(),NetError> {
 
+        let can_send:bool =  self.can_send();
+        
+        let compose = &self.compose.clone(); 
+
+        //start sending reliable msg out of compose 
+        if can_send && !compose.is_empty() {
+            println!("server q socket begin_send_msg ");
+            self.begin_send_msg(socket  , compose)?;
+            self.compose.clear();
+        }
+
+        //keep sending reliable msg or ACK 
         if self.send_next {
+            println!("server q socket send msg next ");
             self.send_msg_next(socket)?;
 
         }
+
+
 
         Ok(())
         
     }
 
-    pub fn send_server_cmd(&mut self, socket: &mut UdpSocket, serverCmd:ServerCmd   )  -> Result<(),NetError> { 
+    pub fn send_server_cmd_reliable(&mut self, socket: &mut UdpSocket, serverCmd:ServerCmd   )  -> Result<(),NetError> { 
 
         
         let mut packet = Vec::new();
@@ -898,7 +952,7 @@ impl fmt::Display for SpecialServerAction {
 #[derive(Debug)]
 pub enum SpecialServerAction {
 
-    RegisterClient(SocketAddr, String, u8),
+    RegisterClient(String, u8),
     DisconnectClient, 
     
 
@@ -973,15 +1027,22 @@ impl ServerConnectionManager {
 
 
     //the server keeps calling this which pops data off of its udp sockets buffer 
-    pub fn recv_msg(&mut self) -> Result<(Vec<u8>, Option<SpecialServerAction>) ,NetError> {
+    pub fn recv_msg(&mut self) -> Result<(Vec<u8>, Option<MsgKind>, Option<SocketAddr>) ,NetError> {
 
         let mut msg = Vec::new();
+
+        let mut socket_recvd_from:Option<SocketAddr> = None;
+
+        let mut msg_kind_opt = None ; 
 
 
         loop {
       
           let (packet_len, remote) = self.socket.recv_from(&mut self.recv_buf)?;
           let mut reader = BufReader::new(&self.recv_buf[..packet_len]);
+
+
+          socket_recvd_from = Some(remote);
 
 
           //All packets start with a 4-byte header. The first 2 bytes is the packet type. The next 2 bytes is the packet length, including the header. 
@@ -997,10 +1058,13 @@ impl ServerConnectionManager {
               }
           };
 
+          msg_kind_opt = Some(msg_kind.clone());
+
 
           if packet_len < HEADER_SIZE {
             // TODO: increment short packet count
             debug!("short packet");
+            println!("srv: short packet");
             continue;
           }
 
@@ -1028,50 +1092,21 @@ impl ServerConnectionManager {
 
 
           match msg_kind {
-            // handle control messages in this scope since the client is not connected 
+            // handle control messages  like unreliable msgs but we dont know the sender (they are not connected yet)
             MsgKind::Ctl =>{
 
-                println!( "Server processing ctl msg !"  );
-                
-                let request_byte = reader.read_u8()?;
-                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
-                    Some(r) => r,
-                    None => {
+                println!( "Server processing ctl msg !"  ); 
 
+                reader.read_to_end( &mut msg )?;
 
-                        println!(
-                           
-                                "error with request code {}",
-                                request_byte
-                             
-
-                        );
-                        return Err(NetError::InvalidData(format!(
-                            "request code {}",
-                            request_byte
-                        )))
-                    }
-                };
-
- 
-                let server_action_result =  self.handle_control_request(&mut reader, request_code, remote );
-                
-                match server_action_result {
-                    Ok(server_action) => {
-
-                        
-                        return Ok( (msg, server_action) ) 
-                    }
-                    Err(e) => return Err( e )
-                }
+                return Ok( (  msg, msg_kind_opt, Some(remote ) ) )  
                
             }
 
             //non-ctl messages are processed by the qsocket we are maintaining for that client!! 
             _ => {
 
-
-                println!("Server handling non- ctl message ! ");
+                
 
                 
                 let client_id_result = self.get_client_id_from_address( remote );
@@ -1080,15 +1115,8 @@ impl ServerConnectionManager {
                     Some(client_id) => {
                         
 
-                        //we do this to ultimately build the msg  vec<u8> 
-
-                       /*  let control_flow_result = self
-                        .handle_connected_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind, client_id, &self.socket);
-                            */
-
-
-                        //put this into a subroutine ?? 
-
+                        //we do this to ultimately build the msg  vec<u8>  
+                        //the clients respective qsocket helps decode the msg while keeping track of that clients msg counters 
                         let client_q_socket = self.serverQSockets.get_mut(&client_id); 
 
                         match client_q_socket {
@@ -1096,10 +1124,8 @@ impl ServerConnectionManager {
 
                                 let socket = &self.socket; 
                 
-                                let control_flow_result= q_socket.handle_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind , socket);
-                
-                               // return Ok(None)
-
+                                let control_flow_result= q_socket.handle_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind.clone() , socket);
+                  
                                match control_flow_result {
 
                                 Ok(control_flow) => {
@@ -1117,13 +1143,7 @@ impl ServerConnectionManager {
                             None =>   return Err(NetError::Other(format!("error handling connected client msg - could not get their q socket ")))
                 
                         }
-                
-                        //return Err(NetError::Other(format!("error handling connected client msg ")))
-
-
-
-                    
-                       
+                 
 
                     },
                     None => {return Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
@@ -1140,13 +1160,187 @@ impl ServerConnectionManager {
 
     
 
-        return Ok((msg, None))
+        return Ok((msg, msg_kind_opt, socket_recvd_from))
 
     }
 
 
+    //use the msg body and msg kind to infer what the client is trying to tell us to do ! 
+    pub fn parse_client_packet( msg_slice: &[u8], msg_kind:MsgKind  ) -> Result< Option<ClientPacket>, NetError>   {
+        
+        let mut reader = BufReader::new( msg_slice );
+
+
+        match msg_kind {
+            // handle control messages in this scope since the client is not connected 
+            MsgKind::Ctl =>{ 
+               
+                let request_byte = reader.read_u8()?;   
+
+                 ///USE THIS PATTERN FOR OPTIONS MATCHING
+                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
+                    Some(r) => r,
+                    None => {  
+                        println!( 
+                                "error with request code {}",
+                                request_byte  
+                        );
+                        return Err(NetError::InvalidData(format!(
+                            "request code {}",
+                            request_byte
+                        )))
+                    }
+                };
+
+
+                let request = match request_code {
+                    RequestCode::Connect => {
+                        let game_name = util::read_cstring(&mut reader).unwrap();
+                        let proto_ver = reader.read_u8()?;
+                        
+                         
+                        return Ok(Some(ClientPacket::Connect(RequestConnect{ game_name, proto_ver} )  ))
+                    }
+        
+                    RequestCode::ServerInfo => {
+                        let game_name = util::read_cstring(&mut reader).unwrap(); 
+        
+                        return Ok(Some(ClientPacket::ServerInfo(RequestServerInfo{ game_name } ))  )
+                    }
+        
+                    RequestCode::PlayerInfo => {
+                        let player_id = reader.read_u8()?; 
+                        
+                       return Ok(Some(ClientPacket::PlayerInfo(RequestPlayerInfo{ player_id } ))  )
+                      
+                    }
+        
+                    RequestCode::RuleInfo => {
+                        let prev_cvar = util::read_cstring(&mut reader).unwrap();
+                       
+
+                        return Ok(Some(ClientPacket::RuleInfo(RequestRuleInfo{ prev_cvar } ))  ) 
+         
+                    }
+                };
+
+
+            },
+
+            // this is where we deserialize 
+
+            MsgKind::Ack =>{ 
+                //no need to do anything 
+                return Ok(None)
+             },
+
+             MsgKind::Reliable | MsgKind::ReliableEom =>{ 
+                println!("Server got reliable packet");
+
+                //is this correct????
+                let request_byte = reader.read_u8()?;   
+ 
+                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
+                    Some(r) => r,
+                    None => {  
+                        println!( 
+                                "error with request code {}",
+                                request_byte  
+                        );
+                        return Err(NetError::InvalidData(format!(
+                            "request code {}",
+                            request_byte
+                        )))
+                    }
+                }; 
+               
+                 let request = match request_code {
+                    RequestCode::Connect => {
+                        let game_name = util::read_cstring(&mut reader).unwrap();
+                        let proto_ver = reader.read_u8()?;
+                        
+                         
+                        return Ok(Some(ClientPacket::Connect(RequestConnect{ game_name, proto_ver} )  ))
+                    }
+        
+                    RequestCode::ServerInfo => {
+                        let game_name = util::read_cstring(&mut reader).unwrap(); 
+        
+                        return Ok(Some(ClientPacket::ServerInfo(RequestServerInfo{ game_name } ))  )
+                    }
+        
+                    RequestCode::PlayerInfo => {
+                        let player_id = reader.read_u8()?; 
+                        
+                       return Ok(Some(ClientPacket::PlayerInfo(RequestPlayerInfo{ player_id } ))  )
+                      
+                    }
+        
+                    RequestCode::RuleInfo => {
+                        let prev_cvar = util::read_cstring(&mut reader).unwrap();
+                       
+
+                        return Ok(Some(ClientPacket::RuleInfo(RequestRuleInfo{ prev_cvar } ))  ) 
+         
+                    }
+                };
+
+
+
+             },
+
+             MsgKind::Unreliable  =>{ 
+                //assume its client phys 
+
+                //read the cstring 
+
+                let send_time = engine::duration_from_f32((&mut reader).read_f32::<LittleEndian>()?);
+                let angles = Vector3::new(
+                    read_angle(&mut reader)?,
+                    read_angle(&mut reader)?,
+                    read_angle(&mut reader)?,
+                );
+                let fwd_move = reader.read_i16::<LittleEndian>()?;
+                let side_move = reader.read_i16::<LittleEndian>()?;
+                let up_move = reader.read_i16::<LittleEndian>()?;
+                let button_flags_val = reader.read_u8()?;
+                let button_flags = match ButtonFlags::from_bits(button_flags_val) {
+                    Some(bf) => bf,
+                    None => {
+                        return Err(NetError::InvalidData(format!(
+                            "Invalid value for button flags: {}",
+                            button_flags_val
+                        )))
+                    }
+                };
+                let impulse = reader.read_u8()?; 
+             
+
+                return Ok(Some(ClientPacket::ClientPhysicsState( RequestClientMove {
+                    send_time ,
+                    angles,
+                    fwd_move,
+                    side_move,
+                    up_move,
+                    button_flags,
+                    impulse,
+
+                }  )))
+             }, 
+
+
+        }
+
+       
+
+
+
+    }
+
+
+
     /// Receives a request and returns it along with its remote address.
-    fn handle_control_request(&self, reader:&mut BufReader<&[u8]>, request_code:RequestCode, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
+    pub fn handle_control_request(&self, reader:&mut BufReader<&[u8]>, request_code:RequestCode, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
         println!("Server handle control request");
         // Original engine receives connection requests in `net_message`,
         // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
@@ -1171,7 +1365,7 @@ impl ServerConnectionManager {
                     proto_ver,
                 })*/
                  
-                return Ok(Some( SpecialServerAction::RegisterClient( remote, game_name, proto_ver )) )
+                return Ok(Some( SpecialServerAction::RegisterClient( game_name, proto_ver )) )
             }
 
             RequestCode::ServerInfo => {
@@ -1292,6 +1486,29 @@ impl ServerConnectionManager {
     
     }
 
+ 
+
+    pub fn send_cmd_to_client_reliable(&mut self,  serverCmd:ServerCmd, client_id: i32  )  -> Result<(),NetError> { 
+            
+        let srvQSocket_option = self.serverQSockets.get_mut(&client_id);
+
+        match srvQSocket_option {
+            Some(srvQSocket) => {
+                let sock = &mut self.socket;
+                let send_result =  srvQSocket.send_server_cmd_reliable( sock, serverCmd  );  
+                println!("sent server info cmd to client reliably"); 
+
+                return Ok( () )
+            }
+            None => { return Err(NetError::Other(format!("Could not get qsocket to send msg reliable"))) } 
+        }
+
+        
+
+
+    }
+
+        
 
     //the server version of QSocket
     // https://doc.rust-lang.org/std/net/struct.UdpSocket.html#method.send_to

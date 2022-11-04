@@ -108,10 +108,23 @@ impl From<::std::io::Error> for NetError {
     }
 }
 
+
+
+impl fmt::Display for MsgKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+        // or, alternatively:
+        // fmt::Debug::fmt(self, f)
+    }
+}
+
+
+
 // the original engine treats these as bitflags, but all of them are mutually exclusive except for
 // NETFLAG_DATA (reliable message) and NETFLAG_EOM (end of reliable message).
-#[derive(Debug, Eq, FromPrimitive, PartialEq)]
+#[derive(Debug, Eq, FromPrimitive, PartialEq, Clone)]
 pub enum MsgKind {
+  //  Invalid = 0x0000,
     Reliable = 0x0001,
     Ack = 0x0002,
     ReliableEom = 0x0009,
@@ -1587,6 +1600,7 @@ impl ServerCmd {
                 writer.write(message.as_bytes())?;
                 writer.write_u8(0)?;
 
+                //is this correct ? 
                 for model_name in model_precache.iter() {
                     writer.write(model_name.as_bytes())?;
                     writer.write_u8(0)?;
