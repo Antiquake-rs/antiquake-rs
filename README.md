@@ -22,6 +22,7 @@ Levels can be designed using Trenchbroom editor.
 boot with this: cargo run --bin quake-client
 type in console: playdemo demo1
 
+// connect to https://www.quakeservers.net/quake/servers/ ? 
 
 
 ## Status
@@ -34,6 +35,8 @@ Antiquake is in pre-alpha.
 ### Client
 
 The client is capable of connecting to and playing on original Quake servers using `sv_protocol 15`.
+(hint: shortcut with ../../../quakespasm.exe -dedicated 16 -port 26000 -map e1m1 -protocol 15)
+
 To connect to a Quake server, run
 
 ```
@@ -42,6 +45,8 @@ $ cargo run --release --bin quake-client -- --connect <server_ip>:<server_port>
 
 Quake servers run on port 26000 by default.
 I can guarantee compatibility with FitzQuake and its derived engines, as I use the QuakeSpasm server for development (just remember `sv_protocol 15`).
+
+hint: connect 127.0.0.1:26000
 
 The client also supports demo playback using the `--demo` option:
 

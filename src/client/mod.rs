@@ -197,7 +197,7 @@ enum ConnectionState {
 
 /// Possible targets that a client can be connected to.
 enum ConnectionKind {
-    /// A regular Quake server.
+    /// A regular Quake server. or local server.
     Server {
         /// The [`QSocket`](crate::net::QSocket) used to communicate with the server.
         qsock: QSocket,
@@ -206,14 +206,7 @@ enum ConnectionKind {
         compose: Vec<u8>,
     },
 
-    // A local server for single player 
-    Local {
-        /// The [`QSocket`](crate::net::QSocket) used to communicate with the server.
-        qsock: QSocket,
-
-        /// The client's packet composition buffer.
-        compose: Vec<u8>,
-    },
+   
 
     /// A demo server.
     Demo(DemoServer),
@@ -251,6 +244,7 @@ impl Connection {
                     match new_stage {
                         Not => (), // TODO this is an error (invalid value)
                         Prespawn => {
+                            println!("serializing prespawn");
                             ClientCmd::StringCmd {
                                 cmd: String::from("prespawn"),
                             }
@@ -339,19 +333,7 @@ impl Connection {
                 (msg, None, None)
             }
 
-            ConnectionKind::Local { ref mut qsock, .. } => {
-                let msg = qsock.recv_msg(match self.conn_state {
-                    // if we're in the game, don't block waiting for messages
-                    ConnectionState::Connected(_) => BlockingMode::NonBlocking,
-
-                    // otherwise, give the server some time to respond
-                    // TODO: might make sense to make this a future or something
-                    ConnectionState::SignOn(_) => BlockingMode::Timeout(Duration::seconds(5)),
-                })?;
-
-                (msg, None, None)
-            }
-
+           
             ConnectionKind::Demo(ref mut demo_srv) => {
                 // only get the next update once we've made it all the way to
                 // the previous one
@@ -433,7 +415,7 @@ impl Connection {
                 ServerCmd::Disconnect => {
                     return Ok(match self.kind {
                         ConnectionKind::Demo(_) => NextDemo,
-                        ConnectionKind::Local { .. } => Disconnect,
+                        
                         ConnectionKind::Server { .. } => Disconnect,
                     })
                 }
