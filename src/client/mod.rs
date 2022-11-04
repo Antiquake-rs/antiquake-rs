@@ -253,7 +253,7 @@ impl Connection {
                         ClientInfo => {
                             // TODO: fill in client info here
                             ClientCmd::StringCmd {
-                                cmd: format!("name \"{}\"\n", "UNNAMED"),
+                                cmd:  String::from("clientinfo"), //format!("name \"{}\"\n", "clientinfo"),
                             }
                             .serialize(compose)?;
                             ClientCmd::StringCmd {

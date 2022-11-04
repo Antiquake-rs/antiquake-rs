@@ -99,7 +99,7 @@ pub trait ConnectPacket {
 
 
 
-
+ 
 impl fmt::Display for RequestCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -1080,34 +1080,21 @@ impl ServerConnectionManager {
 
 
           match msg_kind {
-            // handle control messages in this scope since the client is not connected 
+            // handle control messages  like unreliable msgs but we dont know the sender (they are not connected yet)
             MsgKind::Ctl =>{
 
-                println!( "Server processing ctl msg !"  );
-             
+                println!( "Server processing ctl msg !"  ); 
 
                 reader.read_to_end( &mut msg )?;
 
-                return Ok( (  msg, msg_kind_opt, Some(remote ) ) ) 
- 
-               /* let server_action_result =  self.handle_control_request(&mut reader, request_code, remote );
-                
-                match server_action_result {
-                    Ok(server_action) => {
-
-                        
-                        return Ok( (  server_action, Some(remote ) ) ) 
-                    }
-                    Err(e) => return Err( e )
-                }*/ 
+                return Ok( (  msg, msg_kind_opt, Some(remote ) ) )  
                
             }
 
             //non-ctl messages are processed by the qsocket we are maintaining for that client!! 
             _ => {
 
-
-                println!("Server handling non- ctl message ! ");
+                
 
                 
                 let client_id_result = self.get_client_id_from_address( remote );
@@ -1116,15 +1103,8 @@ impl ServerConnectionManager {
                     Some(client_id) => {
                         
 
-                        //we do this to ultimately build the msg  vec<u8> 
-
-                       /*  let control_flow_result = self
-                        .handle_connected_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind, client_id, &self.socket);
-                            */
-
-
-                        //put this into a subroutine ?? 
-
+                        //we do this to ultimately build the msg  vec<u8>  
+                        //the clients respective qsocket helps decode the msg while keeping track of that clients msg counters 
                         let client_q_socket = self.serverQSockets.get_mut(&client_id); 
 
                         match client_q_socket {
@@ -1133,9 +1113,7 @@ impl ServerConnectionManager {
                                 let socket = &self.socket; 
                 
                                 let control_flow_result= q_socket.handle_client_msg(&mut reader, packet_len, sequence, &mut msg, msg_kind.clone() , socket);
-                
-                               // return Ok(None)
-
+                  
                                match control_flow_result {
 
                                 Ok(control_flow) => {
@@ -1153,13 +1131,7 @@ impl ServerConnectionManager {
                             None =>   return Err(NetError::Other(format!("error handling connected client msg - could not get their q socket ")))
                 
                         }
-                
-                        //return Err(NetError::Other(format!("error handling connected client msg ")))
-
-
-
-                    
-                       
+                 
 
                     },
                     None => {return Err(NetError::Other(format!("Server could not find client id for a client msg"))) }
@@ -1181,7 +1153,7 @@ impl ServerConnectionManager {
     }
 
 
-
+    //use the msg body and msg kind to infer what the client is trying to tell us to do ! 
     pub fn parse_client_packet( msg_slice: &[u8], msg_kind:MsgKind  ) -> Result< Option<ClientPacket>, NetError>   {
         
         let mut reader = BufReader::new( msg_slice );
@@ -1196,15 +1168,10 @@ impl ServerConnectionManager {
                  ///USE THIS PATTERN FOR OPTIONS MATCHING
                 let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
                     Some(r) => r,
-                    None => {
-        
-        
-                        println!(
-                           
+                    None => {  
+                        println!( 
                                 "error with request code {}",
-                                request_byte
-                             
-        
+                                request_byte  
                         );
                         return Err(NetError::InvalidData(format!(
                             "request code {}",
@@ -1257,14 +1224,63 @@ impl ServerConnectionManager {
 
              MsgKind::Reliable | MsgKind::ReliableEom =>{ 
                 println!("Server got reliable packet");
+
+                //is this correct????
+                let request_byte = reader.read_u8()?;   
+ 
+                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
+                    Some(r) => r,
+                    None => {  
+                        println!( 
+                                "error with request code {}",
+                                request_byte  
+                        );
+                        return Err(NetError::InvalidData(format!(
+                            "request code {}",
+                            request_byte
+                        )))
+                    }
+                }; 
                
-                return Ok(None)
+                 let request = match request_code {
+                    RequestCode::Connect => {
+                        let game_name = util::read_cstring(&mut reader).unwrap();
+                        let proto_ver = reader.read_u8()?;
+                        
+                         
+                        return Ok(Some(ClientPacket::Connect(RequestConnect{ game_name, proto_ver} )  ))
+                    }
+        
+                    RequestCode::ServerInfo => {
+                        let game_name = util::read_cstring(&mut reader).unwrap(); 
+        
+                        return Ok(Some(ClientPacket::ServerInfo(RequestServerInfo{ game_name } ))  )
+                    }
+        
+                    RequestCode::PlayerInfo => {
+                        let player_id = reader.read_u8()?; 
+                        
+                       return Ok(Some(ClientPacket::PlayerInfo(RequestPlayerInfo{ player_id } ))  )
+                      
+                    }
+        
+                    RequestCode::RuleInfo => {
+                        let prev_cvar = util::read_cstring(&mut reader).unwrap();
+                       
+
+                        return Ok(Some(ClientPacket::RuleInfo(RequestRuleInfo{ prev_cvar } ))  ) 
+         
+                    }
+                };
+
+
+
              },
 
              MsgKind::Unreliable  =>{ 
                 println!("Server got unreliable packet");
               
-                return Ok(None)
+                return Ok(Some(ClientPacket::ClientPhysicsState))
              }, 
 
 

@@ -395,148 +395,13 @@ impl GameServer {
 
                     self.update()
                     
-
-
+  
 
 
                 } //loop
 
 
-                /* 
-
-                   match msg_result {
-
-                        Ok((msg, msg_kind_opt,  socket_addr_option)) =>  {
-
-
-
-
-                            let msg_kind = match msg_kind_opt {
-
-                                
-
-                            }
-
-                            let socket_addr = match socket_addr_option {
-                                Some(socket_addr) => {  
-
-                                    if(!msg.is_empty()){
-                                        println!("Server is about to deserialize a message with kind {} from a connected client {:02X?}", msg_kind, msg.clone().as_slice() );
-
-                                                    
-                                        let client_packet_result = ServerConnectionManager::parse_client_packet( msg.as_slice() , msg_kind );
-
-                                        //act based on the client packet we got 
-                                    }
-
-                                            //ultimately,  should just put the specialaction encoded into the 'msg' and deserialize it in here 
-                                          /*   match specialServerAction {
-                                                Some(action) => {
-
-                                                        println!("Server doing  special action ");
-                                                    let process_result = self.process_special_server_action(action, socket_addr); 
-                                                    
-                                                }
-                                                None => {}
-                                            }
-
-                                            if(!msg.is_empty()){
-                                                println!("Server is about to deserialize a message from a connected client {:02X?}", msg.clone().as_slice() );
-
-
-                                                ///Server is about to deserialize a message from a connected client [03, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
-
-
-                                                
-                                                let mut reader = BufReader::new(msg.as_slice());
-
-                                                let clientRequest = GameServer::deserialize_client_msg(&mut reader).unwrap().unwrap();
-                                                //deserialize the msg and handle it !
-
-
-                                                //got client prespawn cmd ?? -> 
-                                                //  [04, 70, 72, 65, 73, 70, 61, 77, 6E, 00]
-
-
-                                            
-                                                //if its a control packet we do something ! 
-                                                //  while let Some(cmd) = ServerCmd::deserialize(&mut reader)? {
-
-                                                
-
-                                                /*
-                                                
-                                                
-                                                #define CCREQ_CONNECT		0x01
-                                                #define CCREQ_SERVER_INFO	0x02
-                                                #define CCREQ_PLAYER_INFO	0x03
-                                                #define CCREQ_RULE_INFO		0x04
-
-                                                */
-                                                //see net_dgrm.c  in  fitzquake 
-
-
-
-                                            } */
-                                          
-                            }
-
-                            None => { println!("Unable to get socket addr from msg recvd"); } 
-                          
-          
-
-                            };
-                        }
-
-                        Err(error) => { println!("Unable recv msg properly "); }
-                    }
-
-                */
-                                        
-                       // NetError => { println!("Net error reading packet ")  } 
-
-                     
-
-
-                   
-                    //deserialize it ! 
-
-                    
-                        
-
-                    /* 
-                    match recvMsgResult {
-                        Ok(specialServerAction)=>{
-
-                            match specialServerAction {
-
-                                Some(action) => { 
-        
-                                    let process_result = self.process_special_server_action(action); 
-                                     
-        
-                                    //continue;
-                                }
-                                None => {
-                                    //todo 
-                                   // info!("NetError -- got bad packet from client");
-                                }
-        
-                            }
-        
-
-                        },
-                        Err(_) => {
-                            println!("Net error during rcv msg");
-                        }
-                    }
-
-
-
-                    */
-                   
-                  
-
+               
 
 
                     //update -- run ECS system and send messages to all clients as needed 
@@ -742,7 +607,7 @@ impl GameServer {
 
                 //let (game_name,proto_ver) = request_connect;
 
-                let client_id = self.register_new_client( socket_addr  )?; 
+                 let client_id = self.register_new_client( socket_addr  )?; 
 
 
                  let client_port = GameServer::get_client_port_from_client_id( &client_id  );
@@ -818,18 +683,117 @@ impl GameServer {
                 },
 
 
-                ClientPacket::ServerInfo( game_name ) => { 
+                ClientPacket::ServerInfo( request_server_info ) => { 
                     println!("client packet- server info");
                     return Ok(())
 
                  },
-                ClientPacket::PlayerInfo( game_name ) => { 
+                ClientPacket::PlayerInfo( request_player_info ) => { 
                     println!("client packet- player info");
                     return Ok(())
 
                  },
-                ClientPacket::RuleInfo( game_name ) => { 
-                    println!("client packet- rule info");
+                ClientPacket::RuleInfo( request_rule_info ) => { 
+                    let prev_cvar = request_rule_info.prev_cvar;
+
+                    let client_id_result = self.serverConnectionManager.get_client_id_from_address( socket_addr  ) ; 
+
+                    let client_id:i32 = match client_id_result {
+
+                        Some(c) => c,
+                        None => {
+
+                            return Err(NetError::Other(format!(
+                               "Could not find client id for client packet"
+                            )))
+                        }
+ 
+                    };
+
+                    match prev_cvar.as_str() {
+
+                        "prespawn" => {
+                            // we should send out tons of stuff 
+
+                            println!("sending the player tons of stuff here !!");
+
+                            /// give SpawnStaticSound 
+                            /// give SpawnStatic
+                            /// give SpawnBaseline 
+
+
+                            let signonCmd = ServerCmd::SignOnStage {
+                                stage: SignOnStage::ClientInfo
+                            };    
+     
+                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+    
+                                signonCmd,
+                                client_id 
+                            
+                            );
+
+                        }
+
+
+                        "clientinfo" => {
+                            /*
+                                give time,
+                                update names , frag, color 
+                              
+
+                                give light styles 
+                                give update stat
+                                set angle
+
+                                get playerdata 
+                                 
+                            */
+
+
+                            let signonCmd = ServerCmd::SignOnStage {
+                                stage: SignOnStage::Begin
+                            };    
+     
+                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+    
+                                signonCmd,
+                                client_id 
+                            
+                            );
+
+
+
+
+                            //then our fast updates will put the clinets signonstage into done  -- then they will render the map
+
+                        }
+
+                        "begin" => {
+                            println!(" client is ready to begin ");
+
+                            //is this right ?
+                            let signonCmd = ServerCmd::SignOnStage {
+                                stage: SignOnStage::Done
+                            };    
+     
+                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+    
+                                signonCmd,
+                                client_id 
+                            
+                            );
+
+                        }
+
+
+                        _ => println!("cant give rule info for unknown - {}" , prev_cvar),
+
+                    }
+
+
+
+ 
                     return Ok(())
 
                  },
