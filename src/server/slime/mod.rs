@@ -1,14 +1,17 @@
 
 
+pub mod context;
+
 
 use crate::{
   server::world::{EntityError, EntityTypeDef}, 
   common::vfs::VirtualFile,
   server::progs::string_table::{StringTable},
   server::progs::globals::{Globals},
-  server::scripts::{ScriptingContext},
+ 
 };
 
+use crate::server::Vfs;
 
 use std::{
   
@@ -19,12 +22,18 @@ use std::{
   error::Error,
 };
 
- 
+pub use self::{
+  context::{SlimeContext}
+};
+
+
+
+
 
 pub struct Slime {
   //  pub cx: ExecutionContext,
-    pub script_context: ScriptingContext,
-    pub globals: Globals,
+    pub slime_context: SlimeContext,
+    pub globals: Globals,  //need these anymore ??? 
     pub entity_def: Rc<EntityTypeDef>,
     pub string_table: Rc<RefCell<StringTable>>,
 }
@@ -32,6 +41,8 @@ pub struct Slime {
 #[derive(Debug)]
 pub enum SlimeError {
   Io(::std::io::Error),
+
+  SlimeLoadingError(String),
   
   Entity(EntityError),
  
@@ -53,6 +64,8 @@ impl fmt::Display for SlimeError {
               err.fmt(f)
           }
          
+          SlimeLoadingError(ref msg) => write!(f, "{}", msg),
+
           Other(ref msg) => write!(f, "{}", msg),
       }
   }
@@ -75,7 +88,15 @@ impl From<EntityError> for SlimeError {
 
 
 impl Slime{
-  pub fn load(slime_file:VirtualFile) -> Result<Slime,SlimeError> {
+  pub fn load(vfs: &Vfs, slime_file_name:&str) -> Result<Slime,SlimeError> {
+
+
+
+     //could i also try to load a special custom progs dat file that i design myself ?
+     let mut slime_file = match vfs.open( slime_file_name )  {
+        Ok(f) => f,
+        Err(e) => return  Err( SlimeError::SlimeLoadingError(format!("Could not find {}", String::from(slime_file_name)) )   )
+    };  
 
 
     let mut strings = Vec::new();  
@@ -89,7 +110,7 @@ impl Slime{
     //how do we populate ? 
     //parse w serde ?? 
 
-    let script_context = ScriptingContext::new( ); 
+    let slime_context = SlimeContext::new( ); 
 
 
     let entity_def = Rc::new(EntityTypeDef::new(
@@ -105,6 +126,6 @@ impl Slime{
       addrs.into_boxed_slice(),
   );
 
-    Ok(Slime{script_context,globals,entity_def,string_table})
+    Ok(Slime{slime_context,globals,entity_def,string_table})
   }
 }

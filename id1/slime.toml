@@ -1,16 +1,18 @@
-{
-    "version":"0.10.0",
+name="Antiquake Default"
+version="0.10.0"
 
 
-    "server":{
-        "cvars":[
+server = { cvars = [ 
 
 
+] }
+
+entity_files=[
+"scripts/ogre.toml"
+]
+
+component_files=[
+ 
+]
 
 
-        ]
-    }
-
-
-
-}

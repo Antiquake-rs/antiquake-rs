@@ -25,8 +25,7 @@ pub mod precache;
 pub mod progs; //deprecated
 pub mod world; 
 pub mod levelstate;
-pub mod slime;
-pub mod scripts;
+pub mod slime; 
 
 use std::{
     thread::{self},
@@ -253,9 +252,10 @@ pub struct GameServer {
     serverConnectionManager: ServerConnectionManager, 
 
    
-    server_session: Session // may not exist yet  
+    server_session: Session, // may not exist yet  
+ 
 
-
+    
 
 }
 
@@ -273,6 +273,8 @@ impl GameServer {
         let mut serverConnectionManager = ServerConnectionManager::bind( addr ,max_clients ).unwrap();
 
 
+ 
+
 
         let max_clients = 1; 
 
@@ -284,24 +286,27 @@ impl GameServer {
     
             server_session: Session::new( max_clients ),
 
-            serverConnectionManager 
+            serverConnectionManager,
+ 
 
         })
     }
 
-    pub fn loadMap(&mut self, map_file_name:  String) -> Result< (), GameServerError> {
-
-     
-  
-       let slime_file_name = String::from("slime.json");
-
-
-       let base_dir = default_base_dir();
-
+    pub fn loadSlime(&mut self,slime_file_name:String) -> Result< Slime, GameServerError> {
  
+        let base_dir = default_base_dir(); 
 
-       let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;
- 
+        let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;  
+        
+        //load once then its read only 
+        let slime =  Slime::load( &vfs , &slime_file_name  ).unwrap();
+        
+        return Ok(slime)
+
+    }
+
+    pub fn loadMap(&mut self, map_file_name:  String, slime:Slime) -> Result< (), GameServerError> {
+
          //// do we have to load map here ?  waste since world does it too.. ?
           
 
@@ -313,11 +318,15 @@ impl GameServer {
 
             }  ); */
 
+                
+    
 
-         
+          let base_dir = default_base_dir(); 
 
+          let vfs = Rc::new( Vfs::with_base_dir(base_dir ) ) ;
+  
 
-          let loaded_result = self.server_session.load_level(  vfs , map_file_name, slime_file_name /* cvars, prog,  all_models, entmap */ ) ; 
+          let loaded_result = self.server_session.load_level( vfs, slime, map_file_name   ) ; 
 
           match loaded_result {
 
@@ -1021,8 +1030,8 @@ impl Session {
     pub fn load_level( 
         &mut self,
         vfs: Rc<Vfs>,
-        map_file_name: String,
-        slime_file_name: String, 
+        slime: Slime,
+        map_file_name: String, 
  
     ) -> Result<(),SessionError> {
       
@@ -1036,13 +1045,9 @@ impl Session {
         let (mut brush_models, mut entmap) = bsp::load(map_file).unwrap();
             
               
-        //could i also try to load a special custom progs dat file that i design myself ?
-        let mut slime_file = match vfs.as_ref().open( "slime.json" )  {
-            Ok(f) => f,
-            Err(e) => return  Err( SessionError::SlimeLoadingError   )
-        };  
+       
 
-        let slime = Slime::load(slime_file).unwrap();
+      //  let slime = Slime::load(vfs.as_ref(), "slime.toml").unwrap();
             
  
 
@@ -1060,11 +1065,7 @@ impl Session {
 
         //prep for precaching 
         self.state =  SessionState::Loading(  SessionLoading::new(vfs, cvars, slime, brush_models, entmap) );
-
-        
-
-
-  
+ 
 
 
         //set self state to preparing to do the handoff of the level to active 

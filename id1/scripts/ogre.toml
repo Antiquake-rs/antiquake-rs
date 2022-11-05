@@ -4,7 +4,7 @@
 #figure out best way to parse this into memory ... group stuff up or no ?
 
 [monster_ogre]
-fn_prepare =>  [
+fn_prepare =  [
 
     { call:"remove_self", conditions:[ {  gametype: "deathmatch"  }  ] },
 
@@ -21,7 +21,7 @@ fn_prepare =>  [
 
 
 ] 
-fn_spawn =>  [
+fn_spawn =  [
 
     { call:"register_component", inputs:["ogre/ogwake.wav"] },
 

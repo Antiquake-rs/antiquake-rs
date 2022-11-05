@@ -42,7 +42,7 @@ use crate::{
         Slime
     },
     server::{ClientSlots},
-    server::scripts::{ScriptingContext},
+    server::slime::{SlimeContext},
 };
 
 
@@ -79,7 +79,7 @@ pub struct LevelState {
     ///
     /// This includes the program counter, call stack, and local variables.
    // cx: ExecutionContext,
-    script_context: ScriptingContext,
+   slime_context: SlimeContext,
 
     /// Global values for QuakeC bytecode.
     globals: Globals,
@@ -103,11 +103,11 @@ impl LevelState {
     ) -> LevelState {
 
         let Slime {
-            script_context,
+            slime_context,
             globals,
             entity_def,
             string_table,
-        } = slime;
+        } = slime ;
 
         println!("string table {}", string_table.borrow_mut().getData() );
         
@@ -156,7 +156,7 @@ impl LevelState {
             time: Duration::zero(),
 
           //  cx,
-            script_context,
+            slime_context,
             globals,
             world,
 
@@ -249,9 +249,9 @@ impl LevelState {
 
 
 
-
-
-    pub fn execute_subroutine() {
+    //need to pass in args here 
+/* 
+    pub fn execute_subroutine(&self) {
 
 
         match sub_rt {
@@ -267,7 +267,7 @@ impl LevelState {
         }
 
 
-    }
+    }*/
 
 
 
@@ -598,9 +598,8 @@ impl LevelState {
 
 
 
-    pub fn execute_slime_script<S>(&mut self, classname: S, methodname: S) -> Result<(), ProgsError>
-    where
-        S: AsRef<str>,
+    pub fn execute_slime_script(&mut self, classname: &str, methodname: &str) -> Result<(), ProgsError>
+    
     {
 
         //use rhai for this  ! 
@@ -608,9 +607,9 @@ impl LevelState {
         println!("execute slime script "  );
 
 
-        let context = &self.script_context;
+        let context = &self.slime_context;
 
-        let subroutines = context.find_subroutines_for_function(classname,methodname);
+        let subroutines = context.fetch_subroutines_for_function(classname,methodname);
 
 
         

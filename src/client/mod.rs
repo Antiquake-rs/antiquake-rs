@@ -1478,11 +1478,14 @@ fn cmd_loadmap(
             let local_server_result = GameServer::new() ;
 
             let map_name = format!("maps/{}.bsp",  input_args ) ;
+
+            let slime_file_name = format!("slime.toml");   
             
             match local_server_result {
                 Ok(mut srv ) => {
 
-                    let loadResult = srv.loadMap(map_name);
+                    let slime = srv.loadSlime(slime_file_name).unwrap();
+                    let loadResult = srv.loadMap(map_name, slime);
 
                     match loadResult {
                         Ok(_) =>  {srv.start();}
