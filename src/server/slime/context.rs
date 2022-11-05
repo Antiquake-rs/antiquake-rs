@@ -1,26 +1,36 @@
 
 use toml::Value;
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize,Serialize};
 
  
 
 
 
-#[derive(Debug, Deserialize)]
-pub struct SlimeContext {
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SlimeManifest {
     name: String,
  }
 
+ #[derive(Debug, Deserialize, Serialize)]
+ pub struct SlimeContext {
+    manifest: SlimeManifest,
+ }
+
+
 impl SlimeContext {
     pub fn new() -> SlimeContext {
-        let context:SlimeContext =  toml::from_str(r#"
+        let manifest:SlimeManifest =  toml::from_str(r#"
                 name = 'testt'
  
             "#).unwrap();
 
-        assert_eq!(context.name, "testt");
+        assert_eq!(manifest.name, "testt");
 
-        return context
+        return SlimeContext {  
+
+            manifest
+
+        }
     }
 
 

@@ -145,6 +145,7 @@ dependencies = [
  "regex 0.2.11",
  "rodio",
  "serde",
+ "serde_derive",
  "serde_json",
  "slab",
  "smallvec 1.10.0",
