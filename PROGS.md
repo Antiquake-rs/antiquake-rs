@@ -5,6 +5,7 @@
 use rhai scripts ?? 
 https://docs.rs/rhai/latest/rhai/
 
+https://quakewiki.org/wiki/Quake_QuakeC_source
 https://www.gamers.org/dEngine/quake/spec/quake-spec34/qc-menu.htm
 
 slime.json 

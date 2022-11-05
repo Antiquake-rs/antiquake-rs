@@ -247,6 +247,31 @@ impl LevelState {
         return self.sound_precache.get_data( )
     }
 
+
+
+
+
+    pub fn execute_subroutine() {
+
+
+        match sub_rt {
+
+
+            Spawn => self.builtin_spawn()?,
+            Remove => self.builtin_remove()?,
+
+            PrecacheSound => self.builtin_precache_sound()?,
+            PrecacheModel => self.builtin_precache_model()?,
+
+            _ => panic!("that subroutine not yet implemented");
+        }
+
+
+    }
+
+
+
+
     /// Execute a QuakeC function in the VM.
     /// 
     /// we can do this in Rhai instead of QuakeC 
@@ -521,7 +546,7 @@ impl LevelState {
          // dont execute progs.dat program right now since some funcs are not impl 
     
         //this populates the precache !!! 
-        self.execute_script_by_name(classname)?;
+        self.execute_slime_script(classname,"fn_prepare")?;
 
 
         self.link_entity(ent_id, true)?;
@@ -573,24 +598,67 @@ impl LevelState {
 
 
 
-    pub fn execute_script_by_name<S>(&mut self, name: S) -> Result<(), ProgsError>
+    pub fn execute_slime_script<S>(&mut self, classname: S, methodname: S) -> Result<(), ProgsError>
     where
         S: AsRef<str>,
     {
 
         //use rhai for this  ! 
 
-        println!("execute script by name");
+        println!("execute slime script "  );
 
 
         let context = &self.script_context;
 
-        let eval_result = context.evaluate_build_level();
+        let subroutines = context.find_subroutines_for_function(classname,methodname);
+
+
+        
+        //for each subroutine 
+
+        //execute that subroutine in this levelstate !!!! 
+        // self.execute_subroutine()
+
 
        // let func_id = self.script_context.find_function_by_name(name)?;
       //  self.execute_program(func_id)?;
         Ok(())
     }
+
+
+
+
+
+
+
+
+    pub fn builtin_precache_sound(&mut self, arg:i16) -> Result<(), ProgsError> {
+        // TODO: disable precaching after server is active
+        // TODO: precaching doesn't actually load yet
+        let s_id = self.globals.string_id(arg as i16)?;
+        self.precache_sound(s_id);
+      /*  self.globals
+            .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;*/ //dont need to worry about populating the addr return buffer anymore ! 
+
+        Ok(())
+    }
+
+    pub fn builtin_precache_model(&mut self, arg:i16) -> Result<(), ProgsError> {
+        println!("builtin_precache_model!!");
+        // TODO: disable precaching after server is active
+        // TODO: precaching doesn't actually load yet
+        let s_id = self.globals.string_id(arg as i16)?;
+        if self.model_id(s_id).is_none() {
+            self.precache_model(s_id);
+            self.world.add_model(&self.vfs, s_id)?;
+        }
+
+       /* self.globals
+            .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;*/ 
+
+        Ok(())
+    }
+
 
 
 /* 
@@ -1386,31 +1454,7 @@ impl LevelState {
         Ok(())
     }
 
-    pub fn builtin_precache_sound(&mut self) -> Result<(), ProgsError> {
-        // TODO: disable precaching after server is active
-        // TODO: precaching doesn't actually load yet
-        let s_id = self.globals.string_id(GLOBAL_ADDR_ARG_0 as i16)?;
-        self.precache_sound(s_id);
-        self.globals
-            .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;
-
-        Ok(())
-    }
-
-    pub fn builtin_precache_model(&mut self) -> Result<(), ProgsError> {
-        // TODO: disable precaching after server is active
-        // TODO: precaching doesn't actually load yet
-        let s_id = self.globals.string_id(GLOBAL_ADDR_ARG_0 as i16)?;
-        if self.model_id(s_id).is_none() {
-            self.precache_model(s_id);
-            self.world.add_model(&self.vfs, s_id)?;
-        }
-
-        self.globals
-            .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;
-
-        Ok(())
-    }
+   
 
     pub fn builtin_dprint(&mut self) -> Result<(), ProgsError> {
         let strs = self.string_table.borrow();

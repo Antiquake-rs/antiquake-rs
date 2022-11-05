@@ -1,0 +1,38 @@
+
+# maybe add animations component 
+# see https://quakewiki.org/wiki/ogre.qc 
+#figure out best way to parse this into memory ... group stuff up or no ?
+
+[monster_ogre]
+fn_prepare =>  [
+
+    { call:"remove_self", conditions:[ {  gametype: "deathmatch"  }  ] },
+
+    { call:"precache_model", inputs:{name:"progs/ogre.mdl"} },
+    { call:"precache_model", inputs:["progs/h_ogre.mdl"] },
+    { call:"precache_model", inputs:["progs/grenade.mdl"] },
+    { call:"precache_sound", inputs:["ogre/ogdrag.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogdth.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogidle.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogidle2.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogpain1.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogsawatk.wav"] },
+    { call:"precache_sound", inputs:["ogre/ogwake.wav"] },
+
+
+] 
+fn_spawn =>  [
+
+    { call:"register_component", inputs:["ogre/ogwake.wav"] },
+
+
+    { name:"model", inputs:{model: "progs/ogre.mdl", size: 100} },
+    { name:"stats", inputs:{health: 200} },
+    { name:"movement", inputs:{move_type: "step"} },
+    { name:"collision", inputs:{collision_type: "solid"} },
+
+
+
+
+] 
+ 

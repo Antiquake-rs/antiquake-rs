@@ -25,7 +25,7 @@ gfx pipelines yay!!!
 
 
 #### Next Steps 
-- support netquake 
+ 
 - be able to load a map  by spinning up a local server on port 27500 
 - clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
@@ -33,7 +33,11 @@ gfx pipelines yay!!!
 
 
 
-connect to fitzquake and spy on what they sendme
+- Parse ogre.toml and preload up our slime context with allllll of that kind of data 
+- we will use the raw static data in our slime context to ultimately call methods 
+- GOAL: get 'builtin_precache_model' to run bc of things spawning into our map!  (like ogres) 
+
+
 
 
 
