@@ -310,6 +310,7 @@ pub struct LoadProgs {
     pub string_table: Rc<RefCell<StringTable>>,
 }
 
+/*
 //new blank progs - fake 
 pub fn new () -> Result<LoadProgs, ProgsError> {
 
@@ -355,11 +356,16 @@ pub fn new () -> Result<LoadProgs, ProgsError> {
         string_table,
     })
 }
+ */
+
 
 
 /// Loads all data from a `progs.dat` file.
 ///
 /// This returns objects representing the necessary context to execute QuakeC bytecode.
+/// 
+/// The string table is created by progs dat ! 
+/// 
 pub fn load<R>(mut src: R) -> Result<LoadProgs, ProgsError>
 where
     R: Read + Seek,

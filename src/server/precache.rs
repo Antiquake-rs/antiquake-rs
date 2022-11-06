@@ -32,6 +32,7 @@ impl Precache {
     }
 
     /// Retrieves an item from the precache if the item exists.
+    /// modelId => modelName
     pub fn get(&self, index: usize) -> Option<&str> {
         if index > self.items.len() {
             return None;

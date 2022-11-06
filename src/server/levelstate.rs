@@ -103,10 +103,16 @@ impl LevelState {
         entmap: String,
     ) -> LevelState {
 
+
+        /*
+        
+                How are entities loaded from the map?
+                they have entity id and class name ? 
+        */
         let Slime {
             slime_context,
           //  globals,
-            entity_def,
+            entity_def,  //what if we change how entity defs work ! 
             string_table,   //used for World 
         } = slime ;
 
@@ -136,6 +142,9 @@ impl LevelState {
 
             //find or insert the model name into string table 
             let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
+
+            println!("model stringid is {}",model_name);
+
 
             //add the string to the precache 
             model_precache.precache(string_table.borrow().get(model_name).unwrap());
