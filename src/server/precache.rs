@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, collections::HashMap};
 
 use arrayvec::{ArrayString, ArrayVec};
 
@@ -18,40 +18,38 @@ pub const MAX_PRECACHE_ENTRIES: usize = 256;
 // value of 256.
 #[derive(Debug)]
 pub struct Precache {
-    str_data: ArrayString<{ MAX_PRECACHE_PATH * MAX_PRECACHE_ENTRIES }>,
-    items: ArrayVec<Range<usize>, MAX_PRECACHE_ENTRIES>,
+
+   
+    items: Vec<String>,
+    reverse_id_map: HashMap<String,usize>,
+
+    //str_data: ArrayString<{ MAX_PRECACHE_PATH * MAX_PRECACHE_ENTRIES }>,
+    //items: ArrayVec<Range<usize>, MAX_PRECACHE_ENTRIES>,
 }
 
 impl Precache {
     /// Creates a new empty `Precache`.
     pub fn new() -> Precache {
         Precache {
-            str_data: ArrayString::new(),
-            items: ArrayVec::new(),
+            items: Vec::new(),
+            reverse_id_map: HashMap::new()            
         }
     }
 
     /// Retrieves an item from the precache if the item exists.
     /// modelId => modelName
     pub fn get(&self, index: usize) -> Option<&str> {
-        if index > self.items.len() {
-            return None;
-        }
-
-        let range = self.items[index].clone();
-        Some(&self.str_data[range])
+        
+        Some(&self.items.get(index)?.as_str())
     }
 
     /// Returns the index of the target value if it exists.
-    pub fn find<S>(&self, target: S) -> Option<usize>
+    pub fn find<S>(self, target: S) -> Option<usize>
     where
         S: AsRef<str>,
     {
-        let (idx, _) = self
-            .iter()
-            .enumerate()
-            .find(|&(_, item)| item == target.as_ref())?;
-        Some(idx)
+        //the hashmap speeds this up ! no need to iter
+        Some(*self.reverse_id_map.get(target.as_ref())?)
     }
  
     pub fn get_data(&self) -> Vec<&str> { 
@@ -80,20 +78,31 @@ impl Precache {
             return;
         }
 
-        let start = self.str_data.len();
+      /*  let start = self.str_data.len();
         self.str_data.push_str(item);
         let end = self.str_data.len();
 
-        self.items.push(start..end);
+        self.items.push(start..end);*/ 
+
+        self.reverse_id_map.insert(  item.to_string() , self.items.len() );
+        self.items.push(item.to_string());
+        
+
+
+
+
     }
 
-    /// Returns an iterator over the values in the precache.
-    pub fn iter(&self) -> impl Iterator<Item = &str> {
+    // Returns an iterator over the values in the precache.
+  
+  /*   pub fn iter(&self) -> impl Iterator<Item = String> {
         self.items
             .iter()
             .cloned()
-            .map(move |range| &self.str_data[range])
-    }
+            .// map( | item | item.as_str() )
+    }*/
+
+
 }
 
 #[cfg(test)]

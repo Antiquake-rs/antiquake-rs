@@ -35,7 +35,7 @@ pub struct Slime {
   //  pub cx: ExecutionContext,
     pub slime_context: SlimeContext,
     //pub globals: Globals,  //need these anymore ??? 
-    pub entity_def: Rc<EntityTypeDef>,
+  //  pub entity_def: Rc<EntityTypeDef>,
    // pub string_table: Rc<RefCell<StringTable>>,
 }
 
@@ -108,27 +108,9 @@ impl Slime{
 
     let slime_context = SlimeContext::new( vfs , slime_file_name  ) ?;
 
+     
     
 
-    //let manifest_contents = manifest_file.read();
-
-    let mut strings = Vec::new();  
-    let string_table = Rc::new(RefCell::new(StringTable::new(strings)));
-    let mut field_defs = Vec::new(); //what are these 
-    let mut globaldefs = Vec::new();
-    let mut addrs = Vec::new();
-
-    let ent_addr_count = 105; // is this right 
-
-    //how do we populate ? 
-    //parse w serde ?? 
-
- 
-
-
-    let entity_def = Rc::new(EntityTypeDef::new()
-    
-
-    Ok(Slime{slime_context, entity_def  })
+    Ok(Slime{  slime_context })
   }
 }

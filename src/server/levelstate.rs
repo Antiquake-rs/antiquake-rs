@@ -65,7 +65,7 @@ pub struct LevelState {
     vfs: Rc<Vfs>,
     cvars: Rc<RefCell<CvarRegistry>>,
 
-    string_table: Rc<RefCell<StringTable>>,
+   // string_table: Rc<RefCell<StringTable>>,
     sound_precache: Precache,
     model_precache: Precache,
     lightstyles:  [StringId; MAX_LIGHTSTYLES],
@@ -112,11 +112,11 @@ impl LevelState {
         let Slime {
             slime_context,
           //  globals,
-            entity_def,  //what if we change how entity defs work ! 
-            string_table,   //used for World 
+         //   entity_def,  //what if we change how entity defs work ! 
+         //   string_table,   //used for World 
         } = slime ;
 
-        println!("string table {}", string_table.borrow_mut().getData() );
+      //  println!("string table {}", string_table.borrow_mut().getData() );
         
 
             //see from_server_info 
@@ -141,7 +141,7 @@ impl LevelState {
            
 
             //find or insert the model name into string table 
-            let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
+            //let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
 
             println!("model stringid is {}",model_name);
 
@@ -151,7 +151,7 @@ impl LevelState {
         }
  
 
-        let world = World::create(models, entity_def.clone(), string_table.clone()).unwrap();
+        let world = World::create(models ).unwrap();
        
      
         //add to me from slime ? 
@@ -159,7 +159,7 @@ impl LevelState {
         let mut level = LevelState {
             vfs,
             cvars,
-            string_table,
+            //string_table,
             sound_precache,
             model_precache,
             lightstyles: [StringId(0); MAX_LIGHTSTYLES],
