@@ -220,8 +220,8 @@ enum AreaEntitySlot {
 /// A representation of the current state of the game world.
 #[derive(Debug)]
 pub struct World {
-    string_table: Rc<RefCell<StringTable>>,
-    type_def: Rc<EntityTypeDef>,
+   // string_table: Rc<RefCell<StringTable>>,
+   // type_def: Rc<EntityTypeDef>,
 
     area_nodes: ArrayVec<AreaNode, NUM_AREA_NODES>,
     slots: Box<[AreaEntitySlot]>,
@@ -231,8 +231,8 @@ pub struct World {
 impl World {
     pub fn create(
         mut brush_models: Vec<Model>,
-        type_def: Rc<EntityTypeDef>,
-        string_table: Rc<RefCell<StringTable>>,
+      //  type_def: Rc<EntityTypeDef>,
+      //  string_table: Rc<RefCell<StringTable>>,
     ) -> Result<World, ProgsError> {
         // generate area tree for world model
         let area_nodes = AreaNode::generate(brush_models[0].min(), brush_models[0].max());
@@ -245,9 +245,15 @@ impl World {
         // take ownership of all brush models
         models.append(&mut brush_models);
 
+
+        // where is this type def coming from in richter? 
+        let type_def = HashMap::new();
+
         // generate world entity
-        let mut world_entity = Entity::new(string_table.clone(), type_def.clone());
-        world_entity.put_string_id(
+        let mut world_entity = Entity::new( type_def );
+
+        //the old way the engine handled entity data... now we do ECS arch 
+       /* world_entity.put_string_id(
             string_table.borrow_mut().find_or_insert(models[1].name()),
             FieldAddrStringId::ModelName as i16,
         )?;
@@ -256,7 +262,7 @@ impl World {
         world_entity.put_float(
             MoveKind::Push as u32 as f32,
             FieldAddrFloat::MoveKind as i16,
-        )?;
+        )?;*/ 
 
         let mut slots = Vec::with_capacity(MAX_ENTITIES);
         slots.push(AreaEntitySlot::Occupied(AreaEntity {
@@ -268,9 +274,9 @@ impl World {
         }
 
         Ok(World {
-            string_table,
+          //  string_table,
             area_nodes,
-            type_def,
+          //  type_def,
             slots: slots.into_boxed_slice(),
             models,
         })
@@ -400,7 +406,10 @@ impl World {
     ///   The value should be interpreted as the second component of the `angles` field.
     /// - `light`: This is simply an alias for `light_lev`.
     pub fn alloc_from_map(&mut self, map: HashMap<&str, &str>) -> Result<EntityId, ProgsError> {
-        let mut ent = Entity::new(self.string_table.clone(), self.type_def.clone());
+
+
+
+        let mut ent = Entity::new();
 
         for (key, val) in map.iter() {
             debug!(".{} = {}", key, val);

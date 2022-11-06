@@ -36,7 +36,7 @@ pub struct Slime {
     pub slime_context: SlimeContext,
     //pub globals: Globals,  //need these anymore ??? 
     pub entity_def: Rc<EntityTypeDef>,
-    pub string_table: Rc<RefCell<StringTable>>,
+   // pub string_table: Rc<RefCell<StringTable>>,
 }
 
 #[derive(Debug)]
@@ -126,19 +126,9 @@ impl Slime{
  
 
 
-    let entity_def = Rc::new(EntityTypeDef::new(
-      string_table.clone(),
-        ent_addr_count,
-        field_defs.into_boxed_slice(),
-    )?);
+    let entity_def = Rc::new(EntityTypeDef::new()
+    
 
-
-      let globals = Globals::new(
-        string_table.clone(),
-        globaldefs.into_boxed_slice(),
-        addrs.into_boxed_slice(),
-    );
-
-    Ok(Slime{slime_context,entity_def,string_table})
+    Ok(Slime{slime_context, entity_def  })
   }
 }

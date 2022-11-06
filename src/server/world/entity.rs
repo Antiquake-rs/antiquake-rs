@@ -27,12 +27,12 @@
 
 
 */
-use std::{cell::RefCell, convert::TryInto, error::Error, fmt, rc::Rc};
+use std::{cell::RefCell, convert::TryInto, error::Error, fmt, rc::Rc, collections::HashMap};
 
 use crate::{
     common::{engine::duration_to_f32, net::EntityState},
     server::{
-        progs::{EntityId, FieldDef, FunctionId, ProgsError, StringId, StringTable, Type},
+        progs::{EntityId,  FunctionId, ProgsError, StringId, StringTable, Type},
         world::phys::MoveKind,
     },
 };
@@ -202,6 +202,7 @@ pub enum FieldAddrFloat {
     Sounds = 100,
 }
 
+/* 
 impl FieldAddr for FieldAddrFloat {
     type Value = f32;
 
@@ -215,6 +216,8 @@ impl FieldAddr for FieldAddrFloat {
         ent.put_float(value, *self as i16)
     }
 }
+*/
+
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, FromPrimitive)]
 pub enum FieldAddrVector {
@@ -234,6 +237,7 @@ pub enum FieldAddrVector {
     MoveDirection = 96,
 }
 
+/* 
 impl FieldAddr for FieldAddrVector {
     type Value = [f32; 3];
 
@@ -247,7 +251,7 @@ impl FieldAddr for FieldAddrVector {
         ent.put_vector(value, *self as i16)
     }
 }
-
+*/
 #[derive(Copy, Clone, Debug, FromPrimitive)]
 pub enum FieldAddrStringId {
     ClassName = 28,
@@ -262,7 +266,7 @@ pub enum FieldAddrStringId {
     Noise2Name = 103,
     Noise3Name = 104,
 }
-
+/* 
 impl FieldAddr for FieldAddrStringId {
     type Value = StringId;
 
@@ -274,7 +278,7 @@ impl FieldAddr for FieldAddrStringId {
     fn store(&self, ent: &mut Entity, value: Self::Value) -> Result<(), EntityError> {
         ent.put_int(value.0.try_into().unwrap(), *self as i16)
     }
-}
+}*/
 
 #[derive(Copy, Clone, Debug, FromPrimitive)]
 pub enum FieldAddrEntityId {
@@ -287,6 +291,8 @@ pub enum FieldAddrEntityId {
     DmgInflictor = 94,
     Owner = 95,
 }
+
+/* 
 
 impl FieldAddr for FieldAddrEntityId {
     type Value = EntityId;
@@ -320,7 +326,7 @@ impl FieldAddr for FieldAddrFunctionId {
     fn store(&self, ent: &mut Entity, value: Self::Value) -> Result<(), EntityError> {
         ent.put_function_id(value, *self as i16)
     }
-}
+}*/
 
 bitflags! {
     pub struct EntityFlags: u16 {
@@ -364,24 +370,20 @@ fn vector_addr(addr: usize) -> Result<FieldAddrVector, ProgsError> {
     }
 }
 
-#[derive(Debug)]
-struct FieldDefCacheEntry {
-    name: ArrayString<64>,
-    index: usize,
-}
+ 
 
 #[derive(Debug)]
 pub struct EntityTypeDef {
-    string_table: Rc<RefCell<StringTable>>,
-    addr_count: usize,
+    
+   /* addr_count: usize,
     field_defs: Box<[FieldDef]>,
 
-    name_cache: RefCell<LRUCache<FieldDefCacheEntry, 16>>,
+    name_cache: RefCell<LRUCache<FieldDefCacheEntry, 16>>,*/ 
 }
-
+/*
 impl EntityTypeDef {
     pub fn new(
-        string_table: Rc<RefCell<StringTable>>,
+        
         addr_count: usize,
         field_defs: Box<[FieldDef]>,
     ) -> Result<EntityTypeDef, EntityError> {
@@ -393,7 +395,7 @@ impl EntityTypeDef {
         }
 
         Ok(EntityTypeDef {
-            string_table,
+             
             addr_count,
             field_defs,
             name_cache: RefCell::new(LRUCache::default()),
@@ -439,6 +441,8 @@ impl EntityTypeDef {
         Some(def)
     }
 }
+*/
+
 
 #[derive(Debug, FromPrimitive, PartialEq)]
 pub enum EntitySolid {
@@ -451,33 +455,36 @@ pub enum EntitySolid {
 
 #[derive(Debug)]
 pub struct Entity {
-    string_table: Rc<RefCell<StringTable>>,
-    type_def: Rc<EntityTypeDef>,
-    addrs: Box<[[u8; 4]]>,
+    
+    //type_def: Rc<EntityTypeDef>,
+    //addrs: Box<[[u8; 4]]>,
+
+    //components 
+    type_def: HashMap<String, String>, 
+
 
     pub leaf_count: usize,
     pub leaf_ids: [usize; MAX_ENT_LEAVES],
     pub baseline: EntityState,
 }
 
-impl Entity {
-    pub fn new(string_table: Rc<RefCell<StringTable>>, type_def: Rc<EntityTypeDef>) -> Entity {
-        let mut addrs = Vec::with_capacity(type_def.addr_count);
-        for _ in 0..type_def.addr_count {
-            addrs.push([0; 4]);
-        }
 
-        Entity {
-            string_table,
-            type_def,
-            addrs: addrs.into_boxed_slice(),
+// an entity can have  key-value pairs on it from this type_def  (config within trenchbroom!)
+// an entity can also have components registered to it with init magnitudes (config within slime!)
+// this is the core of our world and levelscene !  This is what makes the game a game . 
+impl Entity {
+    pub fn new( ) -> Entity {
+        let type_def: HashMap<String, String> = HashMap::new();
+
+        Entity {           
+            type_def, 
             leaf_count: 0,
             leaf_ids: [0; MAX_ENT_LEAVES],
             baseline: EntityState::uninitialized(),
         }
     }
 
-    pub fn type_check(&self, addr: usize, type_: Type) -> Result<(), EntityError> {
+  /*   pub fn type_check(&self, addr: usize, type_: Type) -> Result<(), EntityError> {
         match self
             .type_def
             .field_defs
@@ -506,11 +513,11 @@ impl Entity {
     where
         S: AsRef<str>,
     {
-        self.type_def.find(name)
-    }
+        self.type_def.get(name)
+    }*/
 
-    /// Returns a reference to the memory at the given address.
-    pub fn get_addr(&self, addr: i16) -> Result<&[u8], EntityError> {
+    // Returns a reference to the memory at the given address.
+   /*  pub fn get_addr(&self, addr: i16) -> Result<&[u8], EntityError> {
         if addr < 0 {
             return Err(EntityError::Address(addr as isize));
         }
@@ -708,7 +715,9 @@ impl Entity {
         debug!("Setting entity size: {:?}", size);
         self.put_vector(size.into(), FieldAddrVector::Size as i16)?;
         Ok(())
-    }
+    }*/
+
+    /*
 
     pub fn model_index(&self) -> Result<usize, EntityError> {
         let model_index = self.get_float(FieldAddrFloat::ModelIndex as i16)?;
@@ -827,4 +836,7 @@ impl Entity {
     pub fn owner(&self) -> Result<EntityId, EntityError> {
         Ok(self.entity_id(FieldAddrEntityId::Owner as i16)?)
     }
+
+     */
+
 }
