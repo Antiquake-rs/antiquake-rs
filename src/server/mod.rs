@@ -990,16 +990,16 @@ impl SessionLoading {
     ///
     /// If the sound already exists in the precache, this has no effect.
     #[inline]
-    pub fn precache_sound(&mut self, name_id: StringId) {
-        self.level.precache_sound(name_id)
+    pub fn precache_sound(&mut self, name: String) -> StringId {
+        self.level.precache_sound(name)
     }
 
     /// Adds a name to the model precache.
     ///
     /// If the model already exists in the precache, this has no effect.
     #[inline]
-    pub fn precache_model(&mut self, name_id: StringId) {
-        self.level.precache_model(name_id)
+    pub fn precache_model(&mut self, name: String)   -> StringId  {
+        self.level.precache_model(name)
     }
 
      
@@ -1142,17 +1142,17 @@ impl Session {
         self.persist.client(&slot)
     }
 
-    pub fn precache_sound(&mut self, name_id: StringId) {
+    pub fn precache_sound(&mut self, name: String) {
         if let SessionState::Loading(ref mut loading) = self.state {
-            loading.precache_sound(name_id);
+            loading.precache_sound(name);
         } else {
             panic!("Sounds cannot be precached after loading");
         }
     }
 
-    pub fn precache_model(&mut self, name_id: StringId) {
+    pub fn precache_model(&mut self, name: String) {
         if let SessionState::Loading(ref mut loading) = self.state {
-            loading.precache_model(name_id);
+            loading.precache_model(name);
         } else {
             panic!("Models cannot be precached after loading");
         }
@@ -1179,17 +1179,17 @@ impl Session {
     }
 
     #[inline]
-    pub fn sound_id(&self, name_id: StringId) -> Option<usize> {
+    pub fn sound_id(&self, name: String) -> Option<usize> {
  
    
-        self.level()?.sound_id(name_id)
+        self.level()?.sound_id(name)
 
     }
 
     #[inline]
-    pub fn model_id(&self, name_id: StringId) -> Option<usize> {
+    pub fn model_id(&self, name: String) -> Option<usize> {
 
-        self.level()?.model_id(name_id)
+        self.level()?.model_id(name)
 
     }
 

@@ -208,6 +208,19 @@ impl From<EntityError> for ProgsError {
 #[repr(C)]
 pub struct StringId(pub usize);
 
+
+
+
+
+
+
+impl fmt::Display for StringId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+      write!(f, "{}", self.0 as i32)
+    }
+}
+
+
 impl TryInto<i32> for StringId {
     type Error = ProgsError;
 

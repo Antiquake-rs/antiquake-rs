@@ -182,15 +182,16 @@ impl LevelState {
     }
 
     #[inline]
-    pub fn precache_sound(&mut self, name: String) {
+    pub fn precache_sound(&mut self, name: String) -> StringId {
 
         
            //find or insert the model name into string table 
-           let sound_name = (self.string_table).borrow_mut().find_or_insert(sound.name());
+           let sound_name = (self.string_table).borrow_mut().find_or_insert(name);
 
            //add the string to the precache 
-           self.sound_precache.precache(string_table.borrow().get(sound_name).unwrap());
+           self.sound_precache.precache(self.string_table.borrow().get(sound_name).unwrap());
 
+           return sound_name
        /*  let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
@@ -199,21 +200,41 @@ impl LevelState {
 
 
     //this is run by the progs.dat or slime ! 
+    //this adds the string to the string table AND to the precache !  
+    //I think the 'world' uses the string table for some reason. 
     #[inline]
-    pub fn precache_model(&mut self, name: String) {
+    pub fn precache_model(&mut self, name: String) -> StringId {
 
            //find or insert the model name into string table 
-           let model_name = (self.string_table).borrow_mut().find_or_insert(model.name());
-
-           //add the string to the precache 
-           self.model_precache.precache(string_table.borrow().get(model_name).unwrap());
+           let model_name = (self.string_table).borrow_mut().find_or_insert( name );
 
 
+           //get this to run !!!
+            println!("Precaching model {}", model_name );
+
+           //add the string to the precache    
+           self.model_precache.precache(self.string_table.borrow().get(model_name).unwrap());
+
+
+           return model_name
         /*let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
         self.model_precache.precache(&*name)*/
     }
+
+
+/*
+    In richter, there was a StringId  (correlated w string table)  (i think this is bc of how progs dat works ) for a model/sound so then you needed to find the ModelId (or soundId) 
+     using the string table then you needed to find the  sound id (which is also the precache id)
+
+     I think progs dat would export a string table and all of the string values in the code would be executed as a stringId (a pointer) to the strings table.  
+
+     For antiquake, i believe i can largely do away with the strings table for context execution. 
+
+
+     In antiquake, the slime config files can execute using full strings since it is parsed TOML.  
+*/
 
     #[inline]
     pub fn sound_id(&self, name: String) -> Option<usize> {
@@ -271,7 +292,7 @@ impl LevelState {
 
     //need to pass in args here 
 
-    pub fn execute_subroutine(&self, sub_rt: SlimeFunc) -> Result<(), ProgsError>{
+    pub fn execute_subroutine(&mut self, sub_rt: SlimeFunc) -> Result<(), ProgsError>{
 
 
         return match sub_rt {
@@ -638,7 +659,7 @@ impl LevelState {
         //execute that subroutine in this levelstate !!!! 
 
         for (sub_rt) in subroutines.into_iter(){
-            self.execute_subroutine( sub_rt );
+           let fn_result = self.execute_subroutine( sub_rt );
         }
        
 
@@ -671,17 +692,26 @@ impl LevelState {
         // TODO: disable precaching after server is active
         // TODO: precaching doesn't actually load yet
 
-        //let s_id = self.globals.string_id(arg as i16)?; //what is this doing 
+        //let s_id = self.globals.string_id(arg as i16)?; //this was doing the lookup of the progsdat bytecode value (the memory register basically)
 
-        let existing_precache_model_id = self.model_id(s_id);
-
-        if existing_precache_model_id.is_none() { / //if it is not in the precache 
-            let precache_model_id = self.precache_model(name);
-            self.world.add_model(&self.vfs, name)?;
-        }
 
        /* self.globals
             .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;*/ 
+
+
+
+        /*
+            If the string has not been added to the precache, we should add it and then 
+            add it to the world.  Have to give the world the StringId thats in the precache because that is the 
+            same stringId used for the strings_table which is used by the world for lookups on entity defs.
+        */
+        let existing_precache_model_id = self.model_id(name.clone());
+
+        if existing_precache_model_id.is_none() {   //if it is not in the precache 
+            let precache_model_name_id = self.precache_model(name);
+            self.world.add_model(&self.vfs,  precache_model_name_id)?;
+        }
+
 
         Ok(())
     }

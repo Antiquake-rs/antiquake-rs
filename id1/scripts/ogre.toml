@@ -6,9 +6,7 @@
  
 classname="monster_ogre"
 
-scripts = {
-
-fn_prepare =  [
+scripts = { fn_prepare =  [
 
   #  { call="remove_self", conditions=[ {  gametype= "deathmatch"  }  ] },
 
@@ -23,10 +21,9 @@ fn_prepare =  [
     { call="precache_sound", inputs={name="ogre/ogsawatk.wav"} },
     { call="precache_sound", inputs={name="ogre/ogwake.wav"} },  
 
-] 
-fn_spawn =  [
+], fn_spawn =  [
 
-    { call="register_component", inputs={ }}
+    # { call="register_component", inputs={ }}
 
 
     #{ name="model", inputs={model= "progs/ogre.mdl", size= 100} },
@@ -36,8 +33,4 @@ fn_spawn =  [
 
 
 
-
-] 
- 
-
-}
+] }

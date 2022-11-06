@@ -15,6 +15,16 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+
+/*
+
+
+    EntityTypeDefs in the World only have a name_id.  The string table is needed to map their name_id to their string name 
+    
+
+
+*/
 mod entity;
 pub mod phys;
 
@@ -305,6 +315,8 @@ impl World {
         Ok(())
     }
 
+
+   
     fn find_def<S>(&self, name: S) -> Result<&FieldDef, ProgsError>
     where
         S: AsRef<str>,

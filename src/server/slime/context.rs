@@ -131,7 +131,7 @@ impl SlimeContext {
     pub fn build_entity_slime( entry:EntitySlimeEntry ) -> Result<EntitySlime,SlimeError> {
 
 
-        let scripts_output:HashMap<String, Vec< SlimeFunc >> = HashMap::new();
+        let mut scripts_output:HashMap<String, Vec< SlimeFunc >> = HashMap::new();
 
         for (key, entry) in entry.scripts.into_iter() {
 
