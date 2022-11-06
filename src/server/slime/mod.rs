@@ -1,7 +1,8 @@
 
 
 pub mod context;
-
+ 
+use toml;
 
 use crate::{
   server::world::{EntityError, EntityTypeDef}, 
@@ -42,6 +43,8 @@ pub struct Slime {
 pub enum SlimeError {
   Io(::std::io::Error),
 
+  Toml( toml::de::Error),
+
   SlimeLoadingError(String),
   
   Entity(EntityError),
@@ -56,6 +59,11 @@ impl fmt::Display for SlimeError {
       match *self {
           Io(ref err) => {
               write!(f, "I/O error: ")?;
+              err.fmt(f)
+          }
+
+          Toml(ref err) => {
+              write!(f, "Toml error: ")?;
               err.fmt(f)
           }
            
@@ -78,6 +86,12 @@ impl From<::std::io::Error> for SlimeError {
     SlimeError::Io(error)
   }
 }
+
+impl From<toml::de::Error> for SlimeError {
+  fn from(error: toml::de::Error) -> Self {
+    SlimeError::Toml(error)
+  }
+}
  
 
 impl From<EntityError> for SlimeError {
@@ -92,12 +106,11 @@ impl Slime{
 
 
 
-     //could i also try to load a special custom progs dat file that i design myself ?
-     let mut slime_file = match vfs.open( slime_file_name )  {
-        Ok(f) => f,
-        Err(e) => return  Err( SlimeError::SlimeLoadingError(format!("Could not find {}", String::from(slime_file_name)) )   )
-    };  
+    let slime_context = SlimeContext::new( vfs , slime_file_name  ) ?;
 
+    
+
+    //let manifest_contents = manifest_file.read();
 
     let mut strings = Vec::new();  
     let string_table = Rc::new(RefCell::new(StringTable::new(strings)));
@@ -110,7 +123,7 @@ impl Slime{
     //how do we populate ? 
     //parse w serde ?? 
 
-    let slime_context = SlimeContext::new( ); 
+ 
 
 
     let entity_def = Rc::new(EntityTypeDef::new(

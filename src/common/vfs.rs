@@ -35,6 +35,8 @@ pub enum VfsError {
     Pak(#[from] PakError),
     #[error("File does not exist: {0}")]
     NoSuchFile(String),
+    #[error("Error reading file: {0}")]
+    ReadFileError(String)   
 }
 
 
@@ -218,6 +220,18 @@ impl Vfs {
         }
 
         Err(VfsError::NoSuchFile(vp.to_owned()))
+    }
+
+    pub fn read_to_end(mut v_file: VirtualFile) -> Result<String, VfsError> {
+
+        let mut contents_utf8: Vec<u8> = Vec::new(); 
+        let contents_length = v_file.read_to_end(&mut contents_utf8).unwrap();
+     
+        let output_str = std::str::from_utf8(&mut contents_utf8).or_else(
+            |_| { Err(VfsError::ReadFileError("Error with read_to_end".to_string())) }
+        )?;
+     
+        Ok((output_str.to_string()))
     }
 }
 

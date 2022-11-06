@@ -2,10 +2,10 @@ name="Antiquake Default"
 version="0.10.0"
 
 
-server = { cvars = [ 
+cvars = [ 
 
 
-] }
+]  
 
 entity_files=[
 "scripts/ogre.toml"

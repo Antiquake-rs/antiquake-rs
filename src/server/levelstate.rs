@@ -250,24 +250,24 @@ impl LevelState {
 
 
     //need to pass in args here 
-/* 
-    pub fn execute_subroutine(&self) {
+
+    pub fn execute_subroutine(&self, sub_rt: SlimeFunc) {
 
 
         match sub_rt {
 
 
-            Spawn => self.builtin_spawn()?,
-            Remove => self.builtin_remove()?,
+       //     Spawn => self.builtin_spawn()?,
+       //     Remove => self.builtin_remove()?,
 
-            PrecacheSound => self.builtin_precache_sound()?,
-            PrecacheModel => self.builtin_precache_model()?,
+            PrecacheSound({name}) => self.builtin_precache_sound(name) ,
+            PrecacheModel({name}) => self.builtin_precache_model(name) ,
 
-            _ => panic!("that subroutine not yet implemented");
+            _ => panic!("that subroutine not yet implemented"),
         }
 
 
-    }*/
+    }
 
 
 
@@ -609,14 +609,16 @@ impl LevelState {
 
         let context = &self.slime_context;
 
-        let subroutines = context.fetch_subroutines_for_function(classname,methodname);
-
-
-        
+        let subroutines = context.fetch_subroutines(classname,methodname);
+ 
         //for each subroutine 
 
         //execute that subroutine in this levelstate !!!! 
-        // self.execute_subroutine()
+
+        for( sub_rt ) in subroutines.into_iter(){
+            self.execute_subroutine( sub_rt );
+        }
+       
 
 
        // let func_id = self.script_context.find_function_by_name(name)?;

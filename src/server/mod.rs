@@ -27,6 +27,8 @@ pub mod world;
 pub mod levelstate;
 pub mod slime; 
 
+
+
 use std::{
     thread::{self},
     cell::{Ref, RefCell},
@@ -64,9 +66,12 @@ use crate::{
     },
     server::{
         progs::{ EntityId}, 
-       net::{ ServerCmdCode  }
+       net::{ ServerCmdCode  },
+       slime::SlimeError
     },
 };
+
+ 
 
 use self::{
     precache::{Precache,MAX_PRECACHE_ENTRIES,MAX_PRECACHE_PATH},
