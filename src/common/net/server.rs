@@ -52,7 +52,7 @@ pub const CONNECT_PROTOCOL_VERSION: u8 = 3;
 const CONNECT_CONTROL: i32 = 1 << 31;
 const CONNECT_LENGTH_MASK: i32 = 0x0000FFFF;
 
-use cgmath::{Deg, Vector3, Zero};
+use cgmath::{Deg, Vector3 };
 
 
 pub trait ConnectPacket {
@@ -1177,20 +1177,11 @@ impl ServerConnectionManager {
                
                 let request_byte = reader.read_u8()?;   
 
-                 ///USE THIS PATTERN FOR OPTIONS MATCHING
-                let request_code:RequestCode = match RequestCode::from_u8(request_byte) {
-                    Some(r) => r,
-                    None => {  
-                        println!( 
-                                "error with request code {}",
-                                request_byte  
-                        );
-                        return Err(NetError::InvalidData(format!(
+                 //USE THIS PATTERN FOR OPTIONS MATCHING
+                let request_code:RequestCode =   RequestCode::from_u8(request_byte).ok_or(  NetError::InvalidData(format!(
                             "request code {}",
                             request_byte
-                        )))
-                    }
-                };
+                        ) ))?  ;
 
 
                 let request = match request_code {
@@ -1355,7 +1346,7 @@ impl ServerConnectionManager {
         // validate request code
       
 
-        ///if its a simple connect request, then we connect 
+        //if its a simple connect request, then we connect 
         let request = match request_code {
             RequestCode::Connect => {
                 let game_name = util::read_cstring( reader).unwrap();

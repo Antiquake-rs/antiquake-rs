@@ -185,7 +185,7 @@ impl ClientState {
     ) -> Result<ClientState, ClientError> {
         // TODO: validate submodel names
         let mut models = Vec::with_capacity(model_precache.len());
-        models.push(Model::none());
+        models.push(Model::none()); // this is bc the map is slot 0 ? 
         let mut model_names = HashMap::new();
         for mod_name in model_precache {
             // BSPs can have more than one model

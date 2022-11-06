@@ -19,7 +19,7 @@
 
 use std::{
     collections::{hash_map::Iter, HashMap},
-    fs::{self,File},
+    fs::{self },
     io::{self, Read, Seek, SeekFrom},
     path::Path,
 };
@@ -28,10 +28,7 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use thiserror::Error;
 
 use super::vfs::{PakExtType};
-
-
-use zip::result::ZipError;
-
+ 
 
 
 const PAK_MAGIC: [u8; 4] = [b'P', b'A', b'C', b'K'];

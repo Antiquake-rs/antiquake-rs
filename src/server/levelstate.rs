@@ -10,8 +10,7 @@ use std::{
     fs::File,
     fmt::{self,Display},
     ops::Range
-};
- 
+}; 
 
 use crate::{
     server::precache::{Precache,MAX_PRECACHE_ENTRIES,MAX_PRECACHE_PATH},
@@ -42,7 +41,9 @@ use crate::{
         Slime
     },
     server::{ClientSlots},
-    server::slime::{SlimeContext},
+    server::slime::{
+        SlimeContext, 
+        context::SlimeFunc},
 };
 
 
@@ -67,7 +68,7 @@ pub struct LevelState {
     string_table: Rc<RefCell<StringTable>>,
     sound_precache: Precache,
     model_precache: Precache,
-    lightstyles: [StringId; MAX_LIGHTSTYLES],
+    lightstyles:  [StringId; MAX_LIGHTSTYLES],
 
 
     entmap: String,
@@ -82,7 +83,7 @@ pub struct LevelState {
    slime_context: SlimeContext,
 
     /// Global values for QuakeC bytecode.
-    globals: Globals,
+    //globals: Globals,
 
     /// The state of the game world.
     ///
@@ -98,30 +99,30 @@ impl LevelState {
         cvars: Rc<RefCell<CvarRegistry>>,
         slime: Slime,
        
-        models: Vec<Model>,
+        models: Vec<Model>, // brush models 
         entmap: String,
     ) -> LevelState {
 
         let Slime {
             slime_context,
-            globals,
+          //  globals,
             entity_def,
-            string_table,
+            string_table,   //used for World 
         } = slime ;
 
         println!("string table {}", string_table.borrow_mut().getData() );
         
 
-        
-
-        let mut sound_precache = Precache::new();
-       // sound_precache.precache("");
-
-
+            //see from_server_info 
+ 
         //any model you want to use including bsp MUST be precached 
+        
+        let mut sound_precache = Precache::new();
+        sound_precache.precache("");
 
         let mut model_precache = Precache::new();
-       // model_precache.precache("");
+        model_precache.precache("");
+         
 
 
         for model in models.iter() {
@@ -131,15 +132,18 @@ impl LevelState {
 
             println!("model is {}",model.name());
 
+           
+
+            //find or insert the model name into string table 
             let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
+
+            //add the string to the precache 
             model_precache.precache(string_table.borrow().get(model_name).unwrap());
         }
-
-        
+ 
 
         let world = World::create(models, entity_def.clone(), string_table.clone()).unwrap();
-      
-
+       
      
         //add to me from slime ? 
 
@@ -157,7 +161,7 @@ impl LevelState {
 
           //  cx,
             slime_context,
-            globals,
+           // globals,
             world,
 
             datagram: ArrayVec::new(),
@@ -178,36 +182,52 @@ impl LevelState {
     }
 
     #[inline]
-    pub fn precache_sound(&mut self, name_id: StringId) {
-        let name = Ref::map(self.string_table.borrow(), |this| {
+    pub fn precache_sound(&mut self, name: String) {
+
+        
+           //find or insert the model name into string table 
+           let sound_name = (self.string_table).borrow_mut().find_or_insert(sound.name());
+
+           //add the string to the precache 
+           self.sound_precache.precache(string_table.borrow().get(sound_name).unwrap());
+
+       /*  let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
-        self.sound_precache.precache(&*name);
+        self.sound_precache.precache(&*name);*/
     }
 
 
     //this is run by the progs.dat or slime ! 
     #[inline]
-    pub fn precache_model(&mut self, name_id: StringId) {
-        let name = Ref::map(self.string_table.borrow(), |this| {
+    pub fn precache_model(&mut self, name: String) {
+
+           //find or insert the model name into string table 
+           let model_name = (self.string_table).borrow_mut().find_or_insert(model.name());
+
+           //add the string to the precache 
+           self.model_precache.precache(string_table.borrow().get(model_name).unwrap());
+
+
+        /*let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
-        self.model_precache.precache(&*name)
+        self.model_precache.precache(&*name)*/
     }
 
     #[inline]
-    pub fn sound_id(&self, name_id: StringId) -> Option<usize> {
-        let name = Ref::map(self.string_table.borrow(), |this| {
+    pub fn sound_id(&self, name: String) -> Option<usize> {
+        /*let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
-        });
+        });*/
         self.sound_precache.find(&*name)
     }
 
     #[inline]
-    pub fn model_id(&self, name_id: StringId) -> Option<usize> {
-        let name = Ref::map(self.string_table.borrow(), |this| {
+    pub fn model_id(&self, name: String) -> Option<usize> {
+      /*   let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
-        });
+        });*/
         self.model_precache.find(&*name)
     }
 
@@ -251,20 +271,22 @@ impl LevelState {
 
     //need to pass in args here 
 
-    pub fn execute_subroutine(&self, sub_rt: SlimeFunc) {
+    pub fn execute_subroutine(&self, sub_rt: SlimeFunc) -> Result<(), ProgsError>{
 
 
-        match sub_rt {
+        return match sub_rt {
 
 
        //     Spawn => self.builtin_spawn()?,
        //     Remove => self.builtin_remove()?,
 
-            PrecacheSound({name}) => self.builtin_precache_sound(name) ,
-            PrecacheModel({name}) => self.builtin_precache_model(name) ,
+            SlimeFunc::PrecacheSound {name}  => self.builtin_precache_sound(name) ,
+            SlimeFunc::PrecacheModel {name}  => self.builtin_precache_model(name) ,
 
-            _ => panic!("that subroutine not yet implemented"),
-        }
+            _ => Err(ProgsError::Other(format!("that subroutine not yet implemented")))   
+        };
+
+     //   Ok(())
 
 
     }
@@ -534,24 +556,24 @@ impl LevelState {
             None => return Err(ProgsError::with_msg("No classname for entity")),
         };
 
-        let ent_id = self.world.alloc_from_map(map)?;
+        let entity_id = self.world.alloc_from_map(map)?;
 
         // TODO: set origin, mins and maxs here if needed
 
         // set `self` before calling spawn function
-        self.globals
-            .put_entity_id(ent_id, GlobalAddrEntity::Self_ as i16)?;
+       // self.globals
+       //     .put_entity_id(ent_id, GlobalAddrEntity::Self_ as i16)?;
 
 
          // dont execute progs.dat program right now since some funcs are not impl 
     
         //this populates the precache !!! 
-        self.execute_slime_script(classname,"fn_prepare")?;
+        self.execute_slime_script_for_entity(classname,"fn_prepare",  entity_id.0 as usize )?;
 
 
-        self.link_entity(ent_id, true)?;
+        self.link_entity(entity_id, true)?;
 
-        Ok(ent_id)
+        Ok(entity_id)
     }
 
     pub fn set_entity_origin(
@@ -598,13 +620,13 @@ impl LevelState {
 
 
 
-    pub fn execute_slime_script(&mut self, classname: &str, methodname: &str) -> Result<(), ProgsError>
+    pub fn execute_slime_script_for_entity(&mut self, classname: &str, methodname: &str, ent_id:usize) -> Result<(), ProgsError>
     
     {
 
         //use rhai for this  ! 
 
-        println!("execute slime script "  );
+        println!("execute slime script for entity {}", ent_id  );
 
 
         let context = &self.slime_context;
@@ -615,7 +637,7 @@ impl LevelState {
 
         //execute that subroutine in this levelstate !!!! 
 
-        for( sub_rt ) in subroutines.into_iter(){
+        for (sub_rt) in subroutines.into_iter(){
             self.execute_subroutine( sub_rt );
         }
        
@@ -633,25 +655,29 @@ impl LevelState {
 
 
 
-    pub fn builtin_precache_sound(&mut self, arg:i16) -> Result<(), ProgsError> {
+    pub fn builtin_precache_sound(&mut self, name:String) -> Result<(), ProgsError> {
         // TODO: disable precaching after server is active
         // TODO: precaching doesn't actually load yet
-        let s_id = self.globals.string_id(arg as i16)?;
-        self.precache_sound(s_id);
+       // let s_id = self.globals.string_id(arg as i16)?;
+        self.precache_sound(name);
       /*  self.globals
             .put_string_id(s_id, GLOBAL_ADDR_RETURN as i16)?;*/ //dont need to worry about populating the addr return buffer anymore ! 
 
         Ok(())
     }
 
-    pub fn builtin_precache_model(&mut self, arg:i16) -> Result<(), ProgsError> {
+    pub fn builtin_precache_model(&mut self, name:String) -> Result<(), ProgsError> {
         println!("builtin_precache_model!!");
         // TODO: disable precaching after server is active
         // TODO: precaching doesn't actually load yet
-        let s_id = self.globals.string_id(arg as i16)?;
-        if self.model_id(s_id).is_none() {
-            self.precache_model(s_id);
-            self.world.add_model(&self.vfs, s_id)?;
+
+        //let s_id = self.globals.string_id(arg as i16)?; //what is this doing 
+
+        let existing_precache_model_id = self.model_id(s_id);
+
+        if existing_precache_model_id.is_none() { / //if it is not in the precache 
+            let precache_model_id = self.precache_model(name);
+            self.world.add_model(&self.vfs, name)?;
         }
 
        /* self.globals

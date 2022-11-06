@@ -37,7 +37,7 @@ use crate::common::{
 use super::{BspTextureFrame, BspTextureKind};
 use byteorder::{LittleEndian, ReadBytesExt};
 use cgmath::{InnerSpace, Vector3};
-use chrono::Duration;
+ 
 use failure::ResultExt as _;
 use num::FromPrimitive;
 use thiserror::Error;

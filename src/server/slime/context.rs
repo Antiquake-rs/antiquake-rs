@@ -133,7 +133,7 @@ impl SlimeContext {
 
         let scripts_output:HashMap<String, Vec< SlimeFunc >> = HashMap::new();
 
-        for (key, entry) in map.into_iter() {
+        for (key, entry) in entry.scripts.into_iter() {
 
             let slime_funcs = entry.into_iter().map( |x:SlimeFuncEntry| SlimeContext::build_slime_func( x ).unwrap()  ).collect::<Vec<SlimeFunc>>() ;
             scripts_output.insert(key, slime_funcs  );
@@ -171,11 +171,17 @@ impl SlimeContext {
     //research type parameters ! s
 
     //returns the method type and the inputs for the call 
-    pub fn fetch_subroutines(&self, classname: &str, methodname: &str) -> Option<Vec<SlimeFunc>>{
+    pub fn fetch_subroutines(&self, classname: &str, methodname: &str) ->  Vec<SlimeFunc> {
 
-        let entity_slime = self.entity_slimes.get(classname)
+        let output:Vec<SlimeFunc> = Vec::new();
+
+        let entity_slime = self.entity_slimes.get(classname).ok_or( 
+          {  return output;}
+          );
 
 
+
+        return output;        
         
     }
 

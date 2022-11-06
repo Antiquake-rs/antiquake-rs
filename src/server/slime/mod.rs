@@ -6,7 +6,7 @@ use toml;
 
 use crate::{
   server::world::{EntityError, EntityTypeDef}, 
-  common::vfs::VirtualFile,
+ 
   server::progs::string_table::{StringTable},
   server::progs::globals::{Globals},
  
@@ -16,7 +16,7 @@ use crate::server::Vfs;
 
 use std::{
   
-  cell::{Ref, RefCell},
+  cell::{  RefCell},
   rc::Rc,
   fmt,
 
@@ -34,7 +34,7 @@ pub use self::{
 pub struct Slime {
   //  pub cx: ExecutionContext,
     pub slime_context: SlimeContext,
-    pub globals: Globals,  //need these anymore ??? 
+    //pub globals: Globals,  //need these anymore ??? 
     pub entity_def: Rc<EntityTypeDef>,
     pub string_table: Rc<RefCell<StringTable>>,
 }
@@ -133,12 +133,12 @@ impl Slime{
     )?);
 
 
-    let globals = Globals::new(
-      string_table.clone(),
-      globaldefs.into_boxed_slice(),
-      addrs.into_boxed_slice(),
-  );
+      let globals = Globals::new(
+        string_table.clone(),
+        globaldefs.into_boxed_slice(),
+        addrs.into_boxed_slice(),
+    );
 
-    Ok(Slime{slime_context,globals,entity_def,string_table})
+    Ok(Slime{slime_context,entity_def,string_table})
   }
 }
