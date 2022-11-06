@@ -40,8 +40,7 @@ use self::{
 };
 pub use self::{
     entity::{
-        EntityError, EntityFlags, EntitySolid, EntityTypeDef, FieldAddrEntityId, FieldAddrFloat,
-        FieldAddrFunctionId, FieldAddrStringId, FieldAddrVector,
+        EntityError, EntityFlags, EntitySolid,  
     },
     phys::{MoveKind, Trace, TraceEnd, TraceEndKind, TraceStart},
 };
@@ -55,11 +54,10 @@ use crate::{
         parse, sprite,
         vfs::Vfs,
     },
-    server::progs::{
-        EntityFieldAddr, EntityId, FieldAddr, FieldDef, FunctionId, ProgsError, StringId,
-        StringTable, Type,
-    },
+    
 };
+
+
 
 use arrayvec::ArrayVec;
 use cgmath::{InnerSpace, Vector3, Zero};
@@ -67,6 +65,32 @@ use cgmath::{InnerSpace, Vector3, Zero};
 const AREA_DEPTH: usize = 4;
 const NUM_AREA_NODES: usize = 2usize.pow(AREA_DEPTH as u32 + 1) - 1;
 const MAX_ENTITIES: usize = 600;
+
+
+#[derive(Debug)]
+pub enum WorldError {
+    Io(::std::io::Error),
+  
+    Entity(EntityError),
+    CallStackOverflow,
+    LocalStackOverflow,
+    Other(String),
+}
+
+impl WorldError {
+    pub fn with_msg<S>(msg: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        WorldError::Other(msg.as_ref().to_owned())
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, Default, Eq, Hash, PartialEq)]  
+pub struct EntityId(pub usize);
+
+
 
 #[derive(Debug)]
 enum AreaNodeKind {
@@ -233,7 +257,7 @@ impl World {
         mut brush_models: Vec<Model>,
       //  type_def: Rc<EntityTypeDef>,
       //  string_table: Rc<RefCell<StringTable>>,
-    ) -> Result<World, ProgsError> {
+    ) -> Result<World, WorldError> {
         // generate area tree for world model
         let area_nodes = AreaNode::generate(brush_models[0].min(), brush_models[0].max());
 
@@ -247,10 +271,13 @@ impl World {
 
 
         // where is this type def coming from in richter? 
-        let type_def = HashMap::new();
+        let type_def:HashMap<String,String> = HashMap::new();
 
         // generate world entity
-        let mut world_entity = Entity::new( type_def );
+        let mut world_entity = Entity::new(   );
+
+        // inject world type def  hashmap ???
+
 
         //the old way the engine handled entity data... now we do ECS arch 
        /* world_entity.put_string_id(
@@ -288,15 +315,15 @@ impl World {
         ).collect(); 
     }
 
-    pub fn add_model(&mut self, vfs: &Vfs, name_id: StringId) -> Result<(), ProgsError> {
-        let strs = self.string_table.borrow();
-        let name = strs.get(name_id).unwrap();
+    pub fn add_model(&mut self, vfs: &Vfs, name: String) -> Result<(), WorldError> {
+      //  let strs = self.string_table.borrow();
+       // let name = strs.get(name_id).unwrap();
 
         if name.ends_with(".bsp") {
             let data = vfs.open(name).unwrap();
             let (mut brush_models, _) = bsp::load(data).unwrap();
             if brush_models.len() > 1 {
-                return Err(ProgsError::with_msg(
+                return Err(WorldError::with_msg(
                     "Complex brush models must be loaded before world creation",
                 ));
             }
@@ -312,7 +339,7 @@ impl World {
             self.models
                 .push(Model::from_sprite_model(&name, sprite_model));
         } else {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Unrecognized model type: {}",
                 name
             )));
@@ -322,8 +349,8 @@ impl World {
     }
 
 
-   
-    fn find_def<S>(&self, name: S) -> Result<&FieldDef, ProgsError>
+        //what exactly was this for  ?  seemed like it was used for  hacky  things based on comments below 
+    /*fn find_def<S>(&self, name: S) -> Result<&FieldDef, WorldError>
     where
         S: AsRef<str>,
     {
@@ -336,14 +363,14 @@ impl World {
             .find(|def| self.string_table.borrow().get(def.name_id).unwrap() == name)
         {
             Some(d) => Ok(d),
-            None => Err(ProgsError::with_msg(format!("no field with name {}", name))),
+            None => Err(WorldError::with_msg(format!("no field with name {}", name))),
         }
-    }
+    }*/
 
     /// Convert an entity ID and field address to an internal representation used by the VM.
     ///
     /// This representation should be compatible with the one used by the original Quake.
-    pub fn ent_fld_addr_to_i32(&self, ent_fld_addr: EntityFieldAddr) -> i32 {
+  /*   pub fn ent_fld_addr_to_i32(&self, ent_fld_addr: EntityFieldAddr) -> i32 {
         let total_addr =
             (ent_fld_addr.entity_id.0 * self.type_def.addr_count() + ent_fld_addr.field_addr.0) * 4;
 
@@ -369,7 +396,7 @@ impl World {
             entity_id: EntityId(total_addr / self.type_def.addr_count()),
             field_addr: FieldAddr(total_addr % self.type_def.addr_count()),
         }
-    }
+    }*/
 
     fn find_vacant_slot(&self) -> Result<usize, ()> {
         for (i, slot) in self.slots.iter().enumerate() {
@@ -381,11 +408,11 @@ impl World {
         panic!("no vacant slots");
     }
 
-    pub fn alloc_uninitialized(&mut self) -> Result<EntityId, ProgsError> {
+    pub fn alloc_uninitialized(&mut self) -> Result<EntityId, WorldError> {
         let slot_id = self.find_vacant_slot().unwrap();
 
         self.slots[slot_id] = AreaEntitySlot::Occupied(AreaEntity {
-            entity: Entity::new(self.string_table.clone(), self.type_def.clone()),
+            entity: Entity::new( ),
             area_id: None,
         });
 
@@ -405,12 +432,16 @@ impl World {
     /// - `angle`: This allows QuakeEd to write a single value instead of a set of Euler angles.
     ///   The value should be interpreted as the second component of the `angles` field.
     /// - `light`: This is simply an alias for `light_lev`.
-    pub fn alloc_from_map(&mut self, map: HashMap<&str, &str>) -> Result<EntityId, ProgsError> {
+    pub fn alloc_from_map(&mut self, map: HashMap<&str, &str>) -> Result<EntityId, WorldError> {
 
 
 
         let mut ent = Entity::new();
 
+        //populate the field defs for the entity here -- this comes from slime ??
+
+
+/*
         for (key, val) in map.iter() {
             debug!(".{} = {}", key, val);
             match *key {
@@ -473,6 +504,9 @@ impl World {
                 }
             }
         }
+ */
+
+
 
         let entry_id = self.find_vacant_slot().unwrap();
 
@@ -484,11 +518,11 @@ impl World {
         Ok(EntityId(entry_id))
     }
 
-    pub fn free(&mut self, entity_id: EntityId) -> Result<(), ProgsError> {
+    pub fn free(&mut self, entity_id: EntityId) -> Result<(), WorldError> {
         // TODO: unlink entity from world
 
         if entity_id.0 as usize > self.slots.len() {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Invalid entity ID ({:?})",
                 entity_id
             )));
@@ -516,16 +550,16 @@ impl World {
         }
     }
 
-    pub fn try_entity(&self, entity_id: EntityId) -> Result<&Entity, ProgsError> {
+    pub fn try_entity(&self, entity_id: EntityId) -> Result<&Entity, WorldError> {
         if entity_id.0 as usize > self.slots.len() {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Invalid entity ID ({})",
                 entity_id.0 as usize
             )));
         }
 
         match self.slots[entity_id.0 as usize] {
-            AreaEntitySlot::Vacant => Err(ProgsError::with_msg(format!(
+            AreaEntitySlot::Vacant => Err(WorldError::with_msg(format!(
                 "No entity at list entry {}",
                 entity_id.0 as usize
             ))),
@@ -533,16 +567,16 @@ impl World {
         }
     }
 
-    pub fn entity_mut(&mut self, entity_id: EntityId) -> Result<&mut Entity, ProgsError> {
+    pub fn entity_mut(&mut self, entity_id: EntityId) -> Result<&mut Entity, WorldError> {
         if entity_id.0 as usize > self.slots.len() {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Invalid entity ID ({})",
                 entity_id.0 as usize
             )));
         }
 
         match self.slots[entity_id.0 as usize] {
-            AreaEntitySlot::Vacant => Err(ProgsError::with_msg(format!(
+            AreaEntitySlot::Vacant => Err(WorldError::with_msg(format!(
                 "No entity at list entry {}",
                 entity_id.0 as usize
             ))),
@@ -565,16 +599,16 @@ impl World {
         }
     }
 
-    fn area_entity(&self, entity_id: EntityId) -> Result<&AreaEntity, ProgsError> {
+    fn area_entity(&self, entity_id: EntityId) -> Result<&AreaEntity, WorldError> {
         if entity_id.0 as usize > self.slots.len() {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Invalid entity ID ({})",
                 entity_id.0 as usize
             )));
         }
 
         match self.slots[entity_id.0 as usize] {
-            AreaEntitySlot::Vacant => Err(ProgsError::with_msg(format!(
+            AreaEntitySlot::Vacant => Err(WorldError::with_msg(format!(
                 "No entity at list entry {}",
                 entity_id.0 as usize
             ))),
@@ -582,16 +616,16 @@ impl World {
         }
     }
 
-    fn area_entity_mut(&mut self, entity_id: EntityId) -> Result<&mut AreaEntity, ProgsError> {
+    fn area_entity_mut(&mut self, entity_id: EntityId) -> Result<&mut AreaEntity, WorldError> {
         if entity_id.0 as usize > self.slots.len() {
-            return Err(ProgsError::with_msg(format!(
+            return Err(WorldError::with_msg(format!(
                 "Invalid entity ID ({})",
                 entity_id.0 as usize
             )));
         }
 
         match self.slots[entity_id.0 as usize] {
-            AreaEntitySlot::Vacant => Err(ProgsError::with_msg(format!(
+            AreaEntitySlot::Vacant => Err(WorldError::with_msg(format!(
                 "No entity at list entry {}",
                 entity_id.0 as usize
             ))),
@@ -607,8 +641,10 @@ impl World {
         touched: &mut Vec<EntityId>,
         ent_id: EntityId,
         area_id: usize,
-    ) -> Result<(), ProgsError> {
-        'next_trigger: for trigger_id in self.area_nodes[area_id].triggers.iter().copied() {
+    ) -> Result<(), WorldError> {
+
+
+       /*  'next_trigger: for trigger_id in self.area_nodes[area_id].triggers.iter().copied() {
             if trigger_id == ent_id {
                 // Don't trigger self.
                 continue;
@@ -639,16 +675,18 @@ impl World {
         {
             self.list_touched_triggers(touched, ent_id, front)?;
             self.list_touched_triggers(touched, ent_id, back)?;
-        }
+        }*/
 
         Ok(())
     }
 
-    pub fn unlink_entity(&mut self, e_id: EntityId) -> Result<(), ProgsError> {
+    pub fn unlink_entity(&mut self, e_id: EntityId) -> Result<(), WorldError> {
         // if this entity has been removed or freed, do nothing
         if let AreaEntitySlot::Vacant = self.slots[e_id.0 as usize] {
             return Ok(());
         }
+
+        
 
         let area_id = match self.area_entity(e_id)?.area_id {
             Some(i) => i,
@@ -668,7 +706,10 @@ impl World {
         Ok(())
     }
 
-    pub fn link_entity(&mut self, e_id: EntityId) -> Result<(), ProgsError> {
+
+    //what did this do ?? 
+
+    pub fn link_entity(&mut self, e_id: EntityId) -> Result<(), WorldError> {
         // don't link the world entity
         if e_id.0 == 0 {
             return Ok(());
@@ -681,6 +722,10 @@ impl World {
 
         self.unlink_entity(e_id)?;
 
+
+
+        //i guess this somehow added the entity to the world physics space ? 
+        /* 
         let mut abs_min;
         let mut abs_max;
         let solid;
@@ -721,14 +766,21 @@ impl World {
                 todo!("SV_FindTouchedLeafs");
             }
 
+           
+
+
             solid = ent.solid()?;
 
             if solid == EntitySolid::Not {
                 // this entity has no touch interaction, we're done
                 return Ok(());
             }
-        }
 
+
+
+        } */
+
+        /*
         let mut node_id = 0;
         loop {
             match self.area_nodes[node_id].kind {
@@ -761,10 +813,12 @@ impl World {
             self.area_entity_mut(e_id)?.area_id = Some(node_id);
         }
 
+         */
+
         Ok(())
     }
 
-    pub fn set_entity_model(&mut self, e_id: EntityId, model_id: usize) -> Result<(), ProgsError> {
+  /*   pub fn set_entity_model(&mut self, e_id: EntityId, model_id: usize) -> Result<(), WorldError> {
         if model_id == 0 {
             self.set_entity_size(e_id, Vector3::zero(), Vector3::zero())?;
         } else {
@@ -781,33 +835,36 @@ impl World {
         e_id: EntityId,
         min: Vector3<f32>,
         max: Vector3<f32>,
-    ) -> Result<(), ProgsError> {
+    ) -> Result<(), WorldError> {
         let ent = self.entity_mut(e_id)?;
         ent.set_min_max_size(min, max)?;
         Ok(())
-    }
+    }*/
 
     /// Unlink an entity from the world and remove it.
-    pub fn remove_entity(&mut self, e_id: EntityId) -> Result<(), ProgsError> {
+    pub fn remove_entity(&mut self, e_id: EntityId) -> Result<(), WorldError> {
         self.unlink_entity(e_id)?;
         self.free(e_id)?;
         Ok(())
     }
 
+
+    // Collision will be done in ECS ! 
     // TODO: handle the offset return value internally
-    pub fn hull_for_entity(
+    /*  
+   pub fn hull_for_entity(
         &self,
         e_id: EntityId,
         min: Vector3<f32>,
         max: Vector3<f32>,
-    ) -> Result<(BspCollisionHull, Vector3<f32>), ProgsError> {
+    ) -> Result<(BspCollisionHull, Vector3<f32>), WorldError> {
         let solid = self.entity(e_id).solid()?;
         debug!("Entity solid type: {:?}", solid);
 
         match solid {
             EntitySolid::Bsp => {
                 if self.entity(e_id).move_kind()? != MoveKind::Push {
-                    return Err(ProgsError::with_msg(format!(
+                    return Err(WorldError::with_msg(format!(
                         "Brush entities must have MoveKind::Push (has {:?})",
                         self.entity(e_id).move_kind()
                     )));
@@ -836,7 +893,7 @@ impl World {
 
                         Ok((hull, offset))
                     }
-                    _ => Err(ProgsError::with_msg(format!(
+                    _ => Err(WorldError::with_msg(format!(
                         "Non-brush entities may not have MoveKind::Push"
                     ))),
                 }
@@ -854,9 +911,10 @@ impl World {
             }
         }
     }
+ */
 
     // TODO: come up with a better name. This doesn't actually move the entity!
-    pub fn move_entity(
+   /* pub fn trace_move_entity(
         &mut self,
         e_id: EntityId,
         start: Vector3<f32>,
@@ -864,7 +922,7 @@ impl World {
         max: Vector3<f32>,
         end: Vector3<f32>,
         kind: CollideKind,
-    ) -> Result<(Trace, Option<EntityId>), ProgsError> {
+    ) -> Result<(Trace, Option<EntityId>), WorldError> {
         debug!(
             "start={:?} min={:?} max={:?} end={:?}",
             start, min, max, end
@@ -915,7 +973,9 @@ impl World {
         }
     }
 
-    pub fn collide(&self, collide: &Collide) -> Result<(Trace, Option<EntityId>), ProgsError> {
+ */
+    /*   
+    pub fn collide(&self, collide: &Collide) -> Result<(Trace, Option<EntityId>), WorldError> {
         self.collide_area(0, collide)
     }
 
@@ -923,7 +983,7 @@ impl World {
         &self,
         area_id: usize,
         collide: &Collide,
-    ) -> Result<(Trace, Option<EntityId>), ProgsError> {
+    ) -> Result<(Trace, Option<EntityId>), WorldError> {
         let mut trace = Trace::new(
             TraceStart::new(Vector3::zero(), 0.0),
             TraceEnd::terminal(Vector3::zero()),
@@ -948,7 +1008,7 @@ impl World {
 
                 // triggers should not appear in the solids list
                 EntitySolid::Trigger => {
-                    return Err(ProgsError::with_msg(format!(
+                    return Err(WorldError::with_msg(format!(
                         "Trigger in solids list with ID ({})",
                         touch.0
                     )))
@@ -1042,7 +1102,7 @@ impl World {
         min: Vector3<f32>,
         max: Vector3<f32>,
         end: Vector3<f32>,
-    ) -> Result<Trace, ProgsError> {
+    ) -> Result<Trace, WorldError> {
         let (hull, offset) = self.hull_for_entity(e_id, min, max)?;
         debug!("hull offset: {:?}", offset);
         debug!(
@@ -1055,4 +1115,8 @@ impl World {
             .unwrap()
             .adjust(offset))
     }
+
+
+              */
+
 }

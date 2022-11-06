@@ -26,7 +26,7 @@ use crate::{
     },
     server::world::{
         phys::{self, CollideKind, CollisionFlags, Trace, TraceEndKind},
-        MoveKind, EntityFlags, EntitySolid, FieldAddrFloat, FieldAddrVector, FieldAddrEntityId, FieldAddrFunctionId, FieldAddrStringId, World,
+        MoveKind, EntityFlags, EntitySolid,  World,
     },
     server::progs::{
         globals::{
@@ -143,11 +143,11 @@ impl LevelState {
             //find or insert the model name into string table 
             //let model_name = (*string_table).borrow_mut().find_or_insert(model.name());
 
-            println!("model stringid is {}",model_name);
+         //   println!("model stringid is {}",model_name);
 
 
             //add the string to the precache 
-            model_precache.precache(string_table.borrow().get(model_name).unwrap());
+            model_precache.precache( model.name() );
         }
  
 
@@ -191,16 +191,16 @@ impl LevelState {
     }
 
     #[inline]
-    pub fn precache_sound(&mut self, name: String) -> StringId {
+    pub fn precache_sound(&mut self, name: String)   {
 
         
            //find or insert the model name into string table 
-           let sound_name = (self.string_table).borrow_mut().find_or_insert(name);
+          // let sound_name = (self.string_table).borrow_mut().find_or_insert(name);
 
            //add the string to the precache 
-           self.sound_precache.precache(self.string_table.borrow().get(sound_name).unwrap());
+           self.sound_precache.precache(name );
 
-           return sound_name
+           
        /*  let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
@@ -212,20 +212,20 @@ impl LevelState {
     //this adds the string to the string table AND to the precache !  
     //I think the 'world' uses the string table for some reason. 
     #[inline]
-    pub fn precache_model(&mut self, name: String) -> StringId {
+    pub fn precache_model(&mut self, name: String) {
 
            //find or insert the model name into string table 
-           let model_name = (self.string_table).borrow_mut().find_or_insert( name );
+          // let model_name = (self.string_table).borrow_mut().find_or_insert( name );
 
 
            //get this to run !!!
-            println!("Precaching model {}", model_name );
+            println!("Precaching model {}", name );
 
            //add the string to the precache    
-           self.model_precache.precache(self.string_table.borrow().get(model_name).unwrap());
+           self.model_precache.precache(name);
 
 
-           return model_name
+          
         /*let name = Ref::map(self.string_table.borrow(), |this| {
             this.get(name_id).unwrap()
         });
@@ -605,7 +605,7 @@ impl LevelState {
 
         Ok(entity_id)
     }
-
+/* 
     pub fn set_entity_origin(
         &mut self,
         ent_id: EntityId,
@@ -646,7 +646,7 @@ impl LevelState {
 
         Ok(())
     }
-
+*/
 
 
 
@@ -718,7 +718,7 @@ impl LevelState {
 
         if existing_precache_model_id.is_none() {   //if it is not in the precache 
             let precache_model_name_id = self.precache_model(name);
-            self.world.add_model(&self.vfs,  precache_model_name_id)?;
+            self.world.add_model(&self.vfs,  name.clone()  )?;
         }
 
 

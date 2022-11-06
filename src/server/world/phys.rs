@@ -19,7 +19,7 @@
 
 use crate::{
     common::{bsp::BspLeafContents, math::Hyperplane},
-    server::progs::EntityId,
+    server::world::EntityId,
 };
 
 use bitflags::bitflags;

@@ -22,7 +22,7 @@
 
 
 pub mod precache;
-pub mod progs; //deprecated
+ 
 pub mod world; 
 pub mod levelstate;
 pub mod slime; 
@@ -35,10 +35,8 @@ use std::{
     collections::{HashMap,VecDeque},
     rc::Rc,
     net::{ToSocketAddrs,SocketAddr},
-    io::{self, BufRead},
-    fs::File,
-    fmt::{self,Display},
-    ops::Range
+    io::{self, BufRead}, 
+    fmt::{self,Display}, 
 };
 
 use num::FromPrimitive;
@@ -64,25 +62,21 @@ use crate::{
         }, 
         util::read_f32_3, 
     },
-    server::{
-        progs::{ EntityId}, 
-       net::{ ServerCmdCode  },
-       slime::SlimeError
-    },
+    
 };
 
  
 
 use self::{
     precache::{Precache,MAX_PRECACHE_ENTRIES,MAX_PRECACHE_PATH},
-    progs::{StringId, LoadProgs},
-    
+   
+    net::{ ServerCmdCode  },
     world::{ 
-      World,
+      World, EntityId
     },
     levelstate::{LevelState},
     slime::{
-        Slime
+        Slime, SlimeError
     },
 };
  
@@ -684,9 +678,9 @@ impl GameServer {
 
                             println!("sending the player tons of stuff here !!");
 
-                            /// give SpawnStaticSound 
-                            /// give SpawnStatic
-                            /// give SpawnBaseline 
+                            // give SpawnStaticSound 
+                            // give SpawnStatic
+                            // give SpawnBaseline 
                            
 
 
@@ -990,7 +984,7 @@ impl SessionLoading {
     ///
     /// If the sound already exists in the precache, this has no effect.
     #[inline]
-    pub fn precache_sound(&mut self, name: String) -> StringId {
+    pub fn precache_sound(&mut self, name: String)   {
         self.level.precache_sound(name)
     }
 
@@ -998,7 +992,7 @@ impl SessionLoading {
     ///
     /// If the model already exists in the precache, this has no effect.
     #[inline]
-    pub fn precache_model(&mut self, name: String)   -> StringId  {
+    pub fn precache_model(&mut self, name: String)   {
         self.level.precache_model(name)
     }
 

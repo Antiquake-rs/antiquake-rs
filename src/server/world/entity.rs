@@ -461,6 +461,7 @@ pub struct Entity {
 
     //components 
     type_def: HashMap<String, String>, 
+    //model_index : usize, // consider putting this in a component ? 
 
 
     pub leaf_count: usize,
@@ -488,4 +489,20 @@ impl Entity {
     //maybe add bevy for this? or do it the bevy way 
     pub fn registerComponent(){}    
 
+
+    /*
+    pub fn model_index(&self) -> Result<usize, EntityError> {
+        let model_index = self.get_float(FieldAddrFloat::ModelIndex as i16)?;
+        if model_index < 0.0 || model_index > ::std::usize::MAX as f32 {
+            Err(EntityError::with_msg(format!(
+                "Invalid value for entity.model_index ({})",
+                model_index,
+            )))
+        } else {
+            Ok(model_index as usize)
+        }
+    }*/ 
+
+
 }
+

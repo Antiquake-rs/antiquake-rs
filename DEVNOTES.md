@@ -74,18 +74,7 @@ then it'll start sending some unreliables mixed with the odd reliable. woo. easy
 
 
  
-
-WHERE I AM  STUCK : 
-src/client/mod 1377 happens 
-  Ok(Connection {
-        state: ClientState::new(stream),
-        kind: ConnectionKind::Server {
-            qsock,
-            compose: Vec::new(),
-        },
-        conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
-    })
-
+ 
 
 https://www.gamers.org/dEngine/quake/QDP/qnp.html#connection_req
 
@@ -112,12 +101,14 @@ Client is trying todo first render pass and getting
 ' panicked at 'send_msg_unreliable_multicast
 called `Result::unwrap()` on an `Err` value: NoSuchLightmapAnimation(0)', src\client\render\mod.rs:753:58
 
-Some(Connection {
-            state: ref cl_state,
-            ref conn_state,
-            ref kind,
 
-the connection's cl_state  data is not all filled in yet 
+
+
+
+
+## WORLD 
+physics look into https://crates.io/crates/bevy_rapier3d
+https://docs.rs/bevy_ecs/latest/bevy_ecs/
 
 
 

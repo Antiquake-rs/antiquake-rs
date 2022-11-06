@@ -5,10 +5,8 @@ pub mod context;
 use toml;
 
 use crate::{
-  server::world::{EntityError, EntityTypeDef}, 
- 
-  server::progs::string_table::{StringTable},
-  server::progs::globals::{Globals},
+  server::world::{EntityError }, 
+  
  
 };
 
