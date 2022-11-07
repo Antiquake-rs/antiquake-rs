@@ -934,6 +934,21 @@ impl ServerQSocket {
         let msg_sent = self.begin_send_msg( socket, packet.as_slice());
         return msg_sent;
     }
+
+    pub fn send_server_cmds_reliable(&mut self, socket: &mut UdpSocket, serverCmds: Vec<ServerCmd>  )  -> Result<(),NetError> { 
+
+        
+        let mut packet = Vec::new();
+        
+        for cmd in serverCmds.iter(){
+            println!("server: send cmd to client reliably {}", cmd.to_string()); 
+
+            cmd.serialize(&mut packet).unwrap();
+        }  
+
+        let msg_sent = self.begin_send_msg( socket, packet.as_slice());
+        return msg_sent;
+    }
     
 
 
@@ -1479,15 +1494,19 @@ impl ServerConnectionManager {
 
  
 
-    pub fn send_cmd_to_client_reliable(&mut self,  serverCmd:ServerCmd, client_id: i32  )  -> Result<(),NetError> { 
+    pub fn send_cmds_to_client_reliable(&mut self,  serverCmds:Vec<ServerCmd>, client_id: i32  )  -> Result<(),NetError> { 
             
         let srvQSocket_option = self.serverQSockets.get_mut(&client_id);
 
         match srvQSocket_option {
             Some(srvQSocket) => {
                 let sock = &mut self.socket;
-                let send_result =  srvQSocket.send_server_cmd_reliable( sock, serverCmd  );  
-                println!("sent server info cmd to client reliably"); 
+
+             
+
+                let send_result =  srvQSocket.send_server_cmds_reliable( sock, serverCmds  );  
+               
+              
 
                 return Ok( () )
             }

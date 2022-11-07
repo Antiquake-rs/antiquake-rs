@@ -581,6 +581,13 @@ impl GameServer {
                         |&s|  {println!("{}",s);  s.into()}
                     ).collect(); */
 
+
+
+
+                    //Got serv
+
+                    let mut commandsList : Vec<ServerCmd> = Vec::new();
+
                             
                     let serverInfoCmd = ServerCmd::ServerInfo {
                         protocol_version: i32::from(self.protocol_version),
@@ -591,32 +598,35 @@ impl GameServer {
                         sound_precache : precached_sounds   
                     };    
 
+ 
+                    commandsList.push(serverInfoCmd);
+ 
 
-                    println!("sending server cmd {}", serverInfoCmd.to_string()  );
-
-
-                    let send_client_serverinfo_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
-
-                        serverInfoCmd,
-                        client_id 
+                    //maybe acks are not working ?
                     
-                    );
-                    
-
+                   
+                    commandsList.push(ServerCmd::SetView {
+                        ent_id: 1
+                    });
 
                     //Got server cmd CdTrack { track: 5, loop_: 5 }
-                    // Got server cmd SetView { ent_id: 1 }
+
+
+                    // Got server cmd SetView { ent_id: 1 }  NEED TO DO THIS FOR SURE 
                     
-                    let signonCmd = ServerCmd::SignOnStage {
+                
+
+                    commandsList.push(ServerCmd::SignOnStage {
                         stage: SignOnStage::Prespawn
-                    };    
+                    });
+ 
 
-                    let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+                    let send_commands_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
 
-                        signonCmd,
+                        commandsList,
                         client_id 
                     
-                    );
+                    ); 
 
                     //client should send us back a prespawn packet and that is when we send them lighting and statics 
 
@@ -715,13 +725,17 @@ impl GameServer {
                             };   */
 
 
-                            let signonCmd = ServerCmd::SignOnStage {
+                            let mut commandsList : Vec<ServerCmd> = Vec::new();
+
+                            commandsList.push( ServerCmd::SignOnStage {
                                 stage: SignOnStage::ClientInfo
-                            };    
+                            }  );
+                            
+
      
-                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+                            let send_client_signon_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
     
-                                signonCmd,
+                                commandsList, 
                                 client_id 
                             
                             );
@@ -743,29 +757,33 @@ impl GameServer {
                                  
                             */
 
+                            
+                            let mut commandsList : Vec<ServerCmd> = Vec::new();
+
                             //give light maps
                             for id in 0..64 {
+
+                                commandsList.push( ServerCmd::LightStyle {
+                                    id,
+                                    value: String::from("") //what do we put here ?
+                                 }   );
                                 
-                                let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
-    
-                                    ServerCmd::LightStyle {
-                                       id,
-                                       value: String::from("") //what do we put here ?
-                                    }   ,
-                                    client_id 
-                                
-                                );
+                               
 
                             }
+ 
+
+                            
 
 
-                            let signonCmd = ServerCmd::SignOnStage {
+                            commandsList.push( ServerCmd::SignOnStage {
                                 stage: SignOnStage::Begin
-                            };    
-     
-                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+                            }  );
+                            
+                            
+                            let send_client_signon_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
     
-                                signonCmd,
+                                commandsList, 
                                 client_id 
                             
                             );
@@ -780,14 +798,17 @@ impl GameServer {
                         "begin" => {
                             println!(" client is ready to begin ");
 
+
+                            let mut commandsList : Vec<ServerCmd> = Vec::new();
                             //is this right ?
-                            let signonCmd = ServerCmd::SignOnStage {
+                            commandsList.push( ServerCmd::SignOnStage {
                                 stage: SignOnStage::Done
-                            };    
-     
-                            let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+                            }  );
+                            
+                            
+                            let send_client_signon_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
     
-                                signonCmd,
+                                commandsList, 
                                 client_id 
                             
                             );

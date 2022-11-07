@@ -127,24 +127,13 @@ impl LevelState {
         entmap: String,
     ) -> LevelState {
 
-
-        /*
-        
-                How are entities loaded from the map?
-                they have entity id and class name ? 
-        */
+ 
         let Slime {
             slime_context,
-          //  globals,
-         //   entity_def,  //what if we change how entity defs work ! 
-         //   string_table,   //used for World 
+          
         } = slime ;
 
-      //  println!("string table {}", string_table.borrow_mut().getData() );
-        
-
-            //see from_server_info 
- 
+     
         //any model you want to use including bsp MUST be precached 
         
         let mut sound_precache = Precache::new();
@@ -158,9 +147,7 @@ impl LevelState {
     
 
         for model in brush_models.iter() {
-            //why is this crashing ?  oh the string table is not long enough to match what its in models 
-           //how was this loaded before ? 
-            //why is the map bsp not in this ??
+            
 
             println!("brush model is {}",model.name());
 
@@ -225,43 +212,27 @@ impl LevelState {
 
         
            //find or insert the model name into string table 
-          // let sound_name = (self.string_table).borrow_mut().find_or_insert(name);
+          
 
           println!("Precaching sound {}", name );
 
            //add the string to the precache 
            self.sound_precache.precache(name );
-
-           
-       /*  let name = Ref::map(self.string_table.borrow(), |this| {
-            this.get(name_id).unwrap()
-        });
-        self.sound_precache.precache(&*name);*/
+ 
     }
 
 
-    //this is run by the progs.dat or slime ! 
-    //this adds the string to the string table AND to the precache !  
-    //I think the 'world' uses the string table for some reason. 
+    //this is run by the progs.dat or slime !  
     #[inline]
     pub fn precache_model(&mut self, name: String) {
 
            //find or insert the model name into string table 
-          // let model_name = (self.string_table).borrow_mut().find_or_insert( name );
-
-
-           //get this to run !!!
+       
             println!("Precaching model {}", name );
 
            //add the string to the precache    
            self.model_precache.precache(name);
-
-
-          
-        /*let name = Ref::map(self.string_table.borrow(), |this| {
-            this.get(name_id).unwrap()
-        });
-        self.model_precache.precache(&*name)*/
+ 
     }
 
 

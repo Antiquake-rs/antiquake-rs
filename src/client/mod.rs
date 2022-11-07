@@ -760,8 +760,7 @@ impl Connection {
         }
 
 
-        println!("Client has loaded map");
-
+        
         Ok(Maintain)
     }
 
