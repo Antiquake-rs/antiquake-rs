@@ -1,0 +1,26 @@
+
+# maybe add animations component 
+# see https=//quakewiki.org/wiki/ogre.qc 
+#figure out best way to parse this into memory ... group stuff up or no ?
+
+ 
+classname="weapons"
+
+scripts = { fn_precache_all =  [
+
+  
+    { call="precache_sound", inputs={name="weapons/r_exp3.wav"} },
+    { call="precache_sound", inputs={name="weapons/rocket1i.wav"} },
+    { call="precache_sound", inputs={name="weapons/sgun1.wav"} },
+    { call="precache_sound", inputs={name="weapons/guncock.wav"} },
+    { call="precache_sound", inputs={name="weapons/ric1.wav"} },
+    { call="precache_sound", inputs={name="weapons/ric2.wav"} },
+    { call="precache_sound", inputs={name="weapons/ric3.wav"} },
+    { call="precache_sound", inputs={name="weapons/spike2.wav"} },
+    { call="precache_sound", inputs={name="weapons/tink1.wav"} },
+    { call="precache_sound", inputs={name="weapons/grenade.wav"} },
+    { call="precache_sound", inputs={name="weapons/bounce.wav"} },
+    { call="precache_sound", inputs={name="weapons/shotgn2.wav"} }, 
+ 
+ 
+]  }

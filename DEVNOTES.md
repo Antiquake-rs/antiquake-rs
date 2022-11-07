@@ -30,6 +30,8 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
+- server and client should load the slime on boot !  since they will both need it anyways prob -- ? 
+
 - be able to load a map  by spinning up a local server on port 27500 
 - clean up  src/server/mod  -- it is very large and messy  (specifically trait GameServer)
 
@@ -108,6 +110,11 @@ called `Result::unwrap()` on an `Err` value: NoSuchLightmapAnimation(0)', src\cl
 
 
 
+IMPLEMENT THESE SLIMES : 
+https://quakewiki.org/wiki/player.qc
+https://quakewiki.org/wiki/client.qc
+
+
 
 
 ## WORLD 
@@ -129,9 +136,11 @@ Reference the real quake server code : https://github.com/id-Software/Quake/blob
 -server needs to tell client to open the map bsp 
 
 
--add support for quakeworld protocol,  protocol 28 
-https://nyov.github.io/qstat-svn/old/qprotocol.html
-send a getchallenge packet, wait for the response, send a connect, wait for a positive response, start sending game packets periodically.
+This is failing in client state : 
+client has no self view entity id !!   how do they get that ?  
+   self.entities[self.view.entity_id()].origin,
+
+
 
 
 __ 

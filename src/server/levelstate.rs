@@ -50,7 +50,7 @@ const MAX_LIGHTSTYLES: usize = 64;
 
 use chrono::Duration;
 
-use super::world::{EntityId, WorldError};
+use super::{world::{EntityId, WorldError}, slime::context::InternalCallArgs};
 
 
 
@@ -123,7 +123,7 @@ impl LevelState {
         slime: Slime,
         
         map_name: String,
-        models: Vec<Model>, // brush models 
+        brush_models: Vec<Model>, // brush models 
         entmap: String,
     ) -> LevelState {
 
@@ -148,21 +148,21 @@ impl LevelState {
         //any model you want to use including bsp MUST be precached 
         
         let mut sound_precache = Precache::new();
-        sound_precache.precache("");
+       // sound_precache.precache("");
 
-        println!("map model is {}", map_name );
+        
 
         let mut model_precache = Precache::new();
         model_precache.precache(map_name);  //a dirty hack -- ?
          
     
 
-        for model in models.iter() {
+        for model in brush_models.iter() {
             //why is this crashing ?  oh the string table is not long enough to match what its in models 
            //how was this loaded before ? 
             //why is the map bsp not in this ??
 
-            println!("model is {}",model.name());
+            println!("brush model is {}",model.name());
 
            
 
@@ -177,7 +177,7 @@ impl LevelState {
         }
  
 
-        let world = World::create(models ).unwrap();
+        let world = World::create(  brush_models ).unwrap();
        
      
         //add to me from slime ? 
@@ -202,6 +202,10 @@ impl LevelState {
             datagram: ArrayVec::new(),
         };
 
+
+        level.execute_slime_script("world","fn_prepare").unwrap();
+         
+
         let entity_list = parse::entities(&entmap).unwrap();
 
         for entity in entity_list {
@@ -222,6 +226,8 @@ impl LevelState {
         
            //find or insert the model name into string table 
           // let sound_name = (self.string_table).borrow_mut().find_or_insert(name);
+
+          println!("Precaching sound {}", name );
 
            //add the string to the precache 
            self.sound_precache.precache(name );
@@ -338,6 +344,9 @@ impl LevelState {
 
             SlimeFunc::PrecacheSound {name}  => self.builtin_precache_sound(name) ,
             SlimeFunc::PrecacheModel {name}  => self.builtin_precache_model(name) ,
+
+            SlimeFunc::InternalCall(internal_call_args)  => self.builtin_internal_call( internal_call_args ) ,
+       
 
             _ => Err(LevelError::Other(format!("that subroutine not yet implemented")))   
         };
@@ -602,6 +611,7 @@ impl LevelState {
 
         Ok(ent_id)
     }
+    
 
     pub fn spawn_entity_from_map(
         &mut self,
@@ -676,11 +686,25 @@ impl LevelState {
 
 
 
+    pub fn execute_slime_script (&mut self, classname: &str, methodname: &str) -> Result<(), LevelError>
+    {
+     
+        let context = &self.slime_context;
+
+        let subroutines = context.fetch_subroutines(classname,methodname); 
+
+        for sub_rt in subroutines.into_iter(){
+           let fn_result = self.execute_subroutine( sub_rt );
+        }    
+ 
+        Ok(())
+    }
+
+
     pub fn execute_slime_script_for_entity(&mut self, classname: &str, methodname: &str, ent_id:usize) -> Result<(), LevelError>
     
     {
-
-        //use rhai for this  ! 
+ 
 
         println!("execute slime script for entity {}", ent_id  );
 
@@ -693,7 +717,7 @@ impl LevelState {
 
         //execute that subroutine in this levelstate !!!! 
 
-        for (sub_rt) in subroutines.into_iter(){
+        for sub_rt in subroutines.into_iter(){
            let fn_result = self.execute_subroutine( sub_rt );
         }
        
@@ -707,7 +731,18 @@ impl LevelState {
 
 
 
+    pub fn builtin_internal_call(&mut self, internal_call_args: InternalCallArgs) -> Result<(), LevelError> {
 
+        let context = &self.slime_context;
+
+        let subroutines = context.fetch_subroutines(internal_call_args.classname.as_str(), internal_call_args.fn_name.as_str());
+ 
+        for (sub_rt) in subroutines.into_iter(){
+            let fn_result = self.execute_subroutine( sub_rt );
+         }
+
+         Ok(())
+    }
 
 
 
@@ -737,8 +772,7 @@ impl LevelState {
 
         /*
             If the string has not been added to the precache, we should add it and then 
-            add it to the world.  Have to give the world the StringId thats in the precache because that is the 
-            same stringId used for the strings_table which is used by the world for lookups on entity defs.
+        
         */
         let existing_precache_model_id = self.model_id(name.clone());
 

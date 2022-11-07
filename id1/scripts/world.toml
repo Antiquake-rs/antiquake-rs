@@ -1,0 +1,133 @@
+
+# maybe add animations component 
+# see https=//quakewiki.org/wiki/ogre.qc 
+#figure out best way to parse this into memory ... group stuff up or no ?
+
+ 
+classname="world"
+
+#this is always run during world building 
+scripts = { fn_prepare =  [
+ 
+
+  { call="internal_call", inputs={classname="world", fn_name="fn_precache_all"} },
+
+  { call="internal_call", inputs={classname="weapons", fn_name="fn_precache_all"} }
+ 
+ 
+], fn_precache_all =  [
+
+  { call="precache_sound", inputs={name="demon/dland2.wav"} }, # landing thud 
+  { call="precache_sound", inputs={name="misc/h2ohit1.wav"} }, # landing splash 
+
+  { call="precache_sound", inputs={name="items/itembk2.wav"} },
+  { call="precache_sound", inputs={name="player/plyrjmp8.wav"} }, # player jump
+  { call="precache_sound", inputs={name="player/land.wav"} }, #player landing
+
+  { call="precache_sound", inputs={name="player/land2.wav"} }, #player hurt landing
+  { call="precache_sound", inputs={name="player/drown1.wav"} }, #drowning pain
+  { call="precache_sound", inputs={name="player/drown2.wav"} }, # drowning pain
+  { call="precache_sound", inputs={name="player/gasp1.wav"} }, # gasping for air
+  { call="precache_sound", inputs={name="player/gasp2.wav"} }, #taking breath 
+
+  { call="precache_sound", inputs={name="player/h2odeath.wav"} },#drowning death
+  { call="precache_sound", inputs={name="misc/talk.wav"} },
+
+  { call="precache_sound", inputs={name="player/teledth1.wav"} }, #telefrag
+
+
+  { call="precache_sound", inputs={name="misc/r_tele1.wav"} },
+  { call="precache_sound", inputs={name="misc/r_tele2.wav"} },
+  { call="precache_sound", inputs={name="misc/r_tele3.wav"} },
+  { call="precache_sound", inputs={name="misc/r_tele4.wav"} },
+  { call="precache_sound", inputs={name="misc/r_tele5.wav"} },
+
+  { call="precache_sound", inputs={name="weapons/lock4.wav"} }, ## ammo pick up
+  { call="precache_sound", inputs={name="weapons/pkup.wav"} }, #  weapon up
+  { call="precache_sound", inputs={name="items/armor1.wav"} }, # armor up
+  { call="precache_sound", inputs={name="weapons/lhit.wav"} }, # lightning
+  
+
+  { call="precache_sound", inputs={name="weapons/lstart.wav"} }, #lightning start
+  { call="precache_sound", inputs={name="items/damage3.wav"} },
+ 
+  { call="precache_sound", inputs={name="misc/power.wav"} }, # lightning for boss
+   
+
+  { call="precache_sound", inputs={name="player/gib.wav"} },
+ { call="precache_sound", inputs={name="player/udeath.wav"} },
+  { call="precache_sound", inputs={name="player/tornoff2.wav"} },
+  
+
+{ call="precache_sound", inputs={name="player/pain1.wav"} },
+{ call="precache_sound", inputs={name="player/pain2.wav"} },
+{ call="precache_sound", inputs={name="player/pain3.wav"} },
+{ call="precache_sound", inputs={name="player/pain4.wav"} },
+{ call="precache_sound", inputs={name="player/pain5.wav"} },
+{ call="precache_sound", inputs={name="player/pain6.wav"} },
+ 
+{ call="precache_sound", inputs={name="player/death1.wav"} },
+{ call="precache_sound", inputs={name="player/death2.wav"} },
+{ call="precache_sound", inputs={name="player/death3.wav"} },
+{ call="precache_sound", inputs={name="player/death4.wav"} },
+{ call="precache_sound", inputs={name="player/death5.wav"} },
+ 
+
+{ call="precache_sound", inputs={name="weapons/ax1.wav"} },
+{ call="precache_sound", inputs={name="player/axhit1.wav"} },
+{ call="precache_sound", inputs={name="player/axhit2.wav"} },
+
+
+ { call="precache_sound", inputs={name="player/h2ojump.wav"} },#player jumping into water
+ { call="precache_sound", inputs={name="player/slimbrn2.wav"} }, # player enter slime
+ 
+  { call="precache_sound", inputs={name="player/inh2o.wav"} },  # player enter water
+  { call="precache_sound", inputs={name="player/inlava.wav"} },  #player enter lava
+  { call="precache_sound", inputs={name="misc/outwater.wav"} },  #leaving water sound
+ 
+  { call="precache_sound", inputs={name="player/lburn1.wav"} }, 
+  { call="precache_sound", inputs={name="player/lburn2.wav"} }, 
+ 
+  { call="precache_sound", inputs={name="misc/water1.wav"} }, #swimming
+  { call="precache_sound", inputs={name="misc/water2.wav"} }, 
+   
+   
+  
+  
+    { call="precache_model", inputs={name="progs/player.mdl"} }, 
+    { call="precache_model", inputs={name="progs/eyes.mdl"} }, 
+
+    { call="precache_model", inputs={name="progs/h_player.mdl"} }, 
+    { call="precache_model", inputs={name="progs/gib1.mdl"} }, 
+    { call="precache_model", inputs={name="progs/gib2.mdl"} }, 
+    { call="precache_model", inputs={name="progs/gib3.mdl"} }, 
+
+
+    { call="precache_model", inputs={name="progs/s_bubble.spr"} },  # drowning bubbles
+    { call="precache_model", inputs={name="progs/s_explod.spr"} },  # sprite explosion
+    { call="precache_model", inputs={name="progs/v_axe.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_shot.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_nail.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_rock.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_shot2.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_nail2.mdl"} }, 
+    { call="precache_model", inputs={name="progs/v_rock2.mdl"} }, 
+    { call="precache_model", inputs={name="progs/bolt.mdl"} }, 
+    { call="precache_model", inputs={name="progs/bolt2.mdl"} }, 
+    { call="precache_model", inputs={name="progs/bolt3.mdl"} }, 
+    { call="precache_model", inputs={name="progs/lavaball.mdl"} }, 
+    { call="precache_model", inputs={name="progs/missile.mdl"} }, 
+    { call="precache_model", inputs={name="progs/grenade.mdl"} }, 
+
+   { call="precache_model", inputs={name="progs/spike.mdl"} }, 
+     { call="precache_model", inputs={name="progs/s_spike.mdl"} }, 
+       { call="precache_model", inputs={name="progs/backpack.mdl"} }, 
+         { call="precache_model", inputs={name="progs/zom_gib.mdl"} }, 
+  
+      { call="precache_model", inputs={name="progs/v_light.mdl"} }, 
+   
+
+
+
+
+] }

@@ -571,9 +571,11 @@ impl GameServer {
                     };
 
                     println!("models are");
-                    let   precached_models:Vec<String> = level_state.get_model_precache_data() ; 
+                    let precached_models:Vec<String> = level_state.get_model_precache_data() ; 
 
-                    println!("sounds are");
+                    let precached_sounds:Vec<String> = level_state.get_sound_precache_data() ; 
+
+                   
                     /*let mut sound_precache:Vec<String> = level_state.get_sound_precache_data().iter().map(
                         
                         |&s|  {println!("{}",s);  s.into()}
@@ -586,7 +588,7 @@ impl GameServer {
                         game_type: GameType::SinglePlayer,
                         message: String::from("Test message"),
                         model_precache : precached_models, 
-                        sound_precache : vec![String::from("player/death1.wav"), String::from("player/death2.wav")]   
+                        sound_precache : precached_sounds   
                     };    
 
 

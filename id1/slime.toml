@@ -3,16 +3,24 @@ version="0.10.0"
 
 
 cvars = [ 
-
+ 
 
 ]  
 
-entity_files=[
-"scripts/ogre.toml"
+# These are always run 
+world_files=[
+"scripts/world.toml",
+"scripts/weapons.toml"
 ]
 
+
+# These define components that can be attached to entities
 component_files=[
  
 ]
 
 
+# These are run only if the classname exists as an entity in the level 
+entity_files=[
+"scripts/ogre.toml"
+]
