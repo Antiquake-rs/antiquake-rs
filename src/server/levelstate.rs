@@ -28,15 +28,7 @@ use crate::{
         phys::{self, CollideKind, CollisionFlags, Trace, TraceEndKind},
         MoveKind, EntityFlags, EntitySolid,  World,
     },
-    server::progs::{
-        globals::{
-            GLOBAL_ADDR_ARG_0, GLOBAL_ADDR_ARG_1, GLOBAL_ADDR_ARG_2, GLOBAL_ADDR_ARG_3,
-            GLOBAL_ADDR_RETURN,
-        },
-        functions::{FunctionKind,BuiltinFunctionId},GlobalAddrFunction,
-        EntityFieldAddr, EntityId, ExecutionContext, FunctionId, GlobalAddrEntity, GlobalAddrFloat,
-        Globals, LoadProgs, Opcode, ProgsError, StringId, StringTable,
-    },
+    
     server::slime::{
         Slime
     },
@@ -58,6 +50,37 @@ const MAX_LIGHTSTYLES: usize = 64;
 
 use chrono::Duration;
 
+use super::world::{EntityId, WorldError};
+
+
+
+
+
+
+#[derive(Debug)]
+pub enum LevelError {
+    Io(::std::io::Error),
+  
+    World(WorldError),
+     
+    Other(String),
+}
+
+impl LevelError {
+    pub fn with_msg<S>(msg: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        LevelError::Other(msg.as_ref().to_owned())
+    }
+}
+
+impl From<WorldError> for LevelError {
+    fn from(error: WorldError) -> Self {
+        LevelError::World(error)
+    }
+}
+
 
 // Server-side level state.
 #[derive(Debug)]
@@ -68,7 +91,7 @@ pub struct LevelState {
    // string_table: Rc<RefCell<StringTable>>,
     sound_precache: Precache,
     model_precache: Precache,
-    lightstyles:  [StringId; MAX_LIGHTSTYLES],
+    lightstyles:  ArrayVec<String, MAX_LIGHTSTYLES>,//  [String ; MAX_LIGHTSTYLES],
 
 
     entmap: String,
@@ -162,7 +185,7 @@ impl LevelState {
             //string_table,
             sound_precache,
             model_precache,
-            lightstyles: [StringId(0); MAX_LIGHTSTYLES],
+            lightstyles:  ArrayVec::new(), //[String::from(""); MAX_LIGHTSTYLES],
             
 
             entmap: entmap.to_owned(),
@@ -262,7 +285,7 @@ impl LevelState {
     }
 
     #[inline]
-    pub fn set_lightstyle(&mut self, index: usize, val: StringId)   {
+    pub fn set_lightstyle(&mut self, index: usize, val: String )   {
         self.lightstyles[index] = val;
     }
 
@@ -286,13 +309,13 @@ impl LevelState {
     }
 
 
-    pub fn get_model_precache_data(&self) ->  Vec<&str> {
+    pub fn get_model_precache_data(&self) ->  Vec<String> {
 
         return self.model_precache.get_data( )
     }
 
     
-    pub fn get_sound_precache_data(&self) ->  Vec<&str> {
+    pub fn get_sound_precache_data(&self) ->  Vec<String> {
 
         return self.sound_precache.get_data( )
     }
@@ -301,7 +324,7 @@ impl LevelState {
 
     //need to pass in args here 
 
-    pub fn execute_subroutine(&mut self, sub_rt: SlimeFunc) -> Result<(), ProgsError>{
+    pub fn execute_subroutine(&mut self, sub_rt: SlimeFunc) -> Result<(), LevelError>{
 
 
         return match sub_rt {
@@ -313,7 +336,7 @@ impl LevelState {
             SlimeFunc::PrecacheSound {name}  => self.builtin_precache_sound(name) ,
             SlimeFunc::PrecacheModel {name}  => self.builtin_precache_model(name) ,
 
-            _ => Err(ProgsError::Other(format!("that subroutine not yet implemented")))   
+            _ => Err(LevelError::Other(format!("that subroutine not yet implemented")))   
         };
 
      //   Ok(())
@@ -558,7 +581,7 @@ impl LevelState {
         &mut self,
         ent_id: EntityId,
         touch_triggers: bool,
-    ) -> Result<(), ProgsError> {
+    ) -> Result<(), LevelError> {
         self.world.link_entity(ent_id)?;
 
       /* //add this back in !  
@@ -569,7 +592,7 @@ impl LevelState {
         Ok(())
     }
 
-    pub fn spawn_entity(&mut self) -> Result<EntityId, ProgsError> {
+    pub fn spawn_entity(&mut self) -> Result<EntityId, LevelError> {
         let ent_id = self.world.alloc_uninitialized()?;
 
         self.link_entity(ent_id, false)?;
@@ -580,10 +603,10 @@ impl LevelState {
     pub fn spawn_entity_from_map(
         &mut self,
         map: HashMap<&str, &str>,
-    ) -> Result<EntityId, ProgsError> {
+    ) -> Result<EntityId, LevelError> {
         let classname = match map.get("classname") {
             Some(c) => c.to_owned(),
-            None => return Err(ProgsError::with_msg("No classname for entity")),
+            None => return Err(LevelError::with_msg("No classname for entity")),
         };
 
         let entity_id = self.world.alloc_from_map(map)?;
@@ -650,7 +673,7 @@ impl LevelState {
 
 
 
-    pub fn execute_slime_script_for_entity(&mut self, classname: &str, methodname: &str, ent_id:usize) -> Result<(), ProgsError>
+    pub fn execute_slime_script_for_entity(&mut self, classname: &str, methodname: &str, ent_id:usize) -> Result<(), LevelError>
     
     {
 
@@ -685,7 +708,7 @@ impl LevelState {
 
 
 
-    pub fn builtin_precache_sound(&mut self, name:String) -> Result<(), ProgsError> {
+    pub fn builtin_precache_sound(&mut self, name:String) -> Result<(), LevelError> {
         // TODO: disable precaching after server is active
         // TODO: precaching doesn't actually load yet
        // let s_id = self.globals.string_id(arg as i16)?;
@@ -696,7 +719,7 @@ impl LevelState {
         Ok(())
     }
 
-    pub fn builtin_precache_model(&mut self, name:String) -> Result<(), ProgsError> {
+    pub fn builtin_precache_model(&mut self, name:String) -> Result<(), LevelError> {
         println!("builtin_precache_model!!");
         // TODO: disable precaching after server is active
         // TODO: precaching doesn't actually load yet
@@ -717,8 +740,8 @@ impl LevelState {
         let existing_precache_model_id = self.model_id(name.clone());
 
         if existing_precache_model_id.is_none() {   //if it is not in the precache 
-            let precache_model_name_id = self.precache_model(name);
-            self.world.add_model(&self.vfs,  name.clone()  )?;
+            let precache_model_name_id = self.precache_model(name.clone());
+            self.world.add_model(&self.vfs,  name.clone()   )?;
         }
 
 

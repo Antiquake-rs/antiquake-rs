@@ -1188,7 +1188,7 @@ impl Session {
     }
 
     #[inline]
-    pub fn set_lightstyle(&mut self, index: usize, val: StringId) {
+    pub fn set_lightstyle(&mut self, index: usize, val: String ) {
         match  self.level_mut() {
             Some(lvl) => {
 

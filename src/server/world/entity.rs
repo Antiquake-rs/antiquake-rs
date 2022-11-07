@@ -32,7 +32,7 @@ use std::{cell::RefCell, convert::TryInto, error::Error, fmt, rc::Rc, collection
 use crate::{
     common::{engine::duration_to_f32, net::EntityState},
     server::{
-        progs::{EntityId,  FunctionId, ProgsError, StringId, StringTable, Type},
+        
         world::phys::MoveKind,
     },
 };
@@ -43,6 +43,8 @@ use cgmath::Vector3;
 use chrono::Duration;
 use num::FromPrimitive;
 use uluru::LRUCache;
+
+use super::WorldError;
 
 pub const MAX_ENT_LEAVES: usize = 16;
 
@@ -348,10 +350,10 @@ bitflags! {
 
 // TODO: if this never gets used, remove it
 #[allow(dead_code)]
-fn float_addr(addr: usize) -> Result<FieldAddrFloat, ProgsError> {
+fn float_addr(addr: usize) -> Result<FieldAddrFloat, WorldError> {
     match FieldAddrFloat::from_usize(addr) {
         Some(f) => Ok(f),
-        None => Err(ProgsError::with_msg(format!(
+        None => Err(WorldError::with_msg(format!(
             "float_addr: invalid address ({})",
             addr
         ))),
@@ -360,10 +362,10 @@ fn float_addr(addr: usize) -> Result<FieldAddrFloat, ProgsError> {
 
 // TODO: if this never gets used, remove it
 #[allow(dead_code)]
-fn vector_addr(addr: usize) -> Result<FieldAddrVector, ProgsError> {
+fn vector_addr(addr: usize) -> Result<FieldAddrVector, WorldError> {
     match FieldAddrVector::from_usize(addr) {
         Some(v) => Ok(v),
-        None => Err(ProgsError::with_msg(format!(
+        None => Err(WorldError::with_msg(format!(
             "vector_addr: invalid address ({})",
             addr
         ))),

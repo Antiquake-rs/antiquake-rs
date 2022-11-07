@@ -44,7 +44,7 @@ impl Precache {
     }
 
     /// Returns the index of the target value if it exists.
-    pub fn find<S>(self, target: S) -> Option<usize>
+    pub fn find<S>(&self, target: S) -> Option<usize>
     where
         S: AsRef<str>,
     {
@@ -52,8 +52,8 @@ impl Precache {
         Some(*self.reverse_id_map.get(target.as_ref())?)
     }
  
-   pub fn get_data(&self) -> Vec<&str> { 
-        return self.iter().collect() 
+   pub fn get_data(&self) -> Vec<String> { 
+        return self.items.clone()   //.into_iter().collect() 
     } 
 
 
@@ -103,12 +103,14 @@ impl Precache {
 
     // Returns an iterator over the values in the precache.
   
-   pub fn iter( self) -> impl Iterator<Item = String> {
+  /*  pub fn iter( self) -> impl Iterator<Item=String> + 'static {
         self.items
             .iter()
+           // . map( | item | item  )
+            
            // .cloned()
            // . map( | item | item.as_str() )
-    } 
+    } */
 
 
 }

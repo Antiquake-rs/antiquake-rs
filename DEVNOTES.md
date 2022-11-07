@@ -3,6 +3,10 @@
 
 A game engine written in Rust that leverages quake mod tools such as the PAK file format and the standard Quake map format.  
  
+Quake specs 
+https://www.gamers.org/dEngine/quake/spec/quake-spec34/index0.htm
+
+
 
 ## HOW TO RUN WITH DEBUG LOGS
 RUST_LOG=debug cargo run
@@ -123,6 +127,10 @@ Reference the real quake server code : https://github.com/id-Software/Quake/blob
 -now that client can load into their own local gameserver, make them spawn and render the map! 
 -server needs to tell client to open the map bsp 
 
+
+-add support for quakeworld protocol,  protocol 28 
+https://nyov.github.io/qstat-svn/old/qprotocol.html
+send a getchallenge packet, wait for the response, send a connect, wait for a positive response, start sending game packets periodically.
 
 
 __ 

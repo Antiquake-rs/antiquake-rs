@@ -72,8 +72,7 @@ pub enum WorldError {
     Io(::std::io::Error),
   
     Entity(EntityError),
-    CallStackOverflow,
-    LocalStackOverflow,
+    
     Other(String),
 }
 
