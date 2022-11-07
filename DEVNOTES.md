@@ -114,6 +114,7 @@ called `Result::unwrap()` on an `Err` value: NoSuchLightmapAnimation(0)', src\cl
 physics look into https://crates.io/crates/bevy_rapier3d
 https://docs.rs/bevy_ecs/latest/bevy_ecs/
 
+ultimately build map like this https://www.youtube.com/watch?v=rp9-q_imCnk
 
 
 #### NETWORKING 

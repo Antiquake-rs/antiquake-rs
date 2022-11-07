@@ -77,7 +77,7 @@ use view::BobVars;
 
 // connections are tried 3 times, see
 // https://github.com/id-Software/Quake/blob/master/WinQuake/net_dgrm.c#L1248
-const MAX_CONNECT_ATTEMPTS: usize = 3;
+const MAX_CONNECT_ATTEMPTS: usize = 9;
 const MAX_STATS: usize = 32;
 
 const DEFAULT_SOUND_PACKET_VOLUME: u8 = 255;
@@ -1360,6 +1360,11 @@ where
         // than an Accept or Reject).
         _ => Err(ClientError::InvalidConnectResponse)?,
     };
+
+
+
+    // make sure we get to this point ! 
+
 
     let mut new_addr = server_addr;
     new_addr.set_port(port);

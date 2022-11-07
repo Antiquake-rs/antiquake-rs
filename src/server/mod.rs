@@ -388,7 +388,7 @@ impl GameServer {
                              
                         }
 
-                        Err(error) => { println!("Unable recv msg properly "); }
+                        Err(error) => { println!("server: Unable to  recv msg properly "); }
 
                     }
 
@@ -461,7 +461,7 @@ impl GameServer {
         
     }
  
-   fn deserialize_client_msg<R>(reader: &mut R) -> Result<Option<ServerCmdCode>, NetError>
+ /*   fn deserialize_client_msg<R>(reader: &mut R) -> Result<Option<ServerCmdCode>, NetError>
     where
         R: BufRead + ReadBytesExt,
     {
@@ -488,7 +488,7 @@ impl GameServer {
 
         Ok(Some(code))
     }
-
+*/
 
     fn register_new_client( &mut self, socketAddr: SocketAddr ) -> Result<i32,NetError> {
         println!(" Registering new client {}",  socketAddr  );
@@ -533,95 +533,95 @@ impl GameServer {
         match packet {
             ClientPacket::Connect( request_connect ) => {
 
-                //let (game_name,proto_ver) = request_connect;
+                    //let (game_name,proto_ver) = request_connect;
 
-                 let client_id = self.register_new_client( socket_addr  )?; 
+                    let client_id = self.register_new_client( socket_addr  )?; 
 
 
-                 let client_port = GameServer::get_client_port_from_client_id( &client_id  );
-  
+                    let client_port = GameServer::get_client_port_from_client_id( &client_id  );
+    
+                    
+                    let response = Response::Accept(ResponseAccept { port:client_port } );
+                    
+                    println!("Server is sending client -- connection accept ");
+                    let send_response_result = self.serverConnectionManager.send_response( response , socket_addr );
+                    
+
+                    //DO THIS ALL RELIABLY 
+                    // send server info 
+
+                    //send model precaches 
+
+                    //send signon value 
+
+
+
+
+                    let level_state_opt = self.server_session.level(); 
+
+                    let level_state = match level_state_opt {
+                        Some(lvl) => lvl, 
+                        None => {
+                            println!("Cannot give level data before level loads");
+                            return Err(NetError::InvalidData(format!(
+                                "Cannot give level data before level loads" 
+                            )))
+                        }
+
+                    };
+
+                    println!("models are");
+                    let   precached_models:Vec<String> = level_state.get_model_precache_data() ; 
+
+                    println!("sounds are");
+                    /*let mut sound_precache:Vec<String> = level_state.get_sound_precache_data().iter().map(
                         
-                        let response = Response::Accept(ResponseAccept { port:client_port } );
-                        
-                        //this is kind of spaghetti ? 
-                        let send_response_result = self.serverConnectionManager.send_response( response , socket_addr );
-                        
+                        |&s|  {println!("{}",s);  s.into()}
+                    ).collect(); */
 
-                        //DO THIS ALL RELIABLY 
-                        // send server info 
-
-                        //send model precaches 
-
-                        //send signon value 
-
-
-
-
-                        let level_state_opt = self.server_session.level(); 
-
-                        let level_state = match level_state_opt {
-                            Some(lvl) => lvl, 
-                            None => {
-                                println!("Cannot give level data before level loads");
-                                return Err(NetError::InvalidData(format!(
-                                    "Cannot give level data before level loads" 
-                                )))
-                            }
-
-                        };
-
-                        println!("models are");
-                        let mut world_models:Vec<String> = level_state.get_all_world_model_names() ; 
-
-                        println!("sounds are");
-                        /*let mut sound_precache:Vec<String> = level_state.get_sound_precache_data().iter().map(
                             
-                            |&s|  {println!("{}",s);  s.into()}
-                        ).collect(); */
- 
-                                
-                        let serverInfoCmd = ServerCmd::ServerInfo {
-                            protocol_version: i32::from(self.protocol_version),
-                            max_clients: (self.server_session.persist.getMaxClients() as u8),
-                            game_type: GameType::SinglePlayer,
-                            message: String::from("Test message"),
-                            model_precache : world_models, 
-                            sound_precache : vec![String::from("player/death1.wav"), String::from("player/death2.wav")]   
-                        };    
- 
-
-                        println!("sending server cmd {}", serverInfoCmd.to_string()  );
+                    let serverInfoCmd = ServerCmd::ServerInfo {
+                        protocol_version: i32::from(self.protocol_version),
+                        max_clients: (self.server_session.persist.getMaxClients() as u8),
+                        game_type: GameType::SinglePlayer,
+                        message: String::from("Test message"),
+                        model_precache : precached_models, 
+                        sound_precache : vec![String::from("player/death1.wav"), String::from("player/death2.wav")]   
+                    };    
 
 
-                        let send_client_serverinfo_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
-
-                            serverInfoCmd,
-                            client_id 
-                        
-                        );
-                        
+                    println!("sending server cmd {}", serverInfoCmd.to_string()  );
 
 
-                        //Got server cmd CdTrack { track: 5, loop_: 5 }
-                       // Got server cmd SetView { ent_id: 1 }
-                        
-                        let signonCmd = ServerCmd::SignOnStage {
-                            stage: SignOnStage::Prespawn
-                        };    
- 
-                        let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+                    let send_client_serverinfo_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
 
-                            signonCmd,
-                            client_id 
-                        
-                        );
+                        serverInfoCmd,
+                        client_id 
+                    
+                    );
+                    
 
-                        //client should send us back a prespawn packet and that is when we send them lighting and statics 
+
+                    //Got server cmd CdTrack { track: 5, loop_: 5 }
+                    // Got server cmd SetView { ent_id: 1 }
+                    
+                    let signonCmd = ServerCmd::SignOnStage {
+                        stage: SignOnStage::Prespawn
+                    };    
+
+                    let send_client_signon_result = self.serverConnectionManager.send_cmd_to_client_reliable( 
+
+                        signonCmd,
+                        client_id 
+                    
+                    );
+
+                    //client should send us back a prespawn packet and that is when we send them lighting and statics 
 
 
 
 
-                        return Ok(())
+                    return Ok(())
                      
                 },
 
@@ -969,6 +969,7 @@ impl SessionLoading {
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         slime: Slime,
+        map_name:String,
        
         models: Vec<Model>,
         entmap: String,
@@ -976,7 +977,7 @@ impl SessionLoading {
 
         //are these still the best inputs ? 
         SessionLoading {
-            level: LevelState::new(vfs, cvars, slime, models, entmap),
+            level: LevelState::new(vfs, cvars, slime, map_name , models, entmap),
         }
     }
 
@@ -1033,6 +1034,8 @@ impl Session {
         map_file_name: String, 
  
     ) -> Result<(),SessionError> {
+
+        let map_name = map_file_name.clone();
       
             
         let mut map_file = match vfs.as_ref().open( map_file_name )  {
@@ -1063,7 +1066,7 @@ impl Session {
         //do i need to give the level more than just brushmodels ? how does it get entity models..? the progs slime ? 
 
         //prep for precaching 
-        self.state =  SessionState::Loading(  SessionLoading::new(vfs, cvars, slime, brush_models, entmap) );
+        self.state =  SessionState::Loading(  SessionLoading::new(vfs, cvars, slime, map_name,  brush_models, entmap) );
  
 
 

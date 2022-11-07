@@ -121,7 +121,8 @@ impl LevelState {
         vfs: Rc<Vfs>,
         cvars: Rc<RefCell<CvarRegistry>>,
         slime: Slime,
-       
+        
+        map_name: String,
         models: Vec<Model>, // brush models 
         entmap: String,
     ) -> LevelState {
@@ -149,10 +150,12 @@ impl LevelState {
         let mut sound_precache = Precache::new();
         sound_precache.precache("");
 
-        let mut model_precache = Precache::new();
-        model_precache.precache("");
-         
+        println!("map model is {}", map_name );
 
+        let mut model_precache = Precache::new();
+        model_precache.precache(map_name);  //a dirty hack -- ?
+         
+    
 
         for model in models.iter() {
             //why is this crashing ?  oh the string table is not long enough to match what its in models 

@@ -1331,7 +1331,7 @@ impl ServerConnectionManager {
 
 
     /// Receives a request and returns it along with its remote address.
-    pub fn handle_control_request(&self, reader:&mut BufReader<&[u8]>, request_code:RequestCode, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
+    /* pub fn handle_control_request(&self, reader:&mut BufReader<&[u8]>, request_code:RequestCode, remote:SocketAddr) -> Result<Option<SpecialServerAction>, NetError> {
         println!("Server handle control request");
         // Original engine receives connection requests in `net_message`,
         // allocated at https://github.com/id-Software/Quake/blob/master/WinQuake/net_main.c#L851
@@ -1390,7 +1390,7 @@ impl ServerConnectionManager {
  
     }
 
-
+*/
 /*
     fn handle_connected_client_msg(&self,  reader:&mut BufReader<&[u8]>, packet_len:usize, sequence:u32, msg: &mut Vec<u8>, msg_kind:MsgKind, client_id:&i32 , socket: &UdpSocket ) -> Result<SocketReadControlFlow, NetError> {
 
