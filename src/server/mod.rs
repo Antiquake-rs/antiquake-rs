@@ -50,7 +50,7 @@ use crate::{
         bsp::{self},
         console::CvarRegistry,
         engine::{duration_from_f32, duration_to_f32},
-        math::Hyperplane,
+       
         model::{Model,ModelFlags,ModelKind},
         parse,
         vfs::{Vfs,VirtualFile},
@@ -65,6 +65,7 @@ use crate::{
     
 };
 
+ 
  
 
 use self::{
@@ -723,9 +724,42 @@ impl GameServer {
                                 origin,
                                 angles,
                             };   */
+ 
 
-
+                            let view_angles = Vector3::new(
+                                Deg(0.0),
+                                Deg(0.0),
+                                Deg(0.0),
+                            );
+                            
                             let mut commandsList : Vec<ServerCmd> = Vec::new();
+
+
+
+
+                            //spawn a few entities in (make this real --- comes from the level state ??)
+
+                            commandsList.push( ServerCmd::SpawnBaseline { ent_id: 0, model_id: 1, frame_id: 0, colormap: 0, skin_id: 0, origin: Vector3::new(
+                                (0.0),
+                                (0.0),
+                                (0.0),
+                            ), angles: Vector3::new(
+                                Deg(0.0),
+                                Deg(0.0),
+                                Deg(0.0),
+                            ) } );
+
+                            //points at the player   model--  i think 
+                            commandsList.push( ServerCmd::SpawnBaseline { ent_id: 1, model_id: 9, frame_id: 0, colormap: 1, skin_id: 0, origin: Vector3::new(
+                                (0.0),
+                                (0.0),
+                                (0.0),
+                            ), angles: Vector3::new(
+                                Deg(0.0),
+                                Deg(0.0),
+                                Deg(0.0),
+                            ) } );
+
 
                             commandsList.push( ServerCmd::SignOnStage {
                                 stage: SignOnStage::ClientInfo

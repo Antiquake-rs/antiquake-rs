@@ -540,6 +540,9 @@ impl WorldRenderer {
         )) * Matrix4::from_angle_y(cam_angles.yaw)
             * Matrix4::from_angle_x(-cam_angles.pitch)
             * Matrix4::from_angle_z(cam_angles.roll);
+
+        println!("render {}", viewmodel_id);
+
         match self.entity_renderers[viewmodel_id] {
             EntityRenderer::Alias(ref alias) => {
                 pass.set_pipeline(state.alias_pipeline().pipeline());
@@ -555,7 +558,7 @@ impl WorldRenderer {
                 alias.record_draw(state, pass, time, 0, 0);
             }
 
-            _ => unreachable!("non-alias viewmodel"),
+            _ => warn!("non-alias viewmodel"),  //was unreachable 
         }
 
         log::debug!("Drawing particles");
