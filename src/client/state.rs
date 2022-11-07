@@ -729,6 +729,8 @@ impl ClientState {
         bob_vars: BobVars,
     ) {
         
+
+        let entity_origin = self.entities[self.view.entity_id()].origin;
         
         self.view.calc_final_angles(
             self.time,
@@ -740,7 +742,7 @@ impl ClientState {
         );
         self.view.calc_final_origin(
             self.time,
-            self.entities[self.view.entity_id()].origin,
+            entity_origin,
             self.velocity,
             bob_vars,
         );

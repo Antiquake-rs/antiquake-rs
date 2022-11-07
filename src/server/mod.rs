@@ -57,7 +57,7 @@ use crate::{
         default_base_dir,
         net::{
             self, NetError, ServerCmd,  GameType,  SignOnStage, MsgKind,
-            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, ClientPacket, Request, Response, ResponseServerInfo, ResponseAccept, SpecialServerAction},
+            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, ClientPacket, Request, Response, ResponseServerInfo, ResponseAccept, SpecialServerAction}, EntityUpdate,
             
         }, 
         util::read_f32_3, 
@@ -751,9 +751,9 @@ impl GameServer {
 
                             //points at the player   model--  i think 
                             commandsList.push( ServerCmd::SpawnBaseline { ent_id: 1, model_id: 9, frame_id: 0, colormap: 1, skin_id: 0, origin: Vector3::new(
-                                (0.0),
-                                (0.0),
-                                (0.0),
+                                (2220.0),
+                                (2220.0),
+                                (12220.0),
                             ), angles: Vector3::new(
                                 Deg(0.0),
                                 Deg(0.0),
@@ -766,8 +766,9 @@ impl GameServer {
                             }  );
                             
 
+
      
-                            let send_client_signon_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
+                            let send_result = self.serverConnectionManager.send_cmds_to_client_reliable( 
     
                                 commandsList, 
                                 client_id 

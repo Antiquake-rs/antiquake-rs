@@ -232,7 +232,7 @@ impl Connection {
     ) -> Result<(), ClientError> {
         use SignOnStage::*;
 
-        println!("client handle_signon");
+       // println!("client handle_signon {}", new_stage.to_string());
 
         let new_conn_state = match self.conn_state {
             // TODO: validate stage transition
@@ -244,7 +244,7 @@ impl Connection {
                     match new_stage {
                         Not => (), // TODO this is an error (invalid value)
                         Prespawn => {
-                            println!("serializing prespawn");
+                            println!("client handling signon prespawn");
                             ClientCmd::StringCmd {
                                 cmd: String::from("prespawn"),
                             }
@@ -268,12 +268,15 @@ impl Connection {
                             .serialize(compose)?;
                         }
                         SignOnStage::Begin => {
+                            println!("client handling signon begin");
                             ClientCmd::StringCmd {
                                 cmd: String::from("begin"),
                             }
                             .serialize(compose)?;
                         }
                         SignOnStage::Done => {
+                            println!("client handling signon done");
+
                             debug!("SignOn complete");
                             // TODO: end load screen
                             self.state.start_time = self.state.time;
