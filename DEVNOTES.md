@@ -30,6 +30,8 @@ gfx pipelines yay!!!
 
 #### Next Steps 
 
+-allow the client to look around and move around !! (using game deltas in a buffer w ticks) 
+
 - upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server.  (see fn frame() )
 
 
@@ -37,6 +39,9 @@ gfx pipelines yay!!!
 
 
 - upgrade src/client/mod so it accumulates 'input actions' as gamestatedeltas in an array buffer and then send them to the server in a bundle every 33 ms (see  fn handle_input) 
+
+
+
 
 
 
