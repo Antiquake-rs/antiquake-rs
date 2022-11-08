@@ -15,6 +15,8 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::fmt;
+
 use crate::common::{
     bsp::{BspFileError, BspModel},
     mdl::{self, AliasModel, MdlFileError},
@@ -71,6 +73,20 @@ pub enum ModelKind {
     Alias(AliasModel),
     Sprite(SpriteModel),
 }
+
+impl fmt::Display for ModelKind {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      
+       match self {
+         ModelKind::None => {  write!(f, "ModelKind::None" )  },
+         ModelKind::Brush(_) => {  write!(f, "ModelKind::Brush" )  },
+         ModelKind::Alias(_) => {  write!(f, "ModelKind::Alias" )  },
+         ModelKind::Sprite(_)=> {  write!(f, "ModelKind::Sprite" )  } 
+       }  
+}
+}
+
 
 impl Model {
     pub fn none() -> Model {

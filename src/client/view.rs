@@ -203,9 +203,6 @@ impl View {
             self.input_angles + move_angles + damage_angles + self.punch_angles + idle_angles;
     }
 
-    pub fn final_angles(&self) -> Angles {
-        self.final_angles
-    }
 
     pub fn calc_final_origin(
         &mut self,
@@ -229,6 +226,13 @@ impl View {
         // TODO
         self.final_angles()
     }
+
+    pub fn final_angles(&self) -> Angles {
+        self.final_angles
+    }
+
+
+    
 }
 
 #[derive(Copy, Clone, Debug)]

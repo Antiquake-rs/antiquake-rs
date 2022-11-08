@@ -36,6 +36,11 @@ gfx pipelines yay!!!
 -client 'parse_server_msg' is very goofy why are 5 raw values being passed in just for that.. 
 
 
+- upgrade src/client/mod so it accumulates 'input actions' as gamestatedeltas in an array buffer and then send them to the server in a bundle every 33 ms (see  fn handle_input) 
+
+
+
+
  
 - Improve the networking code so it is more like QuakeWorld (client side prediction and rubber banding -- clients just need to know abt physics engine and sim it themselves ) 
 

@@ -760,7 +760,7 @@ impl Connection {
                     unimplemented!();
                 }
             }
-        }rame
+        }
 
 
         
@@ -1111,7 +1111,16 @@ impl Client {
             .borrow()
             .get_value(name.as_ref())
             .map_err(ClientError::Cvar)
-    }
+    }   
+
+    /*
+    
+    
+    THIS SHOULD NOT be sending 
+        out network messages so fast!!
+
+        Queue them up in a buffer 
+    */
 
     pub fn handle_input(
         &mut self,
@@ -1131,7 +1140,7 @@ impl Client {
                 // TODO: arrayvec here
                 let mut msg = Vec::new();
                 move_cmd.serialize(&mut msg)?;
-                qsock.send_msg_unreliable(&msg)?;
+              //  qsock.send_msg_unreliable(&msg)?;
 
                 // clear mouse and impulse
                 game_input.refresh();

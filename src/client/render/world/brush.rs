@@ -747,15 +747,29 @@ impl BrushRenderer {
         pass.set_pipeline(state.brush_pipeline().pipeline());
         pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
+ 
         // if this is a worldmodel, mark faces to be drawn
+        //is this logic totally wrong ?? i dont get it 
         if let Some(ref leaves) = self.leaves {
+
+
+            // in the demo the leaf id is something real! 
+            let leafId = self.bsp_data.find_leaf( camera.origin());
+
+            //println!("brush renderer using cam origin id {} {} {} ",  camera.origin().x,  camera.origin().y,  camera.origin().z);
+            //println!("brush renderer using cam angles id {} {} {} ",  camera.angles().pitch.0,  camera.angles().roll.0,  camera.angles().yaw.0);
+           // println!("brush renderer using leaf id {}", leafId);
+
             let pvs = self
                 .bsp_data
-                .get_pvs(self.bsp_data.find_leaf(camera.origin), leaves.len());
+                .get_pvs(leafId, leaves.len());
 
             // only draw faces in pvs
-            for leaf_id in pvs {
+            for leaf_id in pvs {  //THIS IS NOT WORKING 
+                
                 for facelist_id in leaves[leaf_id].facelist_ids.clone() {
+                  //  println!("marking leaf  {}", leaf_id);
+
                     let face = &self.faces[self.bsp_data.facelist()[facelist_id]];
 
                     // TODO: frustum culling
@@ -815,9 +829,10 @@ impl BrushRenderer {
 
                 // only skip the face if we have visibility data but it's not marked
                 if self.leaves.is_some() && !face.draw_flag.replace(false) {
-                    continue;
+                  continue;
                 }
 
+               // println!("Drawing face {}", face_id);
                 pass.set_bind_group(
                     BindGroupLayoutId::PerFace as u32,
                     &self.per_face_bind_groups[*face_id],

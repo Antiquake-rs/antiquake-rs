@@ -322,10 +322,18 @@ impl WorldRenderer {
             model: Matrix4::identity(),
         });
 
+
+      
         for (i, model) in models.iter().enumerate() {
+
+            println!("assigning a modelkind for an entity {}, {}, {}",  i ,  model.name() ,  model.kind() ) ;
+            println!("worldmodel id is {}", worldmodel_id);
+
             if i == worldmodel_id {
                 match *model.kind() {
                     ModelKind::Brush(ref bmodel) => {
+
+                        println!("Building world renderer {}", model.name());
                         worldmodel_renderer = Some(
                             BrushRendererBuilder::new(bmodel, true)
                                 .build(state)
@@ -471,7 +479,7 @@ impl WorldRenderer {
         BrushPipeline::set_push_constants(
             pass,
             Update(bump.alloc(brush::VertexPushConstants {
-                transform: camera.view_projection(),
+                transform: camera.view_projection(), //is this busted
               //  model_view: camera.view(),
             })),
             Clear,
@@ -526,7 +534,7 @@ impl WorldRenderer {
                     SpritePipeline::set_push_constants(pass, Clear, Clear, Clear);
                     sprite.record_draw(state, pass, ent.frame_id(), time);
                 }
-                _ => warn!("non-brush renderers not implemented!"),
+                _ => unimplemented!("non-brush renderers not implemented!"),   //trying to render something weird for an entity 
                 // _ => unimplemented!(),
             }
         }
@@ -541,7 +549,9 @@ impl WorldRenderer {
             * Matrix4::from_angle_x(-cam_angles.pitch)
             * Matrix4::from_angle_z(cam_angles.roll);
 
-        println!("render {}", viewmodel_id);
+ 
+
+         // this is rendering the model of the weapon you are holding 
 
         match self.entity_renderers[viewmodel_id] {
             EntityRenderer::Alias(ref alias) => {

@@ -1484,17 +1484,17 @@ impl ServerCmd {
                 println!("handling servercmdcode::FastUpdate");
                 let entity_update = EntityUpdate{ 
 
-                    ent_id: 0, //for now 
+                    ent_id: 1, //for now 
                     model_id: None,
-                    frame_id: None,
+                    frame_id: Some(15),
                     colormap: None,
                     skin_id: None,
                     effects: None,
                     origin_x: None,
                     pitch: None,
-                    origin_y: None,
+                    origin_y: Some(-1000.0),
                     yaw: None,
-                    origin_z: None,
+                    origin_z: Some(264.0),
                     roll: None,
                     no_lerp: true,
         
@@ -1888,9 +1888,10 @@ impl ServerCmd {
             }
 
             // TODO
-            ServerCmd::FastUpdate(_) => {
+            ServerCmd::FastUpdate( ref fastUpdate ) => {
 
-
+               // writer.write_u16::<LittleEndian>(fastUpdate.ent_id)?;
+                
                 println!("serializing fast update");
 
 

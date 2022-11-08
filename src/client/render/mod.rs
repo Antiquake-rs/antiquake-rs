@@ -715,6 +715,7 @@ impl ClientRenderer {
     ) {
         self.bump.reset();
 
+
         if let Some(Connection {
             state: ref cl_state,
             ref conn_state,
@@ -730,9 +731,17 @@ impl ClientRenderer {
                         }
                         
                         ConnectionKind::Server { .. } => {
-                            cl_state.camera(width as f32 / height as f32, fov)
+                            cl_state.fake_camera(width as f32 / height as f32, fov)
                         }
                     };
+
+
+                    
+                   println!("CLIENT RENDER ");
+
+                   //camera could be busted !! 
+
+                   
 
                     // initial render pass
                     {
@@ -741,6 +750,11 @@ impl ClientRenderer {
 
                         let mut init_pass =
                             encoder.begin_render_pass(&init_pass_builder.descriptor());
+
+
+                        println!(  );
+
+                            //this is really rendering NOTHING ! 
 
                         world.render_pass(
                             gfx_state,
@@ -751,7 +765,7 @@ impl ClientRenderer {
                             cl_state.iter_visible_entities(),
                             cl_state.iter_particles(),
                             cl_state.lightstyle_values().unwrap().as_slice(),
-                            cl_state.viewmodel_id(),
+                            cl_state.viewmodel_id(),   //what is a viewmodel ?
                             cvars,
                         );
                     }

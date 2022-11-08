@@ -57,7 +57,7 @@ use crate::{
         default_base_dir,
         net::{
             self, NetError, ServerCmd,  GameType,  SignOnStage, MsgKind,
-            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, ClientPacket, Request, Response, ResponseServerInfo, ResponseAccept, SpecialServerAction}, EntityUpdate,
+            server::{ConnectSocket,ServerConnectionManager,ServerQSocket, ClientPacket, Request, Response, ResponseServerInfo, ResponseAccept, SpecialServerAction}, EntityUpdate, PlayerData, ItemFlags,
             
         }, 
         util::read_f32_3, 
@@ -795,12 +795,36 @@ impl GameServer {
                             
                             let mut commandsList : Vec<ServerCmd> = Vec::new();
 
+                            commandsList.push( ServerCmd::LightStyle {
+                                id:0 ,
+                                value: String::from("m") //what do we put here ?
+                             }   );
+                             commandsList.push( ServerCmd::LightStyle {
+                                id:1,
+                                value: String::from("mmnmmommommnonmmonqnmmo") //what do we put here ?
+                             }   );
+                             commandsList.push( ServerCmd::LightStyle {
+                                id:2,
+                                value: String::from("abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba") //what do we put here ?
+                             }   );
+                             commandsList.push( ServerCmd::LightStyle {
+                                id:3,
+                                value: String::from("mmmmmaaaaammmmmaaaaaabcdefgabcdefg") //what do we put here ?
+                             }   );
+                             commandsList.push( ServerCmd::LightStyle {
+                                id:4,
+                                value: String::from("mamamamamama") //what do we put here ?
+                             }   );
+                             commandsList.push( ServerCmd::LightStyle {
+                                id:5,
+                                value: String::from("jklmnopqrstuvwxyzyxwvutsrqponmlkj") //what do we put here ?
+                             }   );
                             //give light maps
-                            for id in 0..64 {
+                            for id in 6..(64) {
 
                                 commandsList.push( ServerCmd::LightStyle {
                                     id,
-                                    value: String::from("") //what do we put here ?
+                                    value: String::from("nmonqnmomnmomomno") //what do we put here ?
                                  }   );
                                 
                                
@@ -839,6 +863,57 @@ impl GameServer {
                             commandsList.push( ServerCmd::SignOnStage {
                                 stage: SignOnStage::Done
                             }  );
+
+                           // EntityUpdate { ent_id: 38, model_id: None, frame_id: None, colormap: None, skin_id: None, effects: None, origin_x: None, pitch: None, origin_y: None, yaw: None, origin_z: None, roll: None, no_lerp: false }
+                            commandsList.push( ServerCmd::FastUpdate(  EntityUpdate{ 
+
+                                ent_id: 1, 
+                                model_id: None, 
+                                frame_id: Some(14), 
+                                colormap: None, 
+                                skin_id: None,
+                                 effects: None, 
+                                 origin_x: None,
+                                  pitch: None, 
+                                  origin_y: Some(-1088.0), 
+                                  yaw: None, 
+                                  origin_z:  Some(264.0), 
+                                  roll: None, 
+                                  no_lerp: false
+                            }));
+                            commandsList.push( ServerCmd::PlayerData(  PlayerData { 
+                            
+                                 view_height: None, 
+                                 ideal_pitch: None,
+                                 punch_pitch: None, 
+                                 velocity_x: None, 
+                                 punch_yaw: None, 
+                                 velocity_y: None, 
+                                 punch_roll: None,
+                                  velocity_z: None, 
+                                  items: ItemFlags::SHOTGUN  ,  
+                                  on_ground: false, 
+                                  in_water: false,
+                                   weapon_frame: None, 
+                                   armor: Some(200), 
+                                   weapon: Some(22), 
+                                   health: 100, 
+                                   ammo: 100, 
+                                   ammo_shells: 100, 
+                                   ammo_nails: 200, 
+                                   ammo_rockets: 100, 
+                                   ammo_cells: 100, 
+                                   active_weapon: 32
+                            
+                            
+                            }));
+
+                            commandsList.push( ServerCmd::Time { time:1000.0 });
+
+
+                            commandsList.push( ServerCmd::SetAngle   { angles: Vector3  {x:Deg(0.0), y:Deg(0.0), z:Deg(0.0)} }  );
+ 
+
                             
                             
                             let send_client_signon_result = self.serverConnectionManager.send_cmds_to_client_reliable( 

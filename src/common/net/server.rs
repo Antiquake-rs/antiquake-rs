@@ -1439,8 +1439,16 @@ impl ServerConnectionManager {
 
 
 
+
+    /*
+    
+        Server should only send a fast update per tickrate !!
+        not as fast as possible 
+    */
     pub fn update(&mut self) {
-        let send_fast_updateresult =  self.send_fast_update(   );
+
+
+      //  let send_fast_updateresult =  self.send_fast_update(   );
         //do stuff for each registered client    like tell them toload map 
 
  
@@ -1448,6 +1456,8 @@ impl ServerConnectionManager {
         for (_, sock) in self.serverQSockets.iter_mut() {
             let update_result = sock.update(&mut self.socket);
         }
+
+
 
     }
 
@@ -1481,6 +1491,11 @@ impl ServerConnectionManager {
             no_lerp: true,
 
         };
+
+
+
+      
+
 
         let serverInfoCmd = ServerCmd::FastUpdate(entity_update);
  

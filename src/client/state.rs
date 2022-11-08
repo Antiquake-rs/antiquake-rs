@@ -731,6 +731,9 @@ impl ClientState {
         
 
         let entity_origin = self.entities[self.view.entity_id()].origin;
+
+        println!("entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
+
         
         self.view.calc_final_angles(
             self.time,
@@ -1207,6 +1210,7 @@ impl ClientState {
         &self.models
     }
 
+    //i guess this is the model of the weapon you are holding 
     pub fn viewmodel_id(&self) -> usize {
         match self.stats[ClientStat::Weapon as usize] as usize {
             0 => 0,
@@ -1252,6 +1256,24 @@ impl ClientState {
         let angles = self.entities[self.view.entity_id()].angles;
         Camera::new(
             self.view.final_origin(),
+            Angles {
+                pitch: angles.x,
+                roll: angles.z,
+                yaw: angles.y,
+            },
+            cgmath::perspective(fov_y, aspect, 4.0, 4096.0),
+        )
+    }
+
+    pub fn fake_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
+        let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
+        let angles = self.entities[self.view.entity_id()].angles;
+        Camera::new(
+            Vector3 {
+                x: -735.96875,
+                y: -1591.9688,  
+                z:  112.4 
+            },
             Angles {
                 pitch: angles.x,
                 roll: angles.z,
