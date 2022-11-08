@@ -29,6 +29,11 @@ gfx pipelines yay!!!
 
 
 #### Next Steps 
+
+- upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server. 
+
+
+
  
 - Improve the networking code so it is more like QuakeWorld (client side prediction and rubber banding -- clients just need to know abt physics engine and sim it themselves ) 
 
@@ -36,31 +41,7 @@ gfx pipelines yay!!!
 - Make the spawnbaseline command happen automagically from the level state 
 - make the set view command give the client their actual client id number not always 1 
 
-   
-
-        client's  pub fn recv_msg(&mut self, block: BlockingMode has ack 
-
-        servers does not 
-
-       
-
-
-Spoike
- — 
-Yesterday at 5:26 PM
-it uses a different server udp socket for each client, instead of the one the user origonally connected to. which is stupid and breaks nats
-so yeah, client sends ccreq_connect packet, server responds to let the client know which server port to accept packets from (complete poop.)
-the server then starts throwing some reliables at you.
-and expects some acks.
-Spoike
- — 
-Yesterday at 5:44 PM
-those reliables have various svc stuff
-the server expects some specific clc replies at various points.
-then it'll start sending some unreliables mixed with the odd reliable. woo. easy, right?...
-
-
- 
+     
  
 
 https://www.gamers.org/dEngine/quake/QDP/qnp.html#connection_req
@@ -108,6 +89,10 @@ Reference the real quake server code : https://github.com/id-Software/Quake/blob
 https://stackoverflow.com/questions/28008549/limit-while-loop-to-run-at-30-fps-using-a-delta-variable-c
 
 (i have done this before! )
+(maybe we do this w bevy tick timers! )
+https://github.com/bevyengine/bevy/blob/main/examples/ecs/fixed_timestep.rs
+https://crates.io/crates/game-loop
+https://sunjay.dev/learn-game-dev/game-loop.html
 
 
 

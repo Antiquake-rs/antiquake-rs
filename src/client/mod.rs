@@ -760,13 +760,33 @@ impl Connection {
                     unimplemented!();
                 }
             }
-        }
+        }rame
 
 
         
         Ok(Maintain)
     }
 
+
+
+
+    /*
+    
+        This client frame happens as often as possible.  
+
+        This whole file needs to be refactored and expanded upon. 
+
+        Client needs to be recording input actions as 'UserCommands' in an array
+        
+        Clients need to be accumulating this frame_time so that if the sum goes above TICKRATE (33ms), 
+        TICKRATE (33ms) is subtracted from that accumulation and the client's simulation is advanced by 1 'tick'. 
+
+        Furthermore, if that accumulator gets way too high (like above 100ms) then the render loop needs to be frozen/paused 
+        so that the ticks can catch up again.  Render lag is not allowed to prevent the advancement of logical ticks. 
+
+ 
+    
+    */
     fn frame(
         &mut self,
         frame_time: Duration,

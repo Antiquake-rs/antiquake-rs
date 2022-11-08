@@ -73,13 +73,7 @@ use winit::{
     window::Window,
 };
 
-
-//use render::framework::FrameworkInstance;
-
-
-
-
-
+ 
 
 
 struct ClientProgram {
@@ -210,27 +204,6 @@ impl ClientProgram {
       
 
 
-
-
-      /*  let swap_chain = RefCell::new(device.create_swap_chain(
-            &surface,
-            &wgpu::SwapChainDescriptor {
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: DIFFUSE_ATTACHMENT_FORMAT,
-                width: size.width,
-                height: size.height,
-                present_mode: wgpu::PresentMode::Immediate,
-            },
-        ));*/
-
- 
-
-         // Create the texture for the main window  (is this correct?)
-
-            //https://stackoverflow.com/questions/68881273/wgpu-rs-thread-main-panicked-at-texture1-does-not-exist
-            //https://github.com/gfx-rs/wgpu/issues/1797
-            //This can be solved by forcing the SurfaceTexture to be dropped after the TextureView.
-        
             let size: Extent2d = window.inner_size().into();
         
             let winit::dpi::PhysicalSize { width, height } = window.inner_size();
@@ -352,29 +325,10 @@ impl ClientProgram {
     
         self.surface.configure(&device, &surface_config);
 
-      //  self.texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
      
-      
-      // ??
     }
 
-
-    /// Builds a new swap chain with the specified present mode and the window's current dimensions.
-   /* fn recreate_swap_chain(&self, present_mode: wgpu::PresentMode) {
-        let winit::dpi::PhysicalSize { width, height } = self.window.inner_size();
-        let swap_chain = self.gfx_state.borrow().device().create_swap_chain(
-            &self.surface,
-            &wgpu::SwapChainDescriptor {
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: DIFFUSE_ATTACHMENT_FORMAT,
-                width,
-                height,
-                present_mode,
-            },
-        );
-        let _ = self.swap_chain.replace(swap_chain);
-    }*/
-
+ 
  
 
     fn render(&mut self) {
