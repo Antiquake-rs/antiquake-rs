@@ -91,6 +91,9 @@ const CONSOLE_DIVIDER: &'static str = "\
 \x1E\x1E\x1E\x1E\x1E\x1E\x1E\x1F\
 \n\n";
 
+use std::time::{SystemTime, UNIX_EPOCH};
+
+
 #[derive(Error, Debug)]
 pub enum ClientError {
     #[error("Connection rejected: {0}")]
@@ -212,11 +215,50 @@ enum ConnectionKind {
     Demo(DemoServer),
 }
 
+
+
+/*
+pub struct Client {
+    state: ClientState,
+
+    connection: Connection,
+
+    //for game ticks 
+    pub tick_period: Duration,
+    pub gametick_accumulator: Duration,
+
+
+
+}
+
+
+
+impl Client {
+
+    pub fn new() -> Client {
+
+        Client { 
+
+
+            tick_period: Duration::milliseconds(33), 
+            gametick_accumulator: Duration::zero(),
+
+            
+            state: 
+            connection: (),
+    }
+
+
+}
+}
+ */
+
+
 /// A connection to a game server of some kind.
 ///
 /// The exact nature of the connected server is specified by [`ConnectionKind`].
 pub struct Connection {
-    state: ClientState,
+    //state: ClientState,
     conn_state: ConnectionState,
     kind: ConnectionKind,
 }
@@ -804,9 +846,18 @@ impl Connection {
     ) -> Result<ConnectionStatus, ClientError> {
         debug!("frame time: {}ms", frame_time.num_milliseconds());
 
+
+
+
+        
+
         // do this _before_ parsing server messages so that we know when to
         // request the next message from the demo server.
         self.state.advance_time(frame_time);
+
+        //if gametick_accumulator is very high (more that 100ms) we need to pause the render loop 
+
+        self.state.run_frame(frame_time);
 
 
         //why are we passing so much stuff in here... ? 
@@ -817,24 +868,10 @@ impl Connection {
         };
 
 
-         
-        self.state.update_interp_ratio(cl_nolerp);
 
-        //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
-        // interpolate entity data and spawn particle effects, lights
-        self.state.update_entities()?;
 
-        // update temp entities (lightning, etc.)
-        self.state.update_temp_entities()?;
 
-        // remove expired lights
-        self.state.lights.update(self.state.time);
-
-        // apply particle physics and remove expired particles
-        self.state
-            .particles
-            .update(self.state.time, frame_time, sv_gravity);
-
+       
         if let ConnectionKind::Server {
             ref mut qsock,
             ref mut compose,
@@ -846,6 +883,9 @@ impl Connection {
                 compose.clear();
             }
         }
+
+        //need to tell client about connection state! 
+
 
         // these all require the player entity to have spawned
         if let ConnectionState::Connected(_) = self.conn_state {
@@ -879,6 +919,14 @@ pub struct Client {
     conn: Rc<RefCell<Option<Connection>>>,
     renderer: ClientRenderer,
     demo_queue: Rc<RefCell<VecDeque<String>>>,
+
+
+    state: ClientState,
+    connection: Connection,
+
+    //for game ticks 
+    pub tick_period: Duration,
+    pub gametick_accumulator: Duration,
 }
 
 impl Client {

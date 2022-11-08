@@ -35,6 +35,9 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
+
+use std::time::{SystemTime, UNIX_EPOCH};
+
 const CACHED_SOUND_NAMES: &[&'static str] = &[
     "hknight/hit.wav",
     "weapons/r_exp3.wav",
@@ -98,6 +101,8 @@ pub struct ClientState {
     pub time: Duration,
     pub lerp_factor: f32,
 
+    
+
     pub items: ItemFlags,
     pub item_get_time: [Duration; net::MAX_ITEMS],
     pub face_anim_time: Duration,
@@ -121,6 +126,9 @@ pub struct ClientState {
 impl ClientState {
     // TODO: add parameter for number of player slots and reserve them in entity list
     pub fn new(stream: OutputStreamHandle) -> ClientState {
+        
+
+        //this is disgusting !!! break it into resources, components , systems 
         ClientState {
             rng: SmallRng::from_entropy(),
             models: vec![Model::none()],
@@ -141,6 +149,8 @@ impl ClientState {
             player_info: Default::default(),
             msg_times: [Duration::zero(), Duration::zero()],
             time: Duration::zero(),
+
+
             lerp_factor: 0.0,
             items: ItemFlags::empty(),
             item_get_time: [Duration::zero(); net::MAX_ITEMS],
@@ -232,10 +242,61 @@ impl ClientState {
     }
 
     /// Advance the simulation time by the specified amount.
-    ///
-    /// This method does not change the state of the world to match the new time value.
-    pub fn advance_time(&mut self, frame_time: Duration) {
+    /// This powers the 'run_tick' method 
+    /// 
+    pub fn advance_time(&mut self, frame_time: Duration) -> Duration {
         self.time = self.time + frame_time;
+
+       
+
+
+        self.gametick_accumulator = self.gametick_accumulator + frame_time;
+        if(self.gametick_accumulator > self.tick_period){
+
+            match self.gametick_accumulator.checked_sub( &self.tick_period ){
+                Some(difference) => {
+                    self.gametick_accumulator = difference;
+                    self.run_tick();
+                },
+                None => {  }
+            }
+        }
+
+        return self.gametick_accumulator 
+        //return how 'far behind' we are 
+        //if we are very very far behind that means we wont render until we catch up 
+
+    }
+
+
+    pub fn run_frame(&mut self, frame_time:Duration){
+        self.time = self.time + frame_time;
+          
+        self.update_interp_ratio(cl_nolerp);
+
+        //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
+        // interpolate entity data and spawn particle effects, lights
+        self.update_entities()?;
+
+        // update temp entities (lightning, etc.)
+        self.update_temp_entities()?;
+
+        // remove expired lights
+        self.lights.update(self.time);
+
+        // apply particle physics and remove expired particles
+        self.particles
+            .update(self.time, frame_time, sv_gravity);
+
+
+    }
+
+    //runs each 'tick_period' milliseconds to advance the virtual machine (to match the server)
+    pub fn run_tick(&mut self){
+        println!("client run tick");
+
+
+
     }
 
     /// Update the client state interpolation ratio.
