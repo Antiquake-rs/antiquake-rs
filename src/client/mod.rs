@@ -807,14 +807,20 @@ impl Connection {
         // do this _before_ parsing server messages so that we know when to
         // request the next message from the demo server.
         self.state.advance_time(frame_time);
+
+
+        //why are we passing so much stuff in here... ? 
         match self.parse_server_msg(vfs, gfx_state, cmds, console, music_player, kick_vars)? {
             ConnectionStatus::Maintain => (),
             // if Disconnect or NextDemo, delegate up the chain
             s => return Ok(s),
         };
 
+
+         
         self.state.update_interp_ratio(cl_nolerp);
 
+        //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
         // interpolate entity data and spawn particle effects, lights
         self.state.update_entities()?;
 

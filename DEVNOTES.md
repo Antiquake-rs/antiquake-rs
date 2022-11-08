@@ -30,8 +30,10 @@ gfx pipelines yay!!!
 
 #### Next Steps 
 
-- upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server. 
+- upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server.  (see fn frame() )
 
+
+-client 'parse_server_msg' is very goofy why are 5 raw values being passed in just for that.. 
 
 
  
