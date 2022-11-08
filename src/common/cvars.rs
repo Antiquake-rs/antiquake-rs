@@ -55,6 +55,9 @@ pub fn register_cvars(cvars: &CvarRegistry) -> Result<(), ConsoleError> {
     cvars.register("v_kickroll", "0.6")?;
     cvars.register("v_kicktime", "0.5")?;
 
+    cvars.register("tickrate", "33")?; //server ticks 33 ms 
+    cvars.register("cl_cmdrate", "66")?; //client send command every 66 ms 
+
     // some server cvars are needed by the client, but if the server is running
     // in the same process they will have been set already, so we can ignore
     // the duplicate cvar error

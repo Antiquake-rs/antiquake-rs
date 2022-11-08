@@ -104,6 +104,12 @@ Reference the real quake server code : https://github.com/id-Software/Quake/blob
 
 - client sends unreliables WAYY too often 
 
+- client and server need a proper gamestate tick loop: 
+https://stackoverflow.com/questions/28008549/limit-while-loop-to-run-at-30-fps-using-a-delta-variable-c
+
+(i have done this before! )
+
+
 
 -now that client can load into their own local gameserver, make them spawn and render the map! 
 -server needs to tell client to open the map bsp 
