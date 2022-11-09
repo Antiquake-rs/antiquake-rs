@@ -4,7 +4,7 @@ use cgmath::{Matrix4, SquareMatrix as _, Vector3, Zero as _};
 
 use crate::{
     client::{
-        entity::MAX_LIGHTS,
+        unit::MAX_LIGHTS,
         render::{pipeline::Pipeline, ui::quad::QuadPipeline, GraphicsState},
     },
     common::util::any_as_bytes,

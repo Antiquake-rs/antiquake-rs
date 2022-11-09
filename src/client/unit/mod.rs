@@ -23,7 +23,7 @@ pub mod particle;
 use crate::common::{
     alloc::LinkedSlab,
     engine,
-    net::{EntityEffects, EntityState, EntityUpdate},
+    net::{UnitEffects, UnitState, EntityUpdate},
 };
 
 use cgmath::{Deg, Vector3};
@@ -36,9 +36,9 @@ pub const MAX_TEMP_ENTITIES: usize = 64;
 pub const MAX_STATIC_ENTITIES: usize = 128;
 
 #[derive(Debug)]
-pub struct ClientEntity {
+pub struct ClientUnit {
     pub force_link: bool,
-    pub baseline: EntityState,
+    pub baseline: UnitState,
     pub msg_time: Duration,
     pub msg_origins: [Vector3<f32>; 2],
     pub origin: Vector3<f32>,
@@ -50,14 +50,14 @@ pub struct ClientEntity {
     pub skin_id: usize,
     colormap: Option<u8>,
     pub sync_base: Duration,
-    pub effects: EntityEffects,
+    pub effects: UnitEffects,
     pub light_id: Option<usize>,
     // vis_frame: usize,
 }
 
-impl ClientEntity {
-    pub fn from_baseline(baseline: EntityState) -> ClientEntity {
-        ClientEntity {
+impl ClientUnit {
+    pub fn from_baseline(baseline: UnitState) -> ClientUnit {
+        ClientUnit {
             force_link: false,
             baseline: baseline.clone(),
             msg_time: Duration::zero(),
@@ -79,10 +79,10 @@ impl ClientEntity {
         }
     }
 
-    pub fn uninitialized() -> ClientEntity {
-        ClientEntity {
+    pub fn uninitialized() -> ClientUnit {
+        ClientUnit {
             force_link: false,
-            baseline: EntityState::uninitialized(),
+            baseline: UnitState::uninitialized(),
             msg_time: Duration::zero(),
             msg_origins: [Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0)],
             origin: Vector3::new(0.0, 0.0, 0.0),
@@ -97,7 +97,7 @@ impl ClientEntity {
             skin_id: 0,
             colormap: None,
             sync_base: Duration::zero(),
-            effects: EntityEffects::empty(),
+            effects: UnitEffects::empty(),
             light_id: None,
         }
     }
@@ -324,7 +324,7 @@ impl Lights {
 
 #[derive(Copy, Clone, Debug)]
 pub struct Beam {
-    pub entity_id: usize,
+    pub unit_id: usize,
     pub model_id: usize,
     pub expire: Duration,
     pub start: Vector3<f32>,

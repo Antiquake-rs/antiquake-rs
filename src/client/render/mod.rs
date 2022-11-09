@@ -80,7 +80,7 @@ use std::{
 
 use crate::{
     client::{
-        entity::MAX_LIGHTS,
+        unit::MAX_LIGHTS,
         input::InputFocus,
         menu::Menu,
         render::{

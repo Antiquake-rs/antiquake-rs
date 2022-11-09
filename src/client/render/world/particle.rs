@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     client::{
-        entity::particle::Particle,
+        unit::particle::Particle,
         render::{
             create_texture,
             pipeline::{Pipeline, PushConstantUpdate},

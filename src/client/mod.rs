@@ -20,7 +20,7 @@
 
  
 pub mod demo;
-pub mod entity;
+pub mod unit;
 pub mod input;
 pub mod menu;
 pub mod render;
@@ -42,7 +42,7 @@ use std::{
 use crate::{
     client::{
         demo::{DemoServer, DemoServerError},
-        entity::{ClientEntity, MAX_STATIC_ENTITIES},
+        unit::{ClientUnit, MAX_STATIC_ENTITIES},
         input::{game::GameInput, Input},
         sound::{MusicPlayer, StaticSound},
         state::{ClientState, PlayerInfo},
@@ -57,7 +57,7 @@ use crate::{
         net::{
             self,
             server::{ConnectSocket, Request, Response, CONNECT_PROTOCOL_VERSION},
-            BlockingMode, ClientCmd, ClientStat, ColorShift, EntityEffects, EntityState, GameType,
+            BlockingMode, ClientCmd, ClientStat, ColorShift, UnitEffects, UnitState, GameType,
             NetError, PlayerColor, QSocket, ServerCmd, SignOnStage,
         },
         vfs::{Vfs, VfsError},
@@ -468,22 +468,25 @@ impl Connection {
                     })
                 }
 
-                ServerCmd::FastUpdate(ent_update) => {
+                ServerCmd::FastUpdate( fast_update) => {
 
                     println!("got fast update - handling sinon");
 
                     // first update signals the last sign-on stage
                     self.handle_signon(SignOnStage::Done, gfx_state)?;
 
-                    let ent_id = ent_update.ent_id as usize;
-                    self.state.update_entity(ent_id, ent_update)?;
 
-                    // patch view angles in demos
-                    if let Some(angles) = demo_view_angles {
-                        if ent_id == self.state.view_entity_id() {
-                            self.state.update_view_angles(angles);
-                        }
-                    }
+                    let unit_id = fast_update.ent_id as usize;//this clones the number
+
+                    self.state.on_fast_update(fast_update)?;
+
+                    
+                    //need this ?
+                    self.state.patch_demo_view_angles(unit_id,demo_view_angles)?;
+
+
+                  
+
                 }
 
                 ServerCmd::Finale { text } => {
@@ -641,14 +644,14 @@ impl Connection {
                 } => {
                     self.state.spawn_entities(
                         ent_id as usize,
-                        EntityState {
+                        UnitState {
                             model_id: model_id as usize,
                             frame_id: frame_id as usize,
                             colormap,
                             skin_id: skin_id as usize,
                             origin,
                             angles,
-                            effects: EntityEffects::empty(),
+                            effects: UnitEffects::empty(),
                         },
                     )?;
                 }
@@ -666,14 +669,14 @@ impl Connection {
                     }
                     self.state
                         .static_entities
-                        .push(ClientEntity::from_baseline(EntityState {
+                        .push(ClientUnit::from_baseline(UnitState {
                             origin,
                             angles,
                             model_id: model_id as usize,
                             frame_id: frame_id as usize,
                             colormap,
                             skin_id: skin_id as usize,
-                            effects: EntityEffects::empty(),
+                            effects: UnitEffects::empty(),
                         }));
                 }
 
@@ -1256,7 +1259,7 @@ impl Client {
 
     pub fn view_entity_id(&self) -> Option<usize> {
         match *self.conn.borrow() {
-            Some(Connection { ref state, .. }) => Some(state.view_entity_id()),
+            Some(Connection { ref state, .. }) => Some(state.view_unit_id()),
             None => None,
         }
     }

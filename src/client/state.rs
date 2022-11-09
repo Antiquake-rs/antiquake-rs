@@ -3,9 +3,9 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use super::{view::BobVars, Client};
 use crate::{
     client::{
-        entity::{
+        unit::{
             particle::{Particle, Particles, TrailKind, MAX_PARTICLES},
-            Beam, ClientEntity, Light, LightDesc, Lights, MAX_BEAMS, MAX_LIGHTS, MAX_TEMP_ENTITIES,
+            Beam, ClientUnit, Light, LightDesc, Lights, MAX_BEAMS, MAX_LIGHTS, MAX_TEMP_ENTITIES,
         },
         input::game::{Action, GameInput},
         render::Camera,
@@ -18,7 +18,7 @@ use crate::{
         math::{self, Angles},
         model::{Model, ModelFlags, ModelKind, SyncType},
         net::{
-            self, BeamEntityKind, ButtonFlags, ColorShift, EntityEffects, ItemFlags, PlayerData,
+            self, BeamEntityKind, ButtonFlags, ColorShift, UnitEffects, ItemFlags, PlayerData,
             PointEntityKind, TempEntity,
         },
         vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
@@ -27,13 +27,15 @@ use crate::{
 use arrayvec::ArrayVec;
 use cgmath::{Angle as _, Deg, InnerSpace as _, Matrix4, Vector3, Zero as _};
 use chrono::Duration;
-use net::{ClientCmd, ClientStat, EntityState, EntityUpdate, PlayerColor};
+use net::{ClientCmd, ClientStat, UnitState, EntityUpdate, PlayerColor};
 use rand::{
     distributions::{Distribution as _, Uniform},
     rngs::SmallRng,
     SeedableRng,
 };
 use rodio::OutputStreamHandle;
+
+use bevy_ecs::{world::{World as BevyWorld}};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -75,11 +77,11 @@ pub struct ClientState {
     pub static_sounds: Vec<StaticSound>,
 
     // entities and entity-like things -- REMOVE THESE
-    pub entities: Vec<ClientEntity>,
-    pub static_entities: Vec<ClientEntity>,
-    pub temp_entities: Vec<ClientEntity>,
+    pub entities: Vec<ClientUnit>,
+    pub static_entities: Vec<ClientUnit>,
+    pub temp_entities: Vec<ClientUnit>,
 
-
+        
 
     // dynamic point lights
     pub lights: Lights,
@@ -126,6 +128,8 @@ pub struct ClientState {
     pub listener: Listener,
 
     pub tick_counter: TickCounter,
+
+    pub ecs_world: BevyWorld,
 }
 
 impl ClientState {
@@ -141,9 +145,11 @@ impl ClientState {
             sounds: Vec::new(),
             cached_sounds: HashMap::new(),
             static_sounds: Vec::new(),
+
             entities: Vec::new(),
             static_entities: Vec::new(),
             temp_entities: Vec::new(),
+
             lights: Lights::with_capacity(MAX_LIGHTS),
             beams: [None; MAX_BEAMS],
             particles: Particles::with_capacity(MAX_PARTICLES),
@@ -156,7 +162,7 @@ impl ClientState {
             time: Duration::zero(),
 
             tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
-
+            ecs_world: BevyWorld::new(),
 
 
 
@@ -460,12 +466,12 @@ impl ClientState {
                 ent.angles[1] = obj_rotate;
             }
 
-            if ent.effects.contains(EntityEffects::BRIGHT_FIELD) {
+            if ent.effects.contains(UnitEffects::BRIGHT_FIELD) {
                 self.particles.create_entity_field(self.time, ent);
             }
 
             // TODO: factor out EntityEffects->LightDesc mapping
-            if ent.effects.contains(EntityEffects::MUZZLE_FLASH) {
+            if ent.effects.contains(UnitEffects::MUZZLE_FLASH) {
                 // TODO: angle and move origin to muzzle
                 ent.light_id = Some(self.lights.insert(
                     self.time,
@@ -480,7 +486,7 @@ impl ClientState {
                 ));
             }
 
-            if ent.effects.contains(EntityEffects::BRIGHT_LIGHT) {
+            if ent.effects.contains(UnitEffects::BRIGHT_LIGHT) {
                 ent.light_id = Some(self.lights.insert(
                     self.time,
                     LightDesc {
@@ -494,7 +500,7 @@ impl ClientState {
                 ));
             }
 
-            if ent.effects.contains(EntityEffects::DIM_LIGHT) {
+            if ent.effects.contains(UnitEffects::DIM_LIGHT) {
                 ent.light_id = Some(self.lights.insert(
                     self.time,
                     LightDesc {
@@ -545,7 +551,7 @@ impl ClientState {
             }
 
             // don't render the player model
-            if self.view.entity_id() != ent_id {
+            if self.view.unit_id() != ent_id {
                 // mark entity for rendering
                 self.visible_entity_ids.push(ent_id);
             }
@@ -556,7 +562,7 @@ impl ClientState {
 
         // apply effects to static entities as well
         for ent in self.static_entities.iter_mut() {
-            if ent.effects.contains(EntityEffects::BRIGHT_LIGHT) {
+            if ent.effects.contains(UnitEffects::BRIGHT_LIGHT) {
                 debug!("spawn bright light on static entity");
                 ent.light_id = Some(self.lights.insert(
                     self.time,
@@ -571,7 +577,7 @@ impl ClientState {
                 ));
             }
 
-            if ent.effects.contains(EntityEffects::DIM_LIGHT) {
+            if ent.effects.contains(UnitEffects::DIM_LIGHT) {
                 debug!("spawn dim light on static entity");
                 ent.light_id = Some(self.lights.insert(
                     self.time,
@@ -603,10 +609,10 @@ impl ClientState {
                 continue;
             }
 
-            let view_ent = self.view_entity_id();
+            let view_ent = self.view_unit_id();
             if let Some(ref mut beam) = self.beams[id] {
                 // keep lightning gun bolts fixed to player
-                if beam.entity_id == view_ent {
+                if beam.unit_id == view_ent {
                     beam.start = self.entities[view_ent].origin;
                 }
 
@@ -618,7 +624,7 @@ impl ClientState {
                 let len = vec.magnitude();
                 let direction = vec.normalize();
                 for interval in 0..(len / 30.0) as i32 {
-                    let mut ent = ClientEntity::uninitialized();
+                    let mut ent = ClientUnit::uninitialized();
                     ent.origin = beam.start + 30.0 * interval as f32 * direction;
                     ent.angles =
                         Vector3::new(pitch, yaw, Deg(ANGLE_DISTRIBUTION.sample(&mut self.rng)));
@@ -781,7 +787,7 @@ impl ClientState {
             cshift.dest_color = [255, 0, 0];
         }
 
-        let v_ent = &self.entities[self.view.entity_id()];
+        let v_ent = &self.entities[self.view.unit_id()];
 
         let v_angles = Angles {
             pitch: v_ent.angles.x,
@@ -809,7 +815,7 @@ impl ClientState {
     ) {
         
 
-        let entity_origin = self.entities[self.view.entity_id()].origin;
+        let entity_origin = self.entities[self.view.unit_id()].origin;
 
         println!("entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
 
@@ -838,7 +844,7 @@ impl ClientState {
     // TODO: skipping entities indicates that the entities have been freed by
     // the server. it may make more sense to use a HashMap to store entities by
     // ID since the lookup table is relatively sparse.
-    pub fn spawn_entities(&mut self, id: usize, baseline: EntityState) -> Result<(), ClientError> {
+    pub fn spawn_entities(&mut self, id: usize, baseline: UnitState) -> Result<(), ClientError> {
         // don't clobber existing entities
         if id < self.entities.len() {
             Err(ClientError::EntityExists(id))?;
@@ -847,21 +853,48 @@ impl ClientState {
         // spawn intermediate entities (uninitialized)
         for i in self.entities.len()..id {
             debug!("Spawning uninitialized entity with ID {}", i);
-            self.entities.push(ClientEntity::uninitialized());
+            self.entities.push(ClientUnit::uninitialized());
         }
 
         debug!(
             "Spawning entity with id {} from baseline {:?}",
             id, baseline
         );
-        self.entities.push(ClientEntity::from_baseline(baseline));
+        self.entities.push(ClientUnit::from_baseline(baseline));
 
+        Ok(())
+    }
+
+
+    pub fn on_fast_update( &mut self, fast_update:EntityUpdate ) -> Result<(), ClientError> {
+
+        let unit_id = fast_update.ent_id as usize;
+        //self.state.on_fast_update(unit_id, fast_update)?;
+        self.update_entity(unit_id,fast_update)?;
+
+
+        
+        Ok(())
+    }
+
+
+
+    //maybe get rid of this ? 
+    pub fn patch_demo_view_angles(&mut self, unit_id:usize,demo_view_angles:Option<Vector3<Deg<f32>>> ) -> Result<(), ClientError> {
+                 
+        // patch view angles in demos
+        if let Some(angles) = demo_view_angles {
+            if unit_id == self.view_unit_id() {
+                self.update_view_angles(angles);
+            }
+        }
+        
         Ok(())
     }
 
     pub fn update_entity(&mut self, id: usize, update: EntityUpdate) -> Result<(), ClientError> {
         if id >= self.entities.len() {
-            let baseline = EntityState {
+            let baseline = UnitState {
                 origin: Vector3::new(
                     update.origin_x.unwrap_or(0.0),
                     update.origin_y.unwrap_or(0.0),
@@ -876,7 +909,7 @@ impl ClientState {
                 frame_id: update.frame_id.unwrap_or(0) as usize,
                 colormap: update.colormap.unwrap_or(0),
                 skin_id: update.skin_id.unwrap_or(0) as usize,
-                effects: EntityEffects::empty(),
+                effects: UnitEffects::empty(),
             };
 
             self.spawn_entities(id, baseline)?;
@@ -1091,7 +1124,7 @@ impl ClientState {
     pub fn spawn_beam(
         &mut self,
         time: Duration,
-        entity_id: usize,
+        unit_id: usize,
         model_id: usize,
         start: Vector3<f32>,
         end: Vector3<f32>,
@@ -1101,7 +1134,7 @@ impl ClientState {
         let mut free = None;
         for i in 0..self.beams.len() {
             if let Some(ref mut beam) = self.beams[i] {
-                if beam.entity_id == entity_id {
+                if beam.unit_id == unit_id {
                     beam.model_id = model_id;
                     beam.expire = time + Duration::milliseconds(200);
                     beam.start = start;
@@ -1114,7 +1147,7 @@ impl ClientState {
 
         if let Some(i) = free {
             self.beams[i] = Some(Beam {
-                entity_id,
+                unit_id,
                 model_id,
                 expire: time + Duration::milliseconds(200),
                 start,
@@ -1127,7 +1160,7 @@ impl ClientState {
 
     pub fn update_listener(&self) {
         // TODO: update to self.view_origin()
-        let view_origin = self.entities[self.view.entity_id()].origin;
+        let view_origin = self.entities[self.view.unit_id()].origin;
         let world_translate = Matrix4::from_translation(view_origin);
 
         let left_base = Vector3::new(0.0, 4.0, self.view.view_height());
@@ -1167,7 +1200,7 @@ impl ClientState {
         match self.models[1].kind() {
             ModelKind::Brush(ref bmodel) => {
                 let bsp_data = bmodel.bsp_data();
-                let leaf_id = bsp_data.find_leaf(self.entities[self.view.entity_id()].origin);
+                let leaf_id = bsp_data.find_leaf(self.entities[self.view.unit_id()].origin);
                 let leaf = &bsp_data.leaves()[leaf_id];
                 Ok(leaf.contents)
             }
@@ -1252,7 +1285,7 @@ impl ClientState {
             yaw: angles.y,
         });
         let final_angles = self.view.final_angles();
-        self.entities[self.view.entity_id()].set_angles(Vector3::new(
+        self.entities[self.view.unit_id()].set_angles(Vector3::new(
             final_angles.pitch,
             final_angles.yaw,
             final_angles.roll,
@@ -1267,7 +1300,7 @@ impl ClientState {
             yaw: angles.y,
         });
         let final_angles = self.view.final_angles();
-        self.entities[self.view.entity_id()].update_angles(Vector3::new(
+        self.entities[self.view.unit_id()].update_angles(Vector3::new(
             final_angles.pitch,
             final_angles.yaw,
             final_angles.roll,
@@ -1281,7 +1314,7 @@ impl ClientState {
         if entity_id > self.max_players && entity_id >= self.entities.len() {
             Err(ClientError::InvalidViewEntity(entity_id))?;
         }
-        self.view.set_entity_id(entity_id);
+        self.view.set_unit_id(entity_id);
         Ok(())
     }
 
@@ -1297,7 +1330,7 @@ impl ClientState {
         }
     }
 
-    pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientEntity> + Clone {
+    pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {
         self.visible_entity_ids
             .iter()
             .map(move |i| &self.entities[*i])
@@ -1317,8 +1350,8 @@ impl ClientState {
         self.time
     }
 
-    pub fn view_entity_id(&self) -> usize {
-        self.view.entity_id()
+    pub fn view_unit_id(&self) -> usize {
+        self.view.unit_id()
     }
 
     pub fn camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
@@ -1332,7 +1365,7 @@ impl ClientState {
 
     pub fn demo_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
-        let angles = self.entities[self.view.entity_id()].angles;
+        let angles = self.entities[self.view.unit_id()].angles;
         Camera::new(
             self.view.final_origin(),
             Angles {
@@ -1346,7 +1379,7 @@ impl ClientState {
 
     pub fn fake_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
-        let angles = self.entities[self.view.entity_id()].angles;
+        let angles = self.entities[self.view.unit_id()].angles;
         Camera::new(
             Vector3 {
                 x: -735.96875,

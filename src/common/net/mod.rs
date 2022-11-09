@@ -506,7 +506,7 @@ pub enum SignOnStage {
 }
 
 bitflags! {
-    pub struct EntityEffects: u8 {
+    pub struct UnitEffects: u8 {
         const BRIGHT_FIELD = 0b0001;
         const MUZZLE_FLASH = 0b0010;
         const BRIGHT_LIGHT = 0b0100;
@@ -515,7 +515,7 @@ bitflags! {
 }
 
 #[derive(Clone, Debug)]
-pub struct EntityState {
+pub struct UnitState {
     pub origin: Vector3<f32>,
     pub angles: Vector3<Deg<f32>>,
     pub model_id: usize,
@@ -524,19 +524,19 @@ pub struct EntityState {
     // TODO: more specific types for these
     pub colormap: u8,
     pub skin_id: usize,
-    pub effects: EntityEffects,
+    pub effects: UnitEffects,
 }
 
-impl EntityState {
-    pub fn uninitialized() -> EntityState {
-        EntityState {
+impl UnitState {
+    pub fn uninitialized() -> UnitState {
+        UnitState {
             origin: Vector3::new(0.0, 0.0, 0.0),
             angles: Vector3::new(Deg(0.0), Deg(0.0), Deg(0.0)),
             model_id: 0,
             frame_id: 0,
             colormap: 0,
             skin_id: 0,
-            effects: EntityEffects::empty(),
+            effects: UnitEffects::empty(),
         }
     }
 }
@@ -548,7 +548,7 @@ pub struct EntityUpdate {
     pub frame_id: Option<u8>,
     pub colormap: Option<u8>,
     pub skin_id: Option<u8>,
-    pub effects: Option<EntityEffects>,
+    pub effects: Option<UnitEffects>,
     pub origin_x: Option<f32>,
     pub pitch: Option<Deg<f32>>,
     pub origin_y: Option<f32>,
@@ -586,8 +586,8 @@ pub struct PlayerData {
 impl EntityUpdate {
     /// Create an `EntityState` from this update, filling in any `None` values
     /// from the specified baseline state.
-    pub fn to_entity_state(&self, baseline: &EntityState) -> EntityState {
-        EntityState {
+    pub fn to_entity_state(&self, baseline: &UnitState) -> UnitState {
+        UnitState {
             origin: Vector3::new(
                 self.origin_x.unwrap_or(baseline.origin.x),
                 self.origin_y.unwrap_or(baseline.origin.y),
@@ -921,7 +921,7 @@ impl ServerCmd {
             let effects;
             if update_flags.contains(UpdateFlags::EFFECTS) {
                 let effects_bits = reader.read_u8()?;
-                effects = match EntityEffects::from_bits(effects_bits) {
+                effects = match UnitEffects::from_bits(effects_bits) {
                     Some(e) => Some(e),
                     None => {
                         return Err(NetError::InvalidData(format!(

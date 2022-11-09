@@ -30,7 +30,7 @@
 use std::{cell::RefCell, convert::TryInto, error::Error, fmt, rc::Rc, collections::HashMap};
 
 use crate::{
-    common::{engine::duration_to_f32, net::EntityState},
+    common::{engine::duration_to_f32, net::UnitState},
     server::{
         
         world::phys::MoveKind,
@@ -468,7 +468,7 @@ pub struct Entity {
 
     pub leaf_count: usize,
     pub leaf_ids: [usize; MAX_ENT_LEAVES],
-    pub baseline: EntityState,
+    pub baseline: UnitState,
 }
 
 
@@ -483,7 +483,7 @@ impl Entity {
             type_def, 
             leaf_count: 0,
             leaf_ids: [0; MAX_ENT_LEAVES],
-            baseline: EntityState::uninitialized(),
+            baseline: UnitState::uninitialized(),
         }
     }
  

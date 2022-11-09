@@ -9,7 +9,7 @@ use std::{cell::RefCell, mem::size_of};
 
 use crate::{
     client::{
-        entity::particle::Particle,
+        unit::particle::Particle,
         render::{
             pipeline::{Pipeline, PushConstantUpdate},
             uniform::{DynamicUniformBufferBlock, UniformArrayFloat, UniformBool},
@@ -21,7 +21,7 @@ use crate::{
             GraphicsState, DEPTH_ATTACHMENT_FORMAT, DIFFUSE_ATTACHMENT_FORMAT,
             LIGHT_ATTACHMENT_FORMAT, NORMAL_ATTACHMENT_FORMAT,
         },
-        ClientEntity,
+        ClientUnit,
     },
     common::{
         console::CvarRegistry,
@@ -386,7 +386,7 @@ impl WorldRenderer {
         lightstyle_values: &[f32],
         cvars: &CvarRegistry,
     ) where
-        I: Iterator<Item = &'a ClientEntity>,
+        I: Iterator<Item = &'a ClientUnit>,
     {
         trace!("Updating frame uniform buffer");
         state
@@ -453,7 +453,7 @@ impl WorldRenderer {
         viewmodel_id: usize,
         cvars: &CvarRegistry,
     ) where
-        E: Iterator<Item = &'a ClientEntity> + Clone,
+        E: Iterator<Item = &'a ClientUnit> + Clone,
         P: Iterator<Item = &'a Particle>,
     {
         use PushConstantUpdate::*;
@@ -577,24 +577,24 @@ impl WorldRenderer {
             .record_draw(pass, &bump, camera, particles);
     }
 
-    fn renderer_for_entity(&self, ent: &ClientEntity) -> &EntityRenderer {
+    fn renderer_for_entity(&self, ent: &ClientUnit) -> &EntityRenderer {
         // subtract 1 from index because world entity isn't counted
         &self.entity_renderers[ent.model_id() - 1]
     }
 
-    fn calculate_mvp_transform(&self, camera: &Camera, entity: &ClientEntity) -> Matrix4<f32> {
+    fn calculate_mvp_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
         let model_transform = self.calculate_model_transform(camera, entity);
 
         camera.view_projection() * model_transform
     }
 
-    fn calculate_mv_transform(&self, camera: &Camera, entity: &ClientEntity) -> Matrix4<f32> {
+    fn calculate_mv_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
         let model_transform = self.calculate_model_transform(camera, entity);
 
         camera.view() * model_transform
     }
 
-    fn calculate_model_transform(&self, camera: &Camera, entity: &ClientEntity) -> Matrix4<f32> {
+    fn calculate_model_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
         let origin = entity.get_origin();
         let angles = entity.get_angles();
         let rotation = match self.renderer_for_entity(entity) {

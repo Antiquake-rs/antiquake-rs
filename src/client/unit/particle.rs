@@ -21,7 +21,7 @@
 use std::ops::RangeInclusive;
 
 use crate::{
-    client::ClientEntity,
+    client::ClientUnit,
     common::{
         alloc::LinkedSlab,
         engine,
@@ -311,7 +311,7 @@ impl Particles {
     }
 
     /// Creates a spherical cloud of particles around an entity.
-    pub fn create_entity_field(&mut self, time: Duration, entity: &ClientEntity) {
+    pub fn create_entity_field(&mut self, time: Duration, unit: &ClientUnit) {
         let beam_length = 16.0;
         let dist = 64.0;
 
@@ -328,7 +328,7 @@ impl Particles {
             let forward = Vector3::new(cos_pitch * cos_yaw, cos_pitch * sin_yaw, -sin_pitch);
             let ttl = Duration::milliseconds(10);
 
-            let origin = entity.origin + dist * math::VERTEX_NORMALS[i] + beam_length * forward;
+            let origin = unit.origin + dist * math::VERTEX_NORMALS[i] + beam_length * forward;
 
             self.insert(Particle {
                 kind: ParticleKind::Explosion {

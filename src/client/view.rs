@@ -14,7 +14,7 @@ use chrono::Duration;
 
 pub struct View {
     // entity "holding" the camera
-    entity_id: usize,
+    unit_id: usize,
 
     // how high the entity is "holding" the camera
     view_height: f32,
@@ -47,7 +47,7 @@ pub struct View {
 impl View {
     pub fn new() -> View {
         View {
-            entity_id: 0,
+            unit_id: 0,
             view_height: 0.0,
             ideal_pitch: Deg(0.0),
             msg_angles: [Angles::zero(); 2],
@@ -60,12 +60,12 @@ impl View {
         }
     }
 
-    pub fn entity_id(&self) -> usize {
-        self.entity_id
+    pub fn unit_id(&self) -> usize {
+        self.unit_id
     }
 
-    pub fn set_entity_id(&mut self, id: usize) {
-        self.entity_id = id;
+    pub fn set_unit_id(&mut self, id: usize) {
+        self.unit_id = id;
     }
 
     pub fn view_height(&self) -> f32 {
