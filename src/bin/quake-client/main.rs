@@ -275,6 +275,8 @@ impl ClientProgram {
             &menu.borrow(),
         );
 
+        client.init_cmds();
+
         info!(" starting game ");
 
         let game = Game::new(cvars.clone(), cmds.clone(), input.clone(), client).unwrap();

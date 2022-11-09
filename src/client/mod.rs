@@ -61,6 +61,7 @@ use crate::{
             NetError, PlayerColor, QSocket, ServerCmd, SignOnStage,
         },
         vfs::{Vfs, VfsError},
+        tickcounter::{TickCounter},
     },
     server::{GameServer}
 };
@@ -921,12 +922,13 @@ pub struct Client {
     demo_queue: Rc<RefCell<VecDeque<String>>>,
 
 
-    state: ClientState,
-    connection: Connection,
+    client_state: Rc<RefCell<Option<ClientState>>>, // ClientState,
+    
 
+    tick_counter: TickCounter, 
     //for game ticks 
-    pub tick_period: Duration,
-    pub gametick_accumulator: Duration,
+   // pub tick_period: Duration,
+    //pub gametick_accumulator: Duration,
 }
 
 impl Client {
@@ -940,80 +942,19 @@ impl Client {
         menu: &Menu,
     ) -> Client {
         let conn = Rc::new(RefCell::new(None));
+        let client_state = Rc::new(RefCell::new(None));
 
-        let (stream, handle) = match OutputStream::try_default() {
+        let (stream, output_stream_handle) = match OutputStream::try_default() {
             Ok(o) => o,
+            
             // TODO: proceed without sound and allow configuration in menu
             Err(_) => Err(ClientError::OutputStream).unwrap(),
         };
-
-        // set up overlay/ui toggles
-        cmds.borrow_mut()
-            .insert_or_replace(
-                "toggleconsole",
-                cmd_toggleconsole(conn.clone(), input.clone()),
-            )
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("togglemenu", cmd_togglemenu(conn.clone(), input.clone()))
-            .unwrap();
-
-        // set up connection console commands
-        cmds.borrow_mut()
-            .insert_or_replace(
-                "connect",
-                cmd_connect(conn.clone(), input.clone(), handle.clone()),
-            )
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("reconnect", cmd_reconnect(conn.clone(), input.clone()))
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("disconnect", cmd_disconnect(conn.clone(), input.clone()))
-            .unwrap();
-
-        // set up demo playback
-        cmds.borrow_mut()
-            .insert_or_replace(
-                "playdemo",
-                cmd_playdemo(conn.clone(), vfs.clone(), input.clone(), handle.clone()),
-            )
-            .unwrap();
-
-        cmds.borrow_mut()
-        .insert_or_replace(
-            "loadmap",
-            cmd_loadmap(conn.clone(), vfs.clone(), input.clone(), handle.clone()),
-        )
-        .unwrap();
-
+ 
+        let music_player = Rc::new(RefCell::new(MusicPlayer::new(vfs.clone(), output_stream_handle.clone())));
         let demo_queue = Rc::new(RefCell::new(VecDeque::new()));
-        cmds.borrow_mut()
-            .insert_or_replace(
-                "startdemos",
-                cmd_startdemos(
-                    conn.clone(),
-                    vfs.clone(),
-                    input.clone(),
-                    handle.clone(),
-                    demo_queue.clone(),
-                ),
-            )
-            .unwrap();
 
-        let music_player = Rc::new(RefCell::new(MusicPlayer::new(vfs.clone(), handle.clone())));
-        cmds.borrow_mut()
-            .insert_or_replace("music", cmd_music(music_player.clone()))
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("music_stop", cmd_music_stop(music_player.clone()))
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("music_pause", cmd_music_pause(music_player.clone()))
-            .unwrap();
-        cmds.borrow_mut()
-            .insert_or_replace("music_resume", cmd_music_resume(music_player.clone()))
-            .unwrap();
+        let tick_counter = TickCounter::new( Duration::milliseconds( 33 )  );
 
         Client {
             vfs,
@@ -1022,12 +963,88 @@ impl Client {
             console,
             input,
             _output_stream: stream,
-            output_stream_handle: handle,
+            output_stream_handle,
             music_player,
             conn,
+            client_state,
             renderer: ClientRenderer::new(gfx_state, menu),
             demo_queue,
+            tick_counter
         }
+    }
+
+
+    pub fn init_cmds( &mut self ){
+
+        // set up overlay/ui toggles
+        self.cmds.borrow_mut()
+            .insert_or_replace(
+                "toggleconsole",
+                cmd_toggleconsole(self.conn.clone(), self.input.clone()),
+            )
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("togglemenu", cmd_togglemenu(self.conn.clone(), self.input.clone()))
+            .unwrap();
+
+        // set up connection console commands
+        self.cmds.borrow_mut()
+            .insert_or_replace(
+                "connect",
+                cmd_connect(self.conn.clone(), self.input.clone(), self.output_stream_handle.clone()),
+            )
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("reconnect", cmd_reconnect(self.conn.clone(), self.input.clone()))
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("disconnect", cmd_disconnect(self.conn.clone(), self.input.clone()))
+            .unwrap();
+
+        // set up demo playback
+        self.cmds.borrow_mut()
+            .insert_or_replace(
+                "playdemo",
+                cmd_playdemo(self.conn.clone(), self.vfs.clone(), self.input.clone(), self.output_stream_handle.clone()),
+            )
+            .unwrap();
+
+        self.cmds.borrow_mut()
+        .insert_or_replace(
+            "loadmap",
+            cmd_loadmap(self.conn.clone(), self.vfs.clone(), self.input.clone(), self.output_stream_handle.clone()),
+        )
+        .unwrap();
+
+        
+        self.cmds.borrow_mut()
+            .insert_or_replace(
+                "startdemos",
+                cmd_startdemos(
+                    self.conn.clone(),
+                    self.vfs.clone(),
+                    self.input.clone(),
+                    self.output_stream_handle.clone(),
+                    self.demo_queue.clone(),
+                ),
+            )
+            .unwrap();
+
+        
+        self.cmds.borrow_mut()
+            .insert_or_replace("music", cmd_music(self.music_player.clone()))
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("music_stop", cmd_music_stop(self.music_player.clone()))
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("music_pause", cmd_music_pause(self.music_player.clone()))
+            .unwrap();
+        self.cmds.borrow_mut()
+            .insert_or_replace("music_resume", cmd_music_resume(self.music_player.clone()))
+            .unwrap();
+
+
     }
 
     pub fn disconnect(&mut self) {
@@ -1064,6 +1081,8 @@ impl Client {
             )?,
             None => ConnectionStatus::Disconnect,
         };
+
+        self.tick_counter( frame_time );
 
         use ConnectionStatus::*;
         match status {
