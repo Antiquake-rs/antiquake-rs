@@ -321,6 +321,21 @@ impl ClientState {
     pub fn on_tick(&mut self){
         println!("client run tick");
 
+
+
+        //need to do this with gamestate deltas which are built by the client from input keys 
+        //also need to do this inside of physics component or something...
+        if(self.view.unit_id() > 0 && self.entities.len() > 0){
+            let controlled_entity = &self.entities[self.view.unit_id()];
+        
+            let past_origin = controlled_entity.get_origin();
+            let new_origin:Vector3<f32> = Vector3::new(0.1,0.0,0.0);
+    
+            //walk
+            self.entities[self.view.unit_id()].origin = past_origin + new_origin;
+    
+        }
+       
       
         // Add a Stage to our schedule. Each Stage in a schedule runs all of its systems
         // before moving on to the next Stage
@@ -1392,6 +1407,7 @@ impl ClientState {
         )
     }
 
+    /* 
     pub fn fake_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
         let angles = self.entities[self.view.unit_id()].angles;
@@ -1408,7 +1424,7 @@ impl ClientState {
             },
             cgmath::perspective(fov_y, aspect, 4.0, 4096.0),
         )
-    }
+    }*/
 
     pub fn lightstyle_values(&self) -> Result<ArrayVec<f32, 64>, ClientError> {
         let mut values = ArrayVec::new();
