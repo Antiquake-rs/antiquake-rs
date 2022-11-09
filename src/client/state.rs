@@ -35,7 +35,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld}};
+use bevy_ecs::{world::{World as BevyWorld}, schedule::Schedule};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -130,6 +130,7 @@ pub struct ClientState {
     pub tick_counter: TickCounter,
 
     pub ecs_world: BevyWorld,
+    pub ecs_schedule: Schedule
 }
 
 impl ClientState {
@@ -163,6 +164,7 @@ impl ClientState {
 
             tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
             ecs_world: BevyWorld::new(),
+            ecs_schedule: Schedule::default(),
 
 
 
@@ -319,7 +321,16 @@ impl ClientState {
     pub fn on_tick(&mut self){
         println!("client run tick");
 
-
+      
+        // Add a Stage to our schedule. Each Stage in a schedule runs all of its systems
+        // before moving on to the next Stage
+      /*  schedule.add_stage("update", SystemStage::parallel()
+            .with_system(movement)
+        );*/ 
+    
+        // Run the schedule once. If your app has a "loop", you would run this once per loop
+        let world = &mut self.ecs_world;
+        self.ecs_schedule.run_once(world);
 
     }
 
@@ -815,11 +826,13 @@ impl ClientState {
     ) {
         
 
+        //WHY IS THIS SO BUSTED? 
         let entity_origin = self.entities[self.view.unit_id()].origin;
 
-        println!("entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
+        println!("calc_final_view entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
 
-        
+       // let spawn_loc = Vector3::new(-735.0,-1591.0,112.0);
+       
         self.view.calc_final_angles(
             self.time,
             self.intermission.as_ref(),
@@ -835,7 +848,9 @@ impl ClientState {
             bob_vars,
         );
 
-
+        println!("calc_final_view ->  {} {} {}", self.view.final_origin().x,self.view.final_origin().y,self.view.final_origin().z);
+          
+        
 
     }
 
@@ -888,7 +903,7 @@ impl ClientState {
                 self.update_view_angles(angles);
             }
         }
-        
+
         Ok(())
     }
 

@@ -749,12 +749,19 @@ impl GameServer {
                                 Deg(0.0),
                             ) } );
 
+
+                            let spawn_loc = Vector3::new(-735.0,-1591.0,112.0);
+                          
+
                             //points at the player   model--  i think 
-                            commandsList.push( ServerCmd::SpawnBaseline { ent_id: 1, model_id: 9, frame_id: 0, colormap: 1, skin_id: 0, origin: Vector3::new(
-                                (2220.0),
-                                (2220.0),
-                                (12220.0),
-                            ), angles: Vector3::new(
+                            commandsList.push( ServerCmd::SpawnBaseline { 
+                                ent_id: 1, 
+                                model_id: 9,  //get dynamically ? 
+                                frame_id: 0,
+                                 colormap: 1, 
+                                 skin_id: 0,
+                                  origin: spawn_loc,
+                                angles: Vector3::new(
                                 Deg(0.0),
                                 Deg(0.0),
                                 Deg(0.0),
@@ -864,6 +871,11 @@ impl GameServer {
                                 stage: SignOnStage::Done
                             }  );
 
+
+
+                            let spawn_loc = Vector3::new(-735.0,-1591.0,112.0);
+                            
+
                            // EntityUpdate { ent_id: 38, model_id: None, frame_id: None, colormap: None, skin_id: None, effects: None, origin_x: None, pitch: None, origin_y: None, yaw: None, origin_z: None, roll: None, no_lerp: false }
                             commandsList.push( ServerCmd::FastUpdate(  EntityUpdate{ 
 
@@ -873,11 +885,11 @@ impl GameServer {
                                 colormap: None, 
                                 skin_id: None,
                                  effects: None, 
-                                 origin_x: None,
+                                 origin_x: Some(spawn_loc.x),
                                   pitch: None, 
-                                  origin_y: Some(-1088.0), 
+                                  origin_y: Some(spawn_loc.y),
                                   yaw: None, 
-                                  origin_z:  Some(264.0), 
+                                  origin_z: Some(spawn_loc.z),
                                   roll: None, 
                                   no_lerp: false
                             }));

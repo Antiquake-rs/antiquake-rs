@@ -731,7 +731,7 @@ impl ClientRenderer {
                         }
                         
                         ConnectionKind::Server { .. } => {
-                            cl_state.fake_camera(width as f32 / height as f32, fov)
+                            cl_state.camera(width as f32 / height as f32, fov)
                         }
                     };
 

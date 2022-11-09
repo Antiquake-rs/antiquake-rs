@@ -1491,10 +1491,7 @@ impl ServerConnectionManager {
             no_lerp: true,
 
         };
-
-
-
-      
+ 
 
 
         let serverInfoCmd = ServerCmd::FastUpdate(entity_update);

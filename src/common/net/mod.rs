@@ -32,7 +32,7 @@ use std::{
 
 use crate::common::{engine, util};
 
-use byteorder::{LittleEndian, NetworkEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, NetworkEndian, ReadBytesExt, WriteBytesExt, BigEndian};
 use cgmath::{Deg, Vector3, Zero};
 use chrono::Duration;
 use num::FromPrimitive;
@@ -133,8 +133,8 @@ pub enum MsgKind {
 }
 
 bitflags! {
-    pub struct UpdateFlags: u16 {
-        const MORE_BITS = 1 << 0;
+    pub struct FastUpdateFlags: u16 {
+        const MORE_BITS = 1 << 0;  //odd number means we use all 16 bits --always do this on server
         const ORIGIN_X = 1 << 1;
         const ORIGIN_Y = 1 << 2;
         const ORIGIN_Z = 1 << 3;
@@ -149,6 +149,8 @@ bitflags! {
         const SKIN = 1 << 12;
         const EFFECTS = 1 << 13;
         const LONG_ENTITY = 1 << 14;
+
+        //const fast update flag is 15 ! 
     }
 }
 
@@ -661,7 +663,9 @@ pub enum ServerCmdCode {
     CdTrack = 32,
     SellScreen = 33,
     Cutscene = 34,
-    FastUpdate = 35   //is this right ?
+
+
+    FastUpdate = 128 //all sports beyond 128 are reserved for fast update and its flags ! 
 }
 
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
@@ -845,9 +849,8 @@ impl ServerCmd {
             ServerCmd::Finale { .. } => ServerCmdCode::Finale,
             ServerCmd::CdTrack { .. } => ServerCmdCode::CdTrack,
             ServerCmd::SellScreen => ServerCmdCode::SellScreen,
-            ServerCmd::Cutscene { .. } => ServerCmdCode::Cutscene,
-            // TODO: figure out a more elegant way of doing this
-            ServerCmd::FastUpdate(_) => ServerCmdCode::FastUpdate,
+            ServerCmd::Cutscene { .. } => ServerCmdCode::Cutscene, 
+            ServerCmd::FastUpdate( ..) => ServerCmdCode::FastUpdate,
         };
 
         code as u8
@@ -857,153 +860,34 @@ impl ServerCmd {
     where
         R: BufRead + ReadBytesExt,
     {
-        let code_num = match reader.read_u8() {
+        let mut code_num = match reader.read_u8() {
             Ok(c) => c,
             Err(ref e) if e.kind() == ::std::io::ErrorKind::UnexpectedEof => return Ok(None),
             Err(e) => return Err(NetError::from(e)),
         };
 
-        if code_num & FAST_UPDATE_FLAG != 0 {
-            let all_bits;
-            let low_bits = code_num & !FAST_UPDATE_FLAG;
-            if low_bits & UpdateFlags::MORE_BITS.bits() as u8 != 0 {
-                let high_bits = reader.read_u8()?;
-                all_bits = (high_bits as u16) << 8 | low_bits as u16;
-            } else {
-                all_bits = low_bits as u16;
-            }
+        let mut update_flag_low_bits = 0;
 
-            let update_flags = match UpdateFlags::from_bits(all_bits) {
-                Some(u) => u,
-                None => {
-                    return Err(NetError::InvalidData(format!(
-                        "UpdateFlags: {:b}",
-                        all_bits
-                    )))
-                }
-            };
-
-            let ent_id;
-            if update_flags.contains(UpdateFlags::LONG_ENTITY) {
-                ent_id = reader.read_u16::<LittleEndian>()?;
-            } else {
-                ent_id = reader.read_u8()? as u16;
-            }
-
-            let model_id;
-            if update_flags.contains(UpdateFlags::MODEL) {
-                model_id = Some(reader.read_u8()?);
-            } else {
-                model_id = None;
-            }
-
-            let frame_id;
-            if update_flags.contains(UpdateFlags::FRAME) {
-                frame_id = Some(reader.read_u8()?);
-            } else {
-                frame_id = None;
-            }
-
-            let colormap;
-            if update_flags.contains(UpdateFlags::COLORMAP) {
-                colormap = Some(reader.read_u8()?);
-            } else {
-                colormap = None;
-            }
-
-            let skin_id;
-            if update_flags.contains(UpdateFlags::SKIN) {
-                skin_id = Some(reader.read_u8()?);
-            } else {
-                skin_id = None;
-            }
-
-            let effects;
-            if update_flags.contains(UpdateFlags::EFFECTS) {
-                let effects_bits = reader.read_u8()?;
-                effects = match UnitEffects::from_bits(effects_bits) {
-                    Some(e) => Some(e),
-                    None => {
-                        return Err(NetError::InvalidData(format!(
-                            "EntityEffects: {:b}",
-                            effects_bits
-                        )))
-                    }
-                };
-            } else {
-                effects = None;
-            }
-
-            let origin_x;
-            if update_flags.contains(UpdateFlags::ORIGIN_X) {
-                origin_x = Some(read_coord(reader)?);
-            } else {
-                origin_x = None;
-            }
-
-            let pitch;
-            if update_flags.contains(UpdateFlags::PITCH) {
-                pitch = Some(read_angle(reader)?);
-            } else {
-                pitch = None;
-            }
-
-            let origin_y;
-            if update_flags.contains(UpdateFlags::ORIGIN_Y) {
-                origin_y = Some(read_coord(reader)?);
-            } else {
-                origin_y = None;
-            }
-
-            let yaw;
-            if update_flags.contains(UpdateFlags::YAW) {
-                yaw = Some(read_angle(reader)?);
-            } else {
-                yaw = None;
-            }
-
-            let origin_z;
-            if update_flags.contains(UpdateFlags::ORIGIN_Z) {
-                origin_z = Some(read_coord(reader)?);
-            } else {
-                origin_z = None;
-            }
-
-            let roll;
-            if update_flags.contains(UpdateFlags::ROLL) {
-                roll = Some(read_angle(reader)?);
-            } else {
-                roll = None;
-            }
-
-            let no_lerp = update_flags.contains(UpdateFlags::NO_LERP);
-
-            return Ok(Some(ServerCmd::FastUpdate(EntityUpdate {
-                ent_id,
-                model_id,
-                frame_id,
-                colormap,
-                skin_id,
-                effects,
-                origin_x,
-                pitch,
-                origin_y,
-                yaw,
-                origin_z,
-                roll,
-                no_lerp,
-            })));
+        if code_num & FAST_UPDATE_FLAG != 0 { //if the code num is > 128..
+            update_flag_low_bits = code_num.clone() & !FAST_UPDATE_FLAG ;
+            
+            //all codes between 128 and 254 are reserved for fast updates bc of its various flags  are all stored in here 
+            code_num = ServerCmdCode::FastUpdate as u8; //this is a little hack so our match works 
         }
+       
 
         let code = match ServerCmdCode::from_u8(code_num) {
             Some(c) => c,
             None => {
+ 
+
                 return Err(NetError::InvalidData(format!(
                     "Invalid server command code: {}",
                     code_num
                 )))
             }
         };
+ 
 
         let cmd = match code {
             ServerCmdCode::Bad => ServerCmd::Bad,
@@ -1482,26 +1366,147 @@ impl ServerCmd {
             ServerCmdCode::FastUpdate  =>    { 
 
                 println!("handling servercmdcode::FastUpdate");
-                let entity_update = EntityUpdate{ 
+                
+             
+              //stiching bits together-- read the other u8 for the rest of the fast update flags 
+                let all_bits;
+                let low_bits = update_flag_low_bits ; 
+                println!("Client got fast update low_bits {}", low_bits );
 
-                    ent_id: 1, //for now 
-                    model_id: None,
-                    frame_id: Some(15),
-                    colormap: None,
-                    skin_id: None,
-                    effects: None,
-                    origin_x: None,
-                    pitch: None,
-                    origin_y: Some(-1000.0),
-                    yaw: None,
-                    origin_z: Some(264.0),
-                    roll: None,
-                    no_lerp: true,
-        
+                if low_bits & FastUpdateFlags::MORE_BITS.bits() as u8 != 0 {
 
+                    println!("combining fast update bits!");
+                    let high_bits = reader.read_u8()?;
+                    all_bits = (high_bits as u16) << 8 | low_bits as u16;
+                } else {
+                    all_bits = low_bits as u16;
+                }
+
+                println!("Client got fast update flags {}", all_bits );
+ 
+                let update_flags = match FastUpdateFlags::from_bits(all_bits) {
+                    Some(u) => u,
+                    None => {
+                        return Err(NetError::InvalidData(format!(
+                            "FastUpdateFlags: {:b}",
+                            all_bits
+                        )))
+                    }
                 };
+    
+                let ent_id;
+                if update_flags.contains(FastUpdateFlags::LONG_ENTITY) {
+                    ent_id = reader.read_u16::<LittleEndian>()?;
+                } else {
+                    ent_id = reader.read_u8()? as u16;
+                }
+    
+                let model_id;
+                if update_flags.contains(FastUpdateFlags::MODEL) {
+                    model_id = Some(reader.read_u8()?);
+                } else {
+                    model_id = None;
+                }
+    
+                let frame_id;
+                if update_flags.contains(FastUpdateFlags::FRAME) {
+                    frame_id = Some(reader.read_u8()?);
+                } else {
+                    frame_id = None;
+                }
+    
+                let colormap;
+                if update_flags.contains(FastUpdateFlags::COLORMAP) {
+                    colormap = Some(reader.read_u8()?);
+                } else {
+                    colormap = None;
+                }
+    
+                let skin_id;
+                if update_flags.contains(FastUpdateFlags::SKIN) {
+                    skin_id = Some(reader.read_u8()?);
+                } else {
+                    skin_id = None;
+                }
+    
+                let effects;
+                if update_flags.contains(FastUpdateFlags::EFFECTS) {
+                    let effects_bits = reader.read_u8()?;
+                    effects = match UnitEffects::from_bits(effects_bits) {
+                        Some(e) => Some(e),
+                        None => {
+                            return Err(NetError::InvalidData(format!(
+                                "EntityEffects: {:b}",
+                                effects_bits
+                            )))
+                        }
+                    };
+                } else {
+                    effects = None;
+                }
+    
+                let origin_x;
+                if update_flags.contains(FastUpdateFlags::ORIGIN_X) {
+                    origin_x = Some(read_coord(reader)?);
+                } else {
+                    origin_x = None;
+                }
+    
+                let pitch;
+                if update_flags.contains(FastUpdateFlags::PITCH) {
+                    pitch = Some(read_angle(reader)?);
+                } else {
+                    pitch = None;
+                }
+    
+                let origin_y;
+                if update_flags.contains(FastUpdateFlags::ORIGIN_Y) {
+                    origin_y = Some(read_coord(reader)?);
+                } else {
+                    origin_y = None;
+                }
+    
+                let yaw;
+                if update_flags.contains(FastUpdateFlags::YAW) {
+                    yaw = Some(read_angle(reader)?);
+                } else {
+                    yaw = None;
+                }
+    
+                let origin_z;
+                if update_flags.contains(FastUpdateFlags::ORIGIN_Z) {
+                    origin_z = Some(read_coord(reader)?);
+                } else {
+                    origin_z = None;
+                }
+    
+                let roll;
+                if update_flags.contains(FastUpdateFlags::ROLL) {
+                    roll = Some(read_angle(reader)?);
+                } else {
+                    roll = None;
+                }
+    
+                let no_lerp = update_flags.contains(FastUpdateFlags::NO_LERP);
+    
+                return Ok(Some(ServerCmd::FastUpdate(EntityUpdate {
+                    ent_id,
+                    model_id,
+                    frame_id,
+                    colormap,
+                    skin_id,
+                    effects,
+                    origin_x,
+                    pitch,
+                    origin_y,
+                    yaw,
+                    origin_z,
+                    roll,
+                    no_lerp,
+                })));
 
-                ServerCmd::FastUpdate(entity_update) 
+
+
 
              }
              
@@ -1514,7 +1519,12 @@ impl ServerCmd {
     where
         W: WriteBytesExt,
     {
-        writer.write_u8(self.code())?;
+
+        if  ! matches!(*self,ServerCmd::FastUpdate(_)) {
+            writer.write_u8(self.code())?;
+            //fast update writes its own code -- its flags are the code 
+        }
+       
 
         match *self {
             ServerCmd::Bad | ServerCmd::NoOp | ServerCmd::Disconnect => (),
@@ -1888,12 +1898,126 @@ impl ServerCmd {
             }
 
             // TODO
-            ServerCmd::FastUpdate( ref fastUpdate ) => {
+            ServerCmd::FastUpdate( EntityUpdate {
+                  ent_id,
+                  model_id,
+                  frame_id,
+                  colormap,
+                  skin_id,
+                  effects,
+                  origin_x,
+                  pitch,
+                  origin_y,
+                  yaw ,
+                  origin_z,
+                  roll,
+                  no_lerp: bool,
+            } ) => {
 
-               // writer.write_u16::<LittleEndian>(fastUpdate.ent_id)?;
+                let mut flags = FastUpdateFlags::empty();
+
+               // flags |= FAST_UPDATE_FLAG;
+                flags |= FastUpdateFlags::LONG_ENTITY;
+
+               /* if no_lerp {
+                    flags |= FastUpdateFlags::NO_LERP;
+                }*/ 
+
+                if model_id.is_some() {
+                    flags |= FastUpdateFlags::MODEL;
+                }
+                if frame_id.is_some() {
+                    flags |= FastUpdateFlags::FRAME;
+                }
+                if colormap.is_some() {
+                    flags |= FastUpdateFlags::COLORMAP;
+                }
+                if skin_id.is_some() {
+                    flags |= FastUpdateFlags::SKIN;
+                }
+                if effects.is_some() {
+                    flags |= FastUpdateFlags::EFFECTS;
+                }
+                if origin_x.is_some() {
+                    flags |= FastUpdateFlags::ORIGIN_X;
+                }
+                if origin_y.is_some() {
+                    flags |= FastUpdateFlags::ORIGIN_Y;
+                }
+                if origin_z.is_some() {
+                    flags |= FastUpdateFlags::ORIGIN_Z;
+                }
+                if pitch.is_some() {
+                    flags |= FastUpdateFlags::PITCH;
+                }
+                if yaw.is_some() {
+                    flags |= FastUpdateFlags::YAW;
+                }
+                if roll.is_some() {
+                    flags |= FastUpdateFlags::ROLL;
+                }
+
+                let flag_bits = flags.bits();
+                let MORE_BITS = 1;
+                let final_flag_bits =  MORE_BITS |  FAST_UPDATE_FLAG as u16 | flag_bits ;
+
+                // write flags
+                writer.write_u16::<LittleEndian>(  final_flag_bits   )?;
+
+                println!("serializing fast update {}", final_flag_bits);
                 
-                println!("serializing fast update");
+                if flags.contains(FastUpdateFlags::LONG_ENTITY) {
+                    writer.write_u16::<LittleEndian>(ent_id)?;
+                } else {
+                    writer.write_u8(ent_id as u8)?;
+                }
+ 
+                
+ 
+                if let Some(m_id) = model_id {
+                    writer.write_u8(m_id as i32 as u8)?;
+                }
+                if let Some(f_id) = frame_id {
+                    writer.write_u8(f_id as i32 as u8)?;
+                }
+                if let Some(cmap) = colormap {
+                    writer.write_u8(cmap as i32 as u8)?;
+                }
+                if let Some(s_id) = skin_id {
+                    writer.write_u8(s_id as i32 as u8)?;
+                }
+                if let Some(eff) = effects {
+                    writer.write_u8(eff.bits() as u8)?;
+                }
 
+                if let Some(x) = origin_x {
+                    write_coord(writer,x)?;
+                }
+
+                if let Some(p) = pitch {
+                    write_angle(writer,p)?;
+                }
+
+                if let Some(y) = origin_y {
+                    write_coord(writer,y)?;
+                }
+
+                if let Some(y) = yaw {
+                    write_angle(writer,y)?;
+                }
+
+                if let Some(z) = origin_z {
+                    write_coord(writer,z)?;
+                }
+
+                if let Some(r) = roll {
+                    write_angle(writer,r)?;
+                }
+
+ 
+
+             
+                //write_coord_vector3(writer, fastUpdate.origin_x)?;
 
                 //there is some other fast update code somewhere ... 
 

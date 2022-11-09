@@ -108,7 +108,7 @@ impl ClientUnit {
     /// `msg_times[0]` is more recent.
     pub fn update(&mut self, msg_times: [Duration; 2], update: EntityUpdate) {
         // enable lerping
-        self.force_link = false;
+        self.force_link = true; //FOR NOW 
 
         if update.no_lerp || self.msg_time != msg_times[1] {
             self.force_link = true;
