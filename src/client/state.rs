@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use super::view::BobVars;
+use super::{view::BobVars, Client};
 use crate::{
     client::{
         entity::{
@@ -21,7 +21,7 @@ use crate::{
             self, BeamEntityKind, ButtonFlags, ColorShift, EntityEffects, ItemFlags, PlayerData,
             PointEntityKind, TempEntity,
         },
-        vfs::Vfs,
+        vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
     },
 };
 use arrayvec::ArrayVec;
@@ -74,10 +74,13 @@ pub struct ClientState {
     // ambient sounds (infinite looping, static position)
     pub static_sounds: Vec<StaticSound>,
 
-    // entities and entity-like things
+    // entities and entity-like things -- REMOVE THESE
     pub entities: Vec<ClientEntity>,
     pub static_entities: Vec<ClientEntity>,
     pub temp_entities: Vec<ClientEntity>,
+
+
+
     // dynamic point lights
     pub lights: Lights,
     // lightning bolts and grappling hook cable
@@ -121,6 +124,8 @@ pub struct ClientState {
 
     pub mixer: EntityMixer,
     pub listener: Listener,
+
+    pub tick_counter: TickCounter,
 }
 
 impl ClientState {
@@ -149,6 +154,10 @@ impl ClientState {
             player_info: Default::default(),
             msg_times: [Duration::zero(), Duration::zero()],
             time: Duration::zero(),
+
+            tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
+
+
 
 
             lerp_factor: 0.0,
@@ -241,36 +250,22 @@ impl ClientState {
         })
     }
 
-    /// Advance the simulation time by the specified amount.
-    /// This powers the 'run_tick' method 
-    /// 
-    pub fn advance_time(&mut self, frame_time: Duration) -> Duration {
+  
+
+
+    pub fn advance_time(&mut self, frame_time:Duration, cvars: &CvarRegistry, is_connected:bool) -> Result<Duration,ClientError>{
         self.time = self.time + frame_time;
 
-       
 
+        let (accum,trigger) = self.tick_counter.update(frame_time);
 
-        self.gametick_accumulator = self.gametick_accumulator + frame_time;
-        if(self.gametick_accumulator > self.tick_period){
-
-            match self.gametick_accumulator.checked_sub( &self.tick_period ){
-                Some(difference) => {
-                    self.gametick_accumulator = difference;
-                    self.run_tick();
-                },
-                None => {  }
-            }
+        if trigger {
+            self.on_tick();            
         }
 
-        return self.gametick_accumulator 
-        //return how 'far behind' we are 
-        //if we are very very far behind that means we wont render until we catch up 
 
-    }
-
-
-    pub fn run_frame(&mut self, frame_time:Duration){
-        self.time = self.time + frame_time;
+        let cl_nolerp = Client::cvar_value(cvars,"cl_nolerp")?;
+        let sv_gravity = Client::cvar_value(cvars,"sv_gravity")?;
           
         self.update_interp_ratio(cl_nolerp);
 
@@ -289,10 +284,33 @@ impl ClientState {
             .update(self.time, frame_time, sv_gravity);
 
 
+
+        if is_connected {
+
+            let idle_vars = Client::idle_vars(cvars)?;
+            let kick_vars = Client::kick_vars(cvars)?;
+            let roll_vars = Client::roll_vars(cvars)?;
+            let bob_vars = Client::bob_vars(cvars)?;
+
+            self.calc_final_view(idle_vars, kick_vars, roll_vars, bob_vars);
+
+            // update ear positions
+            self.update_listener();
+
+            // spatialize sounds for new ear positions
+            self.update_sound_spatialization();
+
+            // update camera color shifts for new position/effects
+            self.update_color_shifts(frame_time)?;
+
+
+        }
+
+        return Ok(accum)
     }
 
     //runs each 'tick_period' milliseconds to advance the virtual machine (to match the server)
-    pub fn run_tick(&mut self){
+    pub fn on_tick(&mut self){
         println!("client run tick");
 
 

@@ -259,9 +259,10 @@ impl Client {
 ///
 /// The exact nature of the connected server is specified by [`ConnectionKind`].
 pub struct Connection {
-    //state: ClientState,
+    state: ClientState,
     conn_state: ConnectionState,
     kind: ConnectionKind,
+   
 }
 
 
@@ -838,27 +839,28 @@ impl Connection {
         cmds: &mut CmdRegistry,
         console: &mut Console,
         music_player: &mut MusicPlayer,
-        idle_vars: IdleVars,
-        kick_vars: KickVars,
-        roll_vars: RollVars,
-        bob_vars: BobVars,
-        cl_nolerp: f32,
-        sv_gravity: f32,
+        //idle_vars: IdleVars,
+        //kick_vars: KickVars,
+        //roll_vars: RollVars,
+        //bob_vars: BobVars,
+
+        cvars: &CvarRegistry
+        //cl_nolerp: f32,
+       // sv_gravity: f32,
     ) -> Result<ConnectionStatus, ClientError> {
         debug!("frame time: {}ms", frame_time.num_milliseconds());
-
-
-
-
-        
+ 
+        let kick_vars = Client::kick_vars(cvars)?;
 
         // do this _before_ parsing server messages so that we know when to
         // request the next message from the demo server.
-        self.state.advance_time(frame_time);
+        //self.state.advance_time(frame_time);
 
         //if gametick_accumulator is very high (more that 100ms) we need to pause the render loop 
 
-        self.state.run_frame(frame_time);
+        let is_connected = matches! (self.conn_state , ConnectionState::Connected(_));
+        
+        let accum =  self.state.advance_time(frame_time, cvars, is_connected)?;
 
 
         //why are we passing so much stuff in here... ? 
@@ -869,9 +871,7 @@ impl Connection {
         };
 
 
-
-
-
+ 
        
         if let ConnectionKind::Server {
             ref mut qsock,
@@ -887,22 +887,7 @@ impl Connection {
 
         //need to tell client about connection state! 
 
-
-        // these all require the player entity to have spawned
-        if let ConnectionState::Connected(_) = self.conn_state {
-            // update view
-            self.state
-                .calc_final_view(idle_vars, kick_vars, roll_vars, bob_vars);
-
-            // update ear positions
-            self.state.update_listener();
-
-            // spatialize sounds for new ear positions
-            self.state.update_sound_spatialization();
-
-            // update camera color shifts for new position/effects
-            self.state.update_color_shifts(frame_time)?;
-        }
+ 
 
         Ok(ConnectionStatus::Maintain)
     }
@@ -922,10 +907,10 @@ pub struct Client {
     demo_queue: Rc<RefCell<VecDeque<String>>>,
 
 
-    client_state: Rc<RefCell<Option<ClientState>>>, // ClientState,
+   // client_state: Rc<RefCell<Option<ClientState>>>, // ClientState,
     
 
-    tick_counter: TickCounter, 
+    
     //for game ticks 
    // pub tick_period: Duration,
     //pub gametick_accumulator: Duration,
@@ -942,8 +927,7 @@ impl Client {
         menu: &Menu,
     ) -> Client {
         let conn = Rc::new(RefCell::new(None));
-        let client_state = Rc::new(RefCell::new(None));
-
+       
         let (stream, output_stream_handle) = match OutputStream::try_default() {
             Ok(o) => o,
             
@@ -954,8 +938,7 @@ impl Client {
         let music_player = Rc::new(RefCell::new(MusicPlayer::new(vfs.clone(), output_stream_handle.clone())));
         let demo_queue = Rc::new(RefCell::new(VecDeque::new()));
 
-        let tick_counter = TickCounter::new( Duration::milliseconds( 33 )  );
-
+     
         Client {
             vfs,
             cvars,
@@ -966,15 +949,14 @@ impl Client {
             output_stream_handle,
             music_player,
             conn,
-            client_state,
+             
             renderer: ClientRenderer::new(gfx_state, menu),
-            demo_queue,
-            tick_counter
+            demo_queue
         }
     }
 
 
-    pub fn init_cmds( &mut self ){
+    pub fn init_cmds( &self ){
 
         // set up overlay/ui toggles
         self.cmds.borrow_mut()
@@ -1057,12 +1039,9 @@ impl Client {
         frame_time: Duration,
         gfx_state: &GraphicsState,
     ) -> Result<(), ClientError> {
-        let cl_nolerp = self.cvar_value("cl_nolerp")?;
-        let sv_gravity = self.cvar_value("sv_gravity")?;
-        let idle_vars = self.idle_vars()?;
-        let kick_vars = self.kick_vars()?;
-        let roll_vars = self.roll_vars()?;
-        let bob_vars = self.bob_vars()?;
+        //let cl_nolerp = Client::cvar_value(&self.cvars.borrow(),"cl_nolerp")?;
+        //let sv_gravity = Client::cvar_value(&self.cvars.borrow(),"sv_gravity")?;
+       
 
         let status = match *self.conn.borrow_mut() {
             Some(ref mut conn) => conn.frame(
@@ -1072,17 +1051,16 @@ impl Client {
                 &mut self.cmds.borrow_mut(),
                 &mut self.console.borrow_mut(),
                 &mut self.music_player.borrow_mut(),
-                idle_vars,
-                kick_vars,
-                roll_vars,
-                bob_vars,
-                cl_nolerp,
-                sv_gravity,
+               
+             //   cl_nolerp,
+             //   sv_gravity,
+
+                & self.cvars.borrow()
             )?,
             None => ConnectionStatus::Disconnect,
         };
 
-        self.tick_counter( frame_time );
+       
 
         use ConnectionStatus::*;
         match status {
@@ -1150,7 +1128,7 @@ impl Client {
         menu: &Menu,
         focus: InputFocus,
     ) -> Result<(), ClientError> {
-        let fov = Deg(self.cvar_value("fov")?);
+        let fov = Deg(Client::cvar_value(&self.cvars.borrow(),"fov")?);
         let cvars = self.cvars.borrow();
         let console = self.console.borrow();
 
@@ -1170,12 +1148,13 @@ impl Client {
         Ok(())
     }
 
-    pub fn cvar_value<S>(&self, name: S) -> Result<f32, ClientError>
+    
+
+    pub fn cvar_value<S>(cvars: &CvarRegistry, name: S) -> Result<f32, ClientError>
     where
         S: AsRef<str>,
     {
-        self.cvars
-            .borrow()
+        cvars             
             .get_value(name.as_ref())
             .map_err(ClientError::Cvar)
     }   
@@ -1194,8 +1173,8 @@ impl Client {
         game_input: &mut GameInput,
         frame_time: Duration,
     ) -> Result<(), ClientError> {
-        let move_vars = self.move_vars()?;
-        let mouse_vars = self.mouse_vars()?;
+        let move_vars = Client::move_vars(&self.cvars.borrow())?;
+        let mouse_vars = Client::mouse_vars(&self.cvars.borrow())?;
 
         match *self.conn.borrow_mut() {
             Some(Connection {
@@ -1219,59 +1198,59 @@ impl Client {
         Ok(())
     }
 
-    fn move_vars(&self) -> Result<MoveVars, ClientError> {
+    fn move_vars(cvars:&CvarRegistry) -> Result<MoveVars, ClientError> {
         Ok(MoveVars {
-            cl_anglespeedkey: self.cvar_value("cl_anglespeedkey")?,
-            cl_pitchspeed: self.cvar_value("cl_pitchspeed")?,
-            cl_yawspeed: self.cvar_value("cl_yawspeed")?,
-            cl_sidespeed: self.cvar_value("cl_sidespeed")?,
-            cl_upspeed: self.cvar_value("cl_upspeed")?,
-            cl_forwardspeed: self.cvar_value("cl_forwardspeed")?,
-            cl_backspeed: self.cvar_value("cl_backspeed")?,
-            cl_movespeedkey: self.cvar_value("cl_movespeedkey")?,
+            cl_anglespeedkey: Client::cvar_value(&cvars,"cl_anglespeedkey")?,
+            cl_pitchspeed: Client::cvar_value(&cvars,"cl_pitchspeed")?,
+            cl_yawspeed: Client::cvar_value(&cvars,"cl_yawspeed")?,
+            cl_sidespeed: Client::cvar_value(&cvars,"cl_sidespeed")?,
+            cl_upspeed: Client::cvar_value(&cvars,"cl_upspeed")?,
+            cl_forwardspeed: Client::cvar_value(&cvars,"cl_forwardspeed")?,
+            cl_backspeed: Client::cvar_value(&cvars,"cl_backspeed")?,
+            cl_movespeedkey: Client::cvar_value(&cvars,"cl_movespeedkey")?,
         })
     }
 
-    fn idle_vars(&self) -> Result<IdleVars, ClientError> {
+    fn idle_vars(cvars:&CvarRegistry) -> Result<IdleVars, ClientError> {
         Ok(IdleVars {
-            v_idlescale: self.cvar_value("v_idlescale")?,
-            v_ipitch_cycle: self.cvar_value("v_ipitch_cycle")?,
-            v_ipitch_level: self.cvar_value("v_ipitch_level")?,
-            v_iroll_cycle: self.cvar_value("v_iroll_cycle")?,
-            v_iroll_level: self.cvar_value("v_iroll_level")?,
-            v_iyaw_cycle: self.cvar_value("v_iyaw_cycle")?,
-            v_iyaw_level: self.cvar_value("v_iyaw_level")?,
+            v_idlescale: Client::cvar_value(&cvars,"v_idlescale")?,
+            v_ipitch_cycle: Client::cvar_value(&cvars,"v_ipitch_cycle")?,
+            v_ipitch_level: Client::cvar_value(&cvars,"v_ipitch_level")?,
+            v_iroll_cycle: Client::cvar_value(&cvars,"v_iroll_cycle")?,
+            v_iroll_level: Client::cvar_value(&cvars,"v_iroll_level")?,
+            v_iyaw_cycle: Client::cvar_value(&cvars,"v_iyaw_cycle")?,
+            v_iyaw_level: Client::cvar_value(&cvars,"v_iyaw_level")?,
         })
     }
 
-    fn kick_vars(&self) -> Result<KickVars, ClientError> {
+    fn kick_vars(cvars:&CvarRegistry) -> Result<KickVars, ClientError> {
         Ok(KickVars {
-            v_kickpitch: self.cvar_value("v_kickpitch")?,
-            v_kickroll: self.cvar_value("v_kickroll")?,
-            v_kicktime: self.cvar_value("v_kicktime")?,
+            v_kickpitch: Client::cvar_value(&cvars,"v_kickpitch")?,
+            v_kickroll: Client::cvar_value(&cvars,"v_kickroll")?,
+            v_kicktime: Client::cvar_value(&cvars,"v_kicktime")?,
         })
     }
 
-    fn mouse_vars(&self) -> Result<MouseVars, ClientError> {
+    fn mouse_vars(cvars:&CvarRegistry) -> Result<MouseVars, ClientError> {
         Ok(MouseVars {
-            m_pitch: self.cvar_value("m_pitch")?,
-            m_yaw: self.cvar_value("m_yaw")?,
-            sensitivity: self.cvar_value("sensitivity")?,
+            m_pitch: Client::cvar_value(&cvars,"m_pitch")?,
+            m_yaw: Client::cvar_value(&cvars,"m_yaw")?,
+            sensitivity: Client::cvar_value(&cvars,"sensitivity")?,
         })
     }
 
-    fn roll_vars(&self) -> Result<RollVars, ClientError> {
+    fn roll_vars(cvars:&CvarRegistry) -> Result<RollVars, ClientError> {
         Ok(RollVars {
-            cl_rollangle: self.cvar_value("cl_rollangle")?,
-            cl_rollspeed: self.cvar_value("cl_rollspeed")?,
+            cl_rollangle: Client::cvar_value(&cvars,"cl_rollangle")?,
+            cl_rollspeed: Client::cvar_value(&cvars,"cl_rollspeed")?,
         })
     }
 
-    fn bob_vars(&self) -> Result<BobVars, ClientError> {
+    fn bob_vars(cvars:&CvarRegistry) -> Result<BobVars, ClientError> {
         Ok(BobVars {
-            cl_bob: self.cvar_value("cl_bob")?,
-            cl_bobcycle: self.cvar_value("cl_bobcycle")?,
-            cl_bobup: self.cvar_value("cl_bobup")?,
+            cl_bob: Client::cvar_value(&cvars,"cl_bob")?,
+            cl_bobcycle: Client::cvar_value(&cvars,"cl_bobcycle")?,
+            cl_bobup: Client::cvar_value(&cvars,"cl_bobup")?,
         })
     }
 
@@ -1476,9 +1455,12 @@ where
     // we're done with the connection socket, so turn it into a QSocket with the new address
     let qsock = con_sock.into_qsocket(new_addr);
 
+   
     println!("client: set up q socket with server");
 
+
     Ok(Connection {
+        
         state: ClientState::new(stream),
         kind: ConnectionKind::Server {
             qsock,
@@ -1650,7 +1632,9 @@ fn cmd_playdemo(
             Err(e) => return format!("{}", e),
         };
 
+       
         conn.replace(Some(Connection {
+             
             state: ClientState::new(stream.clone()),
             kind: ConnectionKind::Demo(demo_server),
             conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
@@ -1690,12 +1674,17 @@ fn cmd_startdemos(
             Err(e) => return format!("{}", e),
         };
 
+        let tick_counter = TickCounter::new( Duration::milliseconds( 33 )  );
+
+
         conn.replace(Some(Connection {
+             
             state: ClientState::new(stream.clone()),
             kind: ConnectionKind::Demo(demo_server),
             conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
         }));
 
+         
         input.borrow_mut().set_focus(InputFocus::Game);
 
         String::new()
