@@ -898,9 +898,9 @@ impl ClientState {
         ClientCmd::Move {
             send_time,
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
-            fwd_move: forwardmove ,
-            side_move: sidemove ,
-            up_move: upmove ,
+            fwd_move: forwardmove as i16 ,
+            side_move: sidemove as i16 ,
+            up_move: upmove as i16 ,
             button_flags,
             impulse: game_input.impulse(),
         }

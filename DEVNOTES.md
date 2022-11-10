@@ -32,7 +32,13 @@ gfx pipelines yay!!!
 
 -allow the client to look around and move around !! (using game deltas in a buffer w ticks) 
 
---probs time for some quaternions ! 
+--probs time for some quaternions !
+
+-make the buffer work more like anymap where only 1 of certain cmd types (per entity) can be in there at a time - maybe use bit flags idk 
+
+
+- fix the 11 errors from cargo test and start doing TDD 
+
 
 - upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server.  (see fn frame() )
 
@@ -142,7 +148,9 @@ jpiolho/QuakePlugins -- cool system w lua hooks
 
 https://github.com/Novum/vkQuake/tree/master/Quake
 
-  
+use iced gui ?
+
+
  ## probable bugs 
  client/input/game -> line 354 -> mousewheels 
 

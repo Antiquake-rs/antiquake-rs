@@ -62,12 +62,12 @@ use crate::{
         },
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
-        gamestate::{GameStateDeltaBuffer, GameStateDelta, DeltaCommand}
+        gamestate::{GameStateDeltaBuffer, GameStateDelta, DeltaCommand, PhysBodyType, movementIsConstrainedFlat}
     },
     server::{GameServer}
 };
 
-use cgmath::{Deg, Vector3, InnerSpace};
+use cgmath::{Deg, Vector3, InnerSpace, Angle};
 use chrono::Duration;
 use input::InputFocus;
 use menu::Menu;
@@ -1212,7 +1212,12 @@ impl Client {
                         state.push_to_gamestate_deltas(  DeltaCommand::SetLookVector{  angle:look_angle   }  );
                        
 
-                        let movement_vector = Client::calc_movement_vector( Vector3::new(fwd_move  , side_move , up_move).clone(), look_angle  );
+                        let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();
+                        let movement_vector = Client::calc_movement_vector( 
+                            inputs_cmd_vector,
+                             look_angle ,
+                             PhysBodyType::Walk
+                             );
                         
                         
                         match movement_vector {
@@ -1252,22 +1257,32 @@ impl Client {
 
 
     //move me somewhere else !
-    fn calc_movement_vector( input_movement: Vector3<f32>, facing: Vector3<Deg<f32>>) -> Option<Vector3<f32>>{
+    fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>, physBodyType: PhysBodyType) -> Option<Vector3<f32>>{
 
-        let movement_dir = input_movement.normalize() ;
 
-        let forward_dir = Vector3::new(Client::degree_to_direction(facing.x), Client::degree_to_direction(facing.y), 0.0).normalize() ;
+ 
+        let input_cmds_normalized:Vector3<f32> = match movementIsConstrainedFlat(physBodyType){
+            true => {
+                Vector3::new(input_cmds.x as f32,input_cmds.y as f32,0.0).normalize()
+            },
+            false => {
+                Vector3::new(input_cmds.x as f32,input_cmds.y as f32,input_cmds.z as f32).normalize()
+            }
+        };
+        
+        //pitch roll yaw 
+        let forward_dir = Vector3::new( (facing.x).cos(), (facing.y).sin(), 0.0).normalize() ;
 
         let up_vector = Vector3::new(0.0,0.0,1.0);
         let sideways_dir = forward_dir.cross(up_vector);
 
         println!("forward dir {} {} {} ", forward_dir.x, forward_dir.y, forward_dir.z);
-        println!("movement_dir {} {} {} ", movement_dir.x, movement_dir.y, movement_dir.z);
+        println!("movement_dir {} {} {} ", input_cmds_normalized.x, input_cmds_normalized.y, input_cmds_normalized.z);
 
 
 
-        let forward_movement = forward_dir * movement_dir.x;
-        let sideways_movement = sideways_dir * movement_dir.y;
+        let forward_movement = forward_dir * input_cmds_normalized.x;
+        let sideways_movement = sideways_dir * input_cmds_normalized.y;
 
         let overall_movement = forward_movement + sideways_movement;
 

@@ -159,3 +159,21 @@ pub enum PhysBodyType {
     NoClip
 }
  
+pub fn movementIsConstrainedFlat(physBodyType: PhysBodyType) -> bool{
+
+    match physBodyType {
+        PhysBodyType::Walk => return true,
+        PhysBodyType::Hover => return true,
+        PhysBodyType::Fly => return false,
+        PhysBodyType::NoClip => return false,
+    }
+}
+pub fn physBodyHasCollision(physBodyType: PhysBodyType) -> bool{
+
+    match physBodyType {
+        PhysBodyType::Walk => return true,
+        PhysBodyType::Hover => return true,
+        PhysBodyType::Fly => return true,
+        PhysBodyType::NoClip => return false,
+    }
+}
