@@ -4,12 +4,64 @@
 
 
 //all the possible things that can affect the physical gamestate !! 
+/*
 
-pub enum GameStateDelta {
 
-    EntityCommand, 
+    Unit ID:  The id used by quake protocol for track 'entities' in its domain 
+
+    Entity ID: the id used by bevy in the ECS world 
+
+
+*/
+
+use cgmath::{Deg, Vector3};
+
+pub struct GameStateDelta {
+
+    command: DeltaCommand,
+    source_entity_id: u32, 
+
+    source_player_id: u32, //0 for server 
+    source_tick_count: u32, 
+
+
 
 }
+
+impl GameStateDelta{
+    pub fn new(delta_cmd:DeltaCommand, source_entity_id:u32, source_player_id:u32,source_tick_count:u32  ) -> GameStateDelta {
+        GameStateDelta { 
+                command: delta_cmd,
+                source_entity_id ,
+                source_player_id ,
+                source_tick_count  
+
+        }
+    }  
+}
+
+
+
+pub struct GameStateDeltaBuffer {
+
+    pub deltas: Vec<GameStateDelta>
+
+}
+
+impl GameStateDeltaBuffer {
+
+    pub fn new() -> GameStateDeltaBuffer{
+        GameStateDeltaBuffer {
+            deltas: Vec::new()
+        }
+    }
+
+
+
+
+
+}
+
 
 /*
     Each 'tick', a client is building an array of entity commands (every 33 ms).  At the end of that tick, 
@@ -21,19 +73,19 @@ pub enum GameStateDelta {
       (typically only 20 according to valve -- can do filtering based on occlusion )   
 
  */
+ 
+pub enum DeltaCommand {
+    ReportLocationVector { loc: Vector3<f32>   },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
+    ReportVelocityVector { angle: Vector3< f32 >   } , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
 
-pub enum EntityCommand {
-    ReportLocationVector { loc: Vector3(f32) },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
-    ReportVelocityVector { angle: Vector3<Deg>} , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
+    SetLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
+    SetMovementVector { vector: Vector3<f32>   }, //always normalized to magnitude of 1.  Z is ignored unless you can fly ? 
 
-    SetLookVector { angle: Vector3<Deg>},//always normalized to magnitude of 1
-    SetMovementVector { angle: Vector3<Deg>}, //always normalized to magnitude of 1.  Z is ignored unless you can fly ? 
-
-    PerformEntityAction { action: EntityAction },
-}
+    PerformEntityAction { action: DeltaAction , target_id: u32  },
+} 
 
 
-pub enum EntityAction {
+pub enum DeltaAction {
 
     BeginJump,
 

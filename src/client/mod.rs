@@ -62,11 +62,12 @@ use crate::{
         },
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
+        gamestate::{GameStateDeltaBuffer, GameStateDelta, DeltaCommand}
     },
     server::{GameServer}
 };
 
-use cgmath::Deg;
+use cgmath::{Deg, Vector3, InnerSpace};
 use chrono::Duration;
 use input::InputFocus;
 use menu::Menu;
@@ -909,7 +910,7 @@ pub struct Client {
     renderer: ClientRenderer,
     demo_queue: Rc<RefCell<VecDeque<String>>>,
 
-
+    
    // client_state: Rc<RefCell<Option<ClientState>>>, // ClientState,
     
 
@@ -928,6 +929,8 @@ impl Client {
         input: Rc<RefCell<Input>>,
         gfx_state: &GraphicsState,
         menu: &Menu,
+
+       
     ) -> Client {
         let conn = Rc::new(RefCell::new(None));
        
@@ -954,7 +957,8 @@ impl Client {
             conn,
              
             renderer: ClientRenderer::new(gfx_state, menu),
-            demo_queue
+            demo_queue,
+
         }
     }
 
@@ -1162,6 +1166,9 @@ impl Client {
             .map_err(ClientError::Cvar)
     }   
 
+
+
+
     /*
     
     
@@ -1186,6 +1193,38 @@ impl Client {
                 ..
             }) => {
                 let move_cmd = state.handle_input(game_input, frame_time, move_vars, mouse_vars);
+                
+                match move_cmd {
+                    ClientCmd::Move {
+                        send_time,
+                        angles,
+                        fwd_move,
+                        side_move,
+                        up_move,
+                        button_flags, 
+                        impulse,
+                    } => {      
+                        let controlled_unit_id = state.view_unit_id(); 
+
+                        let look_angle = angles.clone();
+
+                        //make this suck less -- why i32 ?
+                        let movement_vector = Vector3::new(fwd_move  , side_move , up_move) ;
+                          
+                        state.push_to_gamestate_deltas(  DeltaCommand::SetLookVector{  angle:look_angle   }  );
+                        state.push_to_gamestate_deltas(  DeltaCommand::SetMovementVector{  vector:movement_vector   }  )   ;
+                    
+                    },
+                    _ => { 
+
+
+                    }
+
+                }
+               
+              
+
+              
                 // TODO: arrayvec here
                 let mut msg = Vec::new();
                 move_cmd.serialize(&mut msg)?;

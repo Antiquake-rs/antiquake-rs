@@ -21,7 +21,7 @@ use crate::{
             self, BeamEntityKind, ButtonFlags, ColorShift, UnitEffects, ItemFlags, PlayerData,
             PointEntityKind, TempEntity,
         },
-        vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
+        vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry, gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta},
     },
 };
 use arrayvec::ArrayVec;
@@ -130,7 +130,10 @@ pub struct ClientState {
     pub tick_counter: TickCounter,
 
     pub ecs_world: BevyWorld,
-    pub ecs_schedule: Schedule
+    pub ecs_schedule: Schedule,
+
+    
+    pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
 }
 
 impl ClientState {
@@ -162,10 +165,7 @@ impl ClientState {
             msg_times: [Duration::zero(), Duration::zero()],
             time: Duration::zero(),
 
-            tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
-            ecs_world: BevyWorld::new(),
-            ecs_schedule: Schedule::default(),
-
+        
 
 
             lerp_factor: 0.0,
@@ -200,6 +200,14 @@ impl ClientState {
             completion_time: None,
             mixer: EntityMixer::new(stream),
             listener: Listener::new(),
+
+            tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
+            ecs_world: BevyWorld::new(),
+            ecs_schedule: Schedule::default(),
+
+            
+            client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
+
         }
     }
 
@@ -323,18 +331,16 @@ impl ClientState {
 
 
 
+
+        //flush gamestate delta buffer 
+
+      //  self.flush_gamestate_delta_buffer();
+
+
+
         //need to do this with gamestate deltas which are built by the client from input keys 
         //also need to do this inside of physics component or something...
-        if(self.view.unit_id() > 0 && self.entities.len() > 0){
-            let controlled_entity = &self.entities[self.view.unit_id()];
-        
-            let past_origin = controlled_entity.get_origin();
-            let new_origin:Vector3<f32> = Vector3::new(0.1,0.0,0.0);
-    
-            //walk
-            self.entities[self.view.unit_id()].origin = past_origin + new_origin;
-    
-        }
+       
        
       
         // Add a Stage to our schedule. Each Stage in a schedule runs all of its systems
@@ -348,6 +354,65 @@ impl ClientState {
         self.ecs_schedule.run_once(world);
 
     }
+
+
+
+    fn flush_gamestate_delta_buffer( &mut self  ){
+
+        let is_empty = self.client_gamestate_delta_buffer.deltas.is_empty();
+
+        while  !is_empty   { 
+
+            let next_delta = self.client_gamestate_delta_buffer.deltas.pop();
+            self.apply_gamestate_delta_buffer(  next_delta  );
+
+
+        }
+
+    }
+
+    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta:  Option<GameStateDelta> ) {
+
+        if gamestate_delta.is_some() {
+
+            println!("apply gamestate delta !! ");
+
+            ///just a test thing 
+            if(self.view.unit_id() > 0 && self.entities.len() > 0){
+                let controlled_entity = &self.entities[self.view.unit_id()];
+            
+                let past_origin = controlled_entity.get_origin();
+                let new_origin:Vector3<f32> = Vector3::new(0.1,0.0,0.0);
+        
+                //walk
+                self.entities[self.view.unit_id()].origin = past_origin + new_origin;
+        
+            }
+
+
+        }
+
+    }
+
+
+
+
+
+    pub fn push_to_gamestate_deltas( &mut self , delta_cmd:DeltaCommand ){
+        
+        //really should not push a move or angle if there already are some there !
+
+                self.client_gamestate_delta_buffer.deltas.push( GameStateDelta::new(
+                    delta_cmd, 
+                    self.view_unit_id() as u32,
+                    self.player_id() as u32,
+                    self.tick_count() as u32,
+
+                ) 
+         );
+    }
+
+
 
     /// Update the client state interpolation ratio.
     ///
@@ -793,9 +858,9 @@ impl ClientState {
         ClientCmd::Move {
             send_time,
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
-            fwd_move: forwardmove as i16,
-            side_move: sidemove as i16,
-            up_move: upmove as i16,
+            fwd_move: forwardmove ,
+            side_move: sidemove ,
+            up_move: upmove ,
             button_flags,
             impulse: game_input.impulse(),
         }
@@ -876,6 +941,7 @@ impl ClientState {
         
 
     }
+ 
 
     /// Spawn an entity with the given ID, also spawning any uninitialized
     /// entities between the former last entity and the new one.
@@ -1390,6 +1456,15 @@ impl ClientState {
 
     pub fn view_unit_id(&self) -> usize {
         self.view.unit_id()
+    }
+
+    pub fn player_id(&self) -> usize {
+        return 1; //FIX ME 
+    }
+
+
+    pub fn tick_count(&self) -> usize {
+        return 1; //FIX ME 
     }
 
     pub fn camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {

@@ -2045,9 +2045,9 @@ pub enum ClientCmd {
     Move {
         send_time: Duration,
         angles: Vector3<Deg<f32>>,
-        fwd_move: i16,
-        side_move: i16,
-        up_move: i16,
+        fwd_move: f32,
+        side_move: f32,
+        up_move: f32,
         button_flags: ButtonFlags,
         impulse: u8,
     },
@@ -2093,9 +2093,10 @@ impl ClientCmd {
                     read_angle(reader)?,
                     read_angle(reader)?,
                 );
-                let fwd_move = reader.read_i16::<LittleEndian>()?;
-                let side_move = reader.read_i16::<LittleEndian>()?;
-                let up_move = reader.read_i16::<LittleEndian>()?;
+                   //was i16
+                let fwd_move = reader.read_f32::<LittleEndian>()?;
+                let side_move = reader.read_f32::<LittleEndian>()?;
+                let up_move = reader.read_f32::<LittleEndian>()?;
                 let button_flags_val = reader.read_u8()?;
                 let button_flags = match ButtonFlags::from_bits(button_flags_val) {
                     Some(bf) => bf,
@@ -2147,9 +2148,12 @@ impl ClientCmd {
             } => {
                 writer.write_f32::<LittleEndian>(engine::duration_to_f32(send_time))?;
                 write_angle_vector3(writer, angles)?;
-                writer.write_i16::<LittleEndian>(fwd_move)?;
-                writer.write_i16::<LittleEndian>(side_move)?;
-                writer.write_i16::<LittleEndian>(up_move)?;
+
+                //was i16  -- need to change to i16 again to work w orig quake clients !
+                writer.write_f32::<LittleEndian>(fwd_move)?;
+                writer.write_f32::<LittleEndian>(side_move)?;
+                writer.write_f32::<LittleEndian>(up_move)?;
+
                 writer.write_u8(button_flags.bits())?;
                 writer.write_u8(impulse)?;
             }

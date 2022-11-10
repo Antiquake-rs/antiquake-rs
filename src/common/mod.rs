@@ -36,6 +36,7 @@ pub mod util;
 pub mod vfs;
 pub mod wad;
 pub mod tickcounter;
+pub mod gamestate;
 
 
 use std::path::PathBuf;
