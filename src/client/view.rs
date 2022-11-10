@@ -140,6 +140,10 @@ impl View {
             let yaw_factor = mouse_vars.m_yaw * mouse_vars.sensitivity;
             self.input_angles.pitch += Deg(game_input.mouse_delta().1 as f32 * pitch_factor);
             self.input_angles.yaw -= Deg(game_input.mouse_delta().0 as f32 * yaw_factor);
+
+
+            println!( "view mlook input angles {} {} ", self.input_angles.pitch.0, self.input_angles.yaw.0);
+
         }
 
         if lookup_factor != 0.0 || lookdown_factor != 0.0 {

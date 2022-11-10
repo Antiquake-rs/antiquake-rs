@@ -319,7 +319,7 @@ impl ClientState {
 
     //runs each 'tick_period' milliseconds to advance the virtual machine (to match the server)
     pub fn on_tick(&mut self){
-        println!("client run tick");
+        //println!("client run tick");
 
 
 
@@ -724,7 +724,10 @@ impl ClientState {
     ) -> ClientCmd {
         use Action::*;
 
-        let mlook = game_input.action_state(MLook);
+        //let mlook = game_input.action_state(MLook);
+
+        let mlook = true; //use mouselook by default .  how can i just set the default ?
+
         self.view.handle_input(
             frame_time,
             game_input,
@@ -841,13 +844,11 @@ impl ClientState {
     ) {
         
 
-        //WHY IS THIS SO BUSTED? 
+       
         let entity_origin = self.entities[self.view.unit_id()].origin;
 
-        println!("calc_final_view entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
-
-       // let spawn_loc = Vector3::new(-735.0,-1591.0,112.0);
-       
+      //  println!("calc_final_view entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
+ 
         self.view.calc_final_angles(
             self.time,
             self.intermission.as_ref(),
@@ -863,7 +864,7 @@ impl ClientState {
             bob_vars,
         );
 
-        println!("calc_final_view ->  {} {} {}", self.view.final_origin().x,self.view.final_origin().y,self.view.final_origin().z);
+      //  println!("calc_final_view ->  {} {} {}", self.view.final_origin().x,self.view.final_origin().y,self.view.final_origin().z);
           
         
 

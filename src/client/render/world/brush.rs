@@ -747,7 +747,9 @@ impl BrushRenderer {
         pass.set_pipeline(state.brush_pipeline().pipeline());
         pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
- 
+        
+        let mut outside_of_level = false ;
+
         // if this is a worldmodel, mark faces to be drawn
         //is this logic totally wrong ?? i dont get it 
         if let Some(ref leaves) = self.leaves {
@@ -759,6 +761,11 @@ impl BrushRenderer {
             //println!("brush renderer using cam origin id {} {} {} ",  camera.origin().x,  camera.origin().y,  camera.origin().z);
             //println!("brush renderer using cam angles id {} {} {} ",  camera.angles().pitch.0,  camera.angles().roll.0,  camera.angles().yaw.0);
            // println!("brush renderer using leaf id {}", leafId);
+
+           if leaves.len() == 0 {
+            outside_of_level = true;
+           }
+
 
             let pvs = self
                 .bsp_data
@@ -828,7 +835,7 @@ impl BrushRenderer {
                 let face = &self.faces[*face_id];
 
                 // only skip the face if we have visibility data but it's not marked
-                if self.leaves.is_some() && !face.draw_flag.replace(false) {
+                if !outside_of_level && self.leaves.is_some() && !face.draw_flag.replace(false) {
                   continue;
                 }
 

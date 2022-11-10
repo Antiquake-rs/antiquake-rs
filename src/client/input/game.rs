@@ -487,13 +487,18 @@ impl GameInput {
 
                 WindowEvent::MouseInput { state, button, .. } => (button.into(), state),
                 WindowEvent::MouseWheel { delta, .. } => (delta.into(), ElementState::Pressed),
+
+  
+                
                 _ => return,
             },
 
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } => {
-                    self.mouse_delta.0 += delta.0;
-                    self.mouse_delta.1 += delta.1;
+                   
+                
+                    self.handle_mouse_motion( delta );
+                    
                     return;
                 }
 
@@ -503,17 +508,25 @@ impl GameInput {
             _ => return,
         };
 
-        self.handle_input(input, state);
+        self.handle_keypress(input, state);
+        
     }
 
-    pub fn handle_input<I>(&mut self, input: I, state: ElementState)
+
+
+    //where is this ultimately going ??  action_states? 
+
+    pub fn handle_keypress<I>(&mut self, input: I, state: ElementState)
     where
         I: Into<BindInput>,
     {
         let bind_input = input.into();
 
-        // debug!("handle input {:?}: {:?}", &bind_input, state);
+       
         if let Some(target) = self.bindings.borrow().get(&bind_input) {
+            
+            println!("handle input {:?}: {:?}", &bind_input, state);
+            
             match *target {
                 BindTarget::Action { trigger, action } => {
                     self.action_states.borrow_mut()[action as usize] = state == trigger;
@@ -531,6 +544,19 @@ impl GameInput {
                 }
             }
         }
+    }
+
+    pub fn handle_mouse_motion(&mut self, delta: (f64,f64) ){
+
+        println!("Mouse delta {} {}", self.mouse_delta.0,self.mouse_delta.1);
+
+        self.mouse_delta.0 += delta.0;
+        self.mouse_delta.1 += delta.1;
+
+
+        //broadcast a message using bevy ??? 
+
+
     }
 
     pub fn action_state(&self, action: Action) -> bool {
@@ -636,9 +662,10 @@ impl GameInput {
         self.clear_impulse();
     }
 
+    // must be called every frame!
     fn clear_mouse(&mut self) {
-        self.handle_input(MouseWheel::Up, ElementState::Released);
-        self.handle_input(MouseWheel::Down, ElementState::Released);
+        self.handle_keypress(MouseWheel::Up, ElementState::Released);
+        self.handle_keypress(MouseWheel::Down, ElementState::Released);
         self.mouse_delta = (0.0, 0.0);
     }
 

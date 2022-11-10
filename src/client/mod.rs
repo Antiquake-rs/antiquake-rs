@@ -364,7 +364,7 @@ impl Connection {
         use ConnectionStatus::*;
 
  
-        println!("client parsing server msg ");
+        //println!("client parsing server msg ");
 
         let (msg, demo_view_angles, track_override) = match self.kind {
             ConnectionKind::Server { ref mut qsock, .. } => {
@@ -414,7 +414,7 @@ impl Connection {
 
         // no data available at this time
         if msg.is_empty() {
-            println!("msg from server was empty");
+            //println!("msg from server was empty");
             return Ok(Maintain);
         }
 

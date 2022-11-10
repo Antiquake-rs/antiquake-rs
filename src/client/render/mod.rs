@@ -737,12 +737,8 @@ impl ClientRenderer {
 
 
                     
-                   println!("CLIENT RENDER ");
-
-                   //camera could be busted !! 
-
-                   
-
+                   // println!("CLIENT RENDER ");
+ 
                     // initial render pass
                     {
                         let init_pass_builder =
