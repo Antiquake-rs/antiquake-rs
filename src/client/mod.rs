@@ -62,11 +62,12 @@ use crate::{
         },
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
+        gamestate::{GameStateDeltaBuffer, GameStateDelta, DeltaCommand}
     },
     server::{GameServer}
 };
 
-use cgmath::Deg;
+use cgmath::{Deg, Vector3, InnerSpace};
 use chrono::Duration;
 use input::InputFocus;
 use menu::Menu;
@@ -909,7 +910,7 @@ pub struct Client {
     renderer: ClientRenderer,
     demo_queue: Rc<RefCell<VecDeque<String>>>,
 
-
+    
    // client_state: Rc<RefCell<Option<ClientState>>>, // ClientState,
     
 
@@ -928,6 +929,8 @@ impl Client {
         input: Rc<RefCell<Input>>,
         gfx_state: &GraphicsState,
         menu: &Menu,
+
+       
     ) -> Client {
         let conn = Rc::new(RefCell::new(None));
        
@@ -954,7 +957,8 @@ impl Client {
             conn,
              
             renderer: ClientRenderer::new(gfx_state, menu),
-            demo_queue
+            demo_queue,
+
         }
     }
 
@@ -1162,6 +1166,9 @@ impl Client {
             .map_err(ClientError::Cvar)
     }   
 
+
+
+
     /*
     
     
@@ -1186,6 +1193,48 @@ impl Client {
                 ..
             }) => {
                 let move_cmd = state.handle_input(game_input, frame_time, move_vars, mouse_vars);
+                
+                match move_cmd {
+                    ClientCmd::Move {
+                        send_time,
+                        angles,
+                        fwd_move,
+                        side_move,
+                        up_move,
+                        button_flags, 
+                        impulse,
+                    } => {      
+                        let controlled_unit_id = state.view_unit_id(); 
+
+                        let look_angle = angles.clone();
+
+                       
+                        state.push_to_gamestate_deltas(  DeltaCommand::SetLookVector{  angle:look_angle   }  );
+                       
+
+                        let movement_vector = Client::calc_movement_vector( Vector3::new(fwd_move  , side_move , up_move).clone(), look_angle  );
+                        
+                        
+                        match movement_vector {
+                            Some(mov_vec) => {
+                                state.push_to_gamestate_deltas(  DeltaCommand::SetMovementVector{  vector:mov_vec   }  ) ;
+                            },
+                            _ => {}
+                        }
+                       
+                        
+                    
+                    },
+                    _ => { 
+
+
+                    }
+
+                }
+               
+              
+
+              
                 // TODO: arrayvec here
                 let mut msg = Vec::new();
                 move_cmd.serialize(&mut msg)?;
@@ -1199,6 +1248,42 @@ impl Client {
         }
 
         Ok(())
+    }
+
+
+    //move me somewhere else !
+    fn calc_movement_vector( input_movement: Vector3<f32>, facing: Vector3<Deg<f32>>) -> Option<Vector3<f32>>{
+
+        let movement_dir = input_movement.normalize() ;
+
+        let forward_dir = Vector3::new(Client::degree_to_direction(facing.x), Client::degree_to_direction(facing.y), 0.0).normalize() ;
+
+        let up_vector = Vector3::new(0.0,0.0,1.0);
+        let sideways_dir = forward_dir.cross(up_vector);
+
+        println!("forward dir {} {} {} ", forward_dir.x, forward_dir.y, forward_dir.z);
+        println!("movement_dir {} {} {} ", movement_dir.x, movement_dir.y, movement_dir.z);
+
+
+
+        let forward_movement = forward_dir * movement_dir.x;
+        let sideways_movement = sideways_dir * movement_dir.y;
+
+        let overall_movement = forward_movement + sideways_movement;
+
+        println!("overall_movement {} {} {} ", overall_movement.x, overall_movement.y, overall_movement.z);
+
+        if !overall_movement.x.is_nan() && !overall_movement.y.is_nan() && !overall_movement.z.is_nan() {
+            return Some(overall_movement.normalize()) 
+        }
+
+        return None 
+        
+    }
+
+
+    fn degree_to_direction( deg:Deg<f32> ) -> f32{ 
+        return deg.0 / 360.0; 
     }
 
     fn move_vars(cvars:&CvarRegistry) -> Result<MoveVars, ClientError> {
@@ -1565,7 +1650,7 @@ fn cmd_loadmap(
     
         let input_args = args[0].to_string(); //clone for the thread 
             
-        let handle = thread::spawn(move || {       
+        let handle = thread::Builder::new().name("server_main".to_string()).spawn(move || {       
 
           
 

@@ -424,7 +424,7 @@ impl Program for ClientProgram {
 
         match self.input.borrow().focus() {
             InputFocus::Game => {
-                if let Err(e) = self.window.set_cursor_grab(CursorGrabMode::Locked) {
+                if let Err(e) = self.window.set_cursor_grab(CursorGrabMode::Confined) {
                     // This can happen if the window is running in another
                     // workspace. It shouldn't be considered an error.
                     log::debug!("Couldn't grab cursor: {}", e);
