@@ -63,18 +63,13 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
     let up_vector = Vector3::new(0.0,0.0,1.0);
     let sideways_dir = forward_dir_normalized.cross(up_vector);
 
-    println!("forward dir {} {} {} ", forward_dir_normalized.x, forward_dir_normalized.y, forward_dir_normalized.z);
-    println!("movement_dir {} {} {} ", input_cmds.x, input_cmds.y, input_cmds.z);
-
-
+  
 
     let forward_movement = forward_dir_normalized * (input_cmds.x as f32);
     let sideways_movement = sideways_dir * (input_cmds.y as f32);
 
     let overall_movement = (forward_movement + sideways_movement).normalize();
-
-    println!("overall_movement {} {} {} ", overall_movement.x, overall_movement.y, overall_movement.z);
-
+ 
     if !overall_movement.x.is_nan() && !overall_movement.y.is_nan() && !overall_movement.z.is_nan() {
         return Some(overall_movement) 
     }

@@ -440,10 +440,6 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-           
-
-           println!("push to delta");
-
             self.client_gamestate_delta_buffer.push( GameStateDelta::new(
                 delta_cmd, 
                 self.view_unit_id() as u32,

@@ -154,6 +154,7 @@ jpiolho/QuakePlugins -- cool system w lua hooks
 https://github.com/Novum/vkQuake/tree/master/Quake
 
 use iced gui ?
+add gltf models ?
 
 
  ## probable bugs 
