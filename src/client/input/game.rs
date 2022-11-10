@@ -473,6 +473,42 @@ impl GameInput {
     }
 
     pub fn handle_event<T>(&mut self, outer_event: Event<T>) {
+
+        
+
+        match &outer_event {
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            state,
+                            virtual_keycode: Some(key),
+                            ..
+                        },
+                    ..
+                } => { println!("keyboard event " );}
+
+                _ =>  {}
+            },
+
+            Event::DeviceEvent { event, .. } => match event {
+                DeviceEvent::MouseMotion { delta } => {
+                   
+                    
+                    //this stops happening when a keyboard key is pressed ! 
+                    println!("mouse event " );
+                    
+                   
+                }
+
+                _ =>  {} ,
+            },
+
+            _ =>  {} ,
+        }
+
+        
+
         let (input, state): (BindInput, _) = match outer_event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::KeyboardInput {
@@ -487,7 +523,7 @@ impl GameInput {
 
                 WindowEvent::MouseInput { state, button, .. } => (button.into(), state),
                 WindowEvent::MouseWheel { delta, .. } => (delta.into(), ElementState::Pressed),
-
+                
   
                 
                 _ => return,
@@ -496,7 +532,8 @@ impl GameInput {
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } => {
                    
-                
+                    
+                    //this stops happening when a keyboard key is pressed ! 
                     self.handle_mouse_motion( delta );
                     
                     return;

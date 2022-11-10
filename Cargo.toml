@@ -53,7 +53,7 @@ rodio = { git = "https://github.com/RustAudio/rodio", rev = "82b4952" }
 slab = "0.4"
 strum = "0.18.0"
 strum_macros = "0.18.0"
-png = "0.16"
+png = "0.17.7"
 serde_json = "1.0"
 uluru = "2"
 

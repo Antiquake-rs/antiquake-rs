@@ -822,14 +822,17 @@ impl ClientState {
         self.stats[ClientStat::ActiveWeapon as usize] = update.active_weapon as i32;
     }
 
+
+
+    //affects the view (camera)
     pub fn handle_input(
         &mut self,
         game_input: &mut GameInput,
         frame_time: Duration,
         move_vars: MoveVars,
         mouse_vars: MouseVars,
-    ) -> ClientCmd {
-        use Action::*;
+    )  {
+       
 
         //let mlook = game_input.action_state(MLook);
 
@@ -845,6 +848,24 @@ impl ClientState {
             move_vars.cl_yawspeed,
             mouse_vars,
         );
+
+       
+    }
+
+    pub fn build_move_cmd(
+        game_input: &mut GameInput,
+        frame_time: Duration,
+        move_vars: MoveVars,
+        mouse_vars: MouseVars,
+        angles: Angles,
+    ) -> ClientCmd {
+        use Action::*;
+
+        //let mlook = game_input.action_state(MLook);
+
+        let mlook = true; //use mouselook by default .  how can i just set the default ?
+ 
+
 
         let mut move_left = game_input.action_state(MoveLeft);
         let mut move_right = game_input.action_state(MoveRight);
@@ -889,16 +910,19 @@ impl ClientState {
             // TODO: IN_Move (mouse / joystick / gamepad)
         }
 
-        let send_time = self.msg_times[0];
+
+        //waht was this 
+          //   let send_time = self.msg_times[0];
+
         // send "raw" angles without any pitch/roll from movement or damage
-        let angles = self.view.input_angles();
+        //let angles = self.view.input_angles();
  
 
         //this sends a client cmd to the server but it should NOT work this way --- needs to go into an array buffer 
 
 
         ClientCmd::Move {
-            send_time,
+            send_time:Duration::milliseconds(20),// stub for now 
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
             fwd_move: forwardmove as i16 ,
             side_move: sidemove as i16 ,

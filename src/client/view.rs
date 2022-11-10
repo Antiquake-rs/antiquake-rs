@@ -124,6 +124,9 @@ impl View {
             return;
         }
 
+        /* 
+        this seems to be for keyboard look? 
+
         if !game_input.action_state(Action::Strafe) {
             let right_factor = game_input.action_state(Action::Right) as i32 as f32;
             let left_factor = game_input.action_state(Action::Left) as i32 as f32;
@@ -134,6 +137,8 @@ impl View {
         let lookup_factor = game_input.action_state(Action::LookUp) as i32 as f32;
         let lookdown_factor = game_input.action_state(Action::LookDown) as i32 as f32;
         self.input_angles.pitch += Deg(speed * cl_pitchspeed * (lookdown_factor - lookup_factor));
+
+        */
 
         if mlook {
             let pitch_factor = mouse_vars.m_pitch * mouse_vars.sensitivity;
@@ -146,9 +151,9 @@ impl View {
 
         }
 
-        if lookup_factor != 0.0 || lookdown_factor != 0.0 {
+        /* if lookup_factor != 0.0 || lookdown_factor != 0.0 {
             // TODO: V_StopPitchDrift
-        }
+        } */
 
         // clamp pitch to [-70, 80] and roll to [-50, 50]
         self.input_angles.pitch = math::clamp_deg(self.input_angles.pitch, Deg(-70.0), Deg(80.0));

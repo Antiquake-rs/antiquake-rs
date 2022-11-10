@@ -32,8 +32,10 @@ gfx pipelines yay!!!
 
 -allow the client to look around and move around !! (using game deltas in a buffer w ticks) 
 
+client > input > game.rs  handle_event is busted 
+
 - need to be able to move and look in the same tick 
-- need the gamestate deltas to be applied to Components which are then applied to the render state.  
+- need the gamestate deltas to be applied to Components (physics component) which are then applied to the render state.  (consider building a 'render system' within the ecs)
 
 
 

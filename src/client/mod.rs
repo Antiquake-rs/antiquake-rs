@@ -148,6 +148,7 @@ pub enum ClientError {
     Vfs(#[from] VfsError),
 }
 
+#[derive(Clone)]
 pub struct MoveVars {
     cl_anglespeedkey: f32,
     cl_pitchspeed: f32,
@@ -1193,7 +1194,16 @@ impl Client {
                 kind: ConnectionKind::Server { ref mut qsock, .. },
                 ..
             }) => {
-                let move_cmd = state.handle_input(game_input, frame_time, move_vars, mouse_vars);
+               
+                state.handle_input(game_input, frame_time, move_vars.clone(), mouse_vars.clone());
+               
+                let move_cmd = ClientState::build_move_cmd(
+                    game_input,
+                    frame_time, 
+                    move_vars.clone(),
+                    mouse_vars.clone(),
+                    state.view.input_angles()
+                    );
                 
                 match move_cmd {
                     ClientCmd::Move {
