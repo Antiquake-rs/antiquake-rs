@@ -334,7 +334,7 @@ impl ClientState {
 
         //flush gamestate delta buffer 
 
-      //  self.flush_gamestate_delta_buffer();
+       self.flush_gamestate_delta_buffer();
 
 
 
@@ -359,38 +359,74 @@ impl ClientState {
 
     fn flush_gamestate_delta_buffer( &mut self  ){
 
-        let is_empty = self.client_gamestate_delta_buffer.deltas.is_empty();
-
-        while  !is_empty   { 
-
+        
+        while  !self.client_gamestate_delta_buffer.deltas.is_empty()   { 
+        
             let next_delta = self.client_gamestate_delta_buffer.deltas.pop();
-            self.apply_gamestate_delta_buffer(  next_delta  );
+            
+            
+            self.apply_gamestate_delta_buffer(   next_delta  );
 
 
         }
 
     }
 
-    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta:  Option<GameStateDelta> ) {
+    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta:   Option<GameStateDelta> ) {
+ 
+        
+        match gamestate_delta {
+            Some(delta) => {
 
-        if gamestate_delta.is_some() {
-
-            println!("apply gamestate delta !! ");
+             println!("apply gamestate delta !! {} ", &delta);   //this print goes infinite ?
 
             ///just a test thing 
-            if(self.view.unit_id() > 0 && self.entities.len() > 0){
-                let controlled_entity = &self.entities[self.view.unit_id()];
-            
-                let past_origin = controlled_entity.get_origin();
-                let new_origin:Vector3<f32> = Vector3::new(0.1,0.0,0.0);
-        
-                //walk
-                self.entities[self.view.unit_id()].origin = past_origin + new_origin;
-        
-            }
+          
+                let controlled_entity =  self.entities.get_mut(self.view.unit_id()); //[self.view.unit_id()];
+                
+                match controlled_entity {
+                    Some(   c_ent) => {
+                            
+
+                            //affect ECS systems ??
+
+                            match delta.command {
+                                DeltaCommand::ReportLocationVector { loc } => {},
+                                DeltaCommand::ReportVelocityVector { angle } => {},
+                                DeltaCommand::SetLookVector { angle } => {},
+                                DeltaCommand::SetMovementVector { vector } => {
+                                     
+                                    let past_origin = c_ent.get_origin();
+
+                                    let move_speed = 1.0;
+                                    println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
+                                    let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
+                            
+                                    //walk
+                                    c_ent.set_origin(    new_origin  ) ;
+
+                                },
+                                DeltaCommand::PerformEntityAction { action, target_id } => {},
+                            }
 
 
+                            
+                    }
+
+                    _ =>{}
+
+                }
+
+        
+           
+
+           }
+           _ => {
+        
+           }
         }
+
+     
 
     }
 
@@ -402,13 +438,17 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-                self.client_gamestate_delta_buffer.deltas.push( GameStateDelta::new(
-                    delta_cmd, 
-                    self.view_unit_id() as u32,
-                    self.player_id() as u32,
-                    self.tick_count() as u32,
+           if self.client_gamestate_delta_buffer.deltas.len() > 25  {return;}
 
-                ) 
+           println!("push to delta");
+
+            self.client_gamestate_delta_buffer.deltas.push( GameStateDelta::new(
+                delta_cmd, 
+                self.view_unit_id() as u32,
+                self.player_id() as u32,
+                self.tick_count() as u32,
+
+            ) 
          );
     }
 
@@ -812,10 +852,12 @@ impl ClientState {
         }
 
         let mut sidemove = move_vars.cl_sidespeed * (move_right as i32 - move_left as i32) as f32;
+        if(sidemove.is_nan()) {sidemove = 0.0;}
 
         let mut upmove = move_vars.cl_upspeed
             * (game_input.action_state(MoveUp) as i32 - game_input.action_state(MoveDown) as i32)
                 as f32;
+        if(upmove.is_nan()) {upmove = 0.0;}
 
         let mut forwardmove = 0.0;
         if !game_input.action_state(KLook) {
@@ -823,6 +865,7 @@ impl ClientState {
                 move_vars.cl_forwardspeed * game_input.action_state(Forward) as i32 as f32;
             forwardmove -= move_vars.cl_backspeed * game_input.action_state(Back) as i32 as f32;
         }
+        if(forwardmove.is_nan()) {forwardmove = 0.0;}
 
         if game_input.action_state(Speed) {
             sidemove *= move_vars.cl_movespeedkey;
@@ -847,10 +890,7 @@ impl ClientState {
         let send_time = self.msg_times[0];
         // send "raw" angles without any pitch/roll from movement or damage
         let angles = self.view.input_angles();
-
-
-
-        
+ 
 
         //this sends a client cmd to the server but it should NOT work this way --- needs to go into an array buffer 
 

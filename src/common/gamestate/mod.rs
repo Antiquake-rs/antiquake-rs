@@ -13,20 +13,23 @@
 
 
 */
-
+use std::{fmt, rc::Rc};
 use cgmath::{Deg, Vector3};
 
 pub struct GameStateDelta {
 
-    command: DeltaCommand,
-    source_entity_id: u32, 
+    pub command: DeltaCommand,
+    pub source_entity_id: u32, 
 
-    source_player_id: u32, //0 for server 
-    source_tick_count: u32, 
+    pub source_player_id: u32, //0 for server 
+    pub source_tick_count: u32, 
 
 
 
 }
+
+
+
 
 impl GameStateDelta{
     pub fn new(delta_cmd:DeltaCommand, source_entity_id:u32, source_player_id:u32,source_tick_count:u32  ) -> GameStateDelta {
@@ -42,9 +45,25 @@ impl GameStateDelta{
 
 
 
-pub struct GameStateDeltaBuffer {
 
-    pub deltas: Vec<GameStateDelta>
+impl fmt::Display for GameStateDelta {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        write!(f, "{} - {} - {} - {}", 
+            self.command.to_string(), 
+            self.source_entity_id,
+            self.source_player_id,
+            self.source_tick_count 
+         )
+    }
+}
+
+
+
+pub struct GameStateDeltaBuffer {
+    //put big arrays in a box so they dont overflow our stack 
+    pub deltas: Box<Vec<GameStateDelta>>
 
 }
 
@@ -52,7 +71,7 @@ impl GameStateDeltaBuffer {
 
     pub fn new() -> GameStateDeltaBuffer{
         GameStateDeltaBuffer {
-            deltas: Vec::new()
+            deltas: Box::new( Vec::new() )
         }
     }
 
@@ -83,6 +102,24 @@ pub enum DeltaCommand {
 
     PerformEntityAction { action: DeltaAction , target_id: u32  },
 } 
+
+
+
+impl fmt::Display for DeltaCommand {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        
+        match self {
+            DeltaCommand::ReportLocationVector { loc } =>write!(f, "ReportLocationVector" ),
+            DeltaCommand::ReportVelocityVector { angle } => write!(f, "ReportVelocityVector" ),
+            DeltaCommand::SetLookVector { angle } => write!(f, "SetLookVector" ),
+            DeltaCommand::SetMovementVector { vector } =>write!(f, "SetMovementVector" ),
+            DeltaCommand::PerformEntityAction { action, target_id } => write!(f, "PerformEntityAction" ),
+        }
+    }
+}
+
 
 
 pub enum DeltaAction {

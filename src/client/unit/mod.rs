@@ -179,6 +179,12 @@ impl ClientUnit {
         self.origin
     }
 
+    pub fn set_origin(&mut self, vec:Vector3<f32>) {
+        self.origin.x = vec.x;
+        self.origin.y = vec.y;
+        self.origin.z = vec.z; 
+    }
+
     pub fn get_angles(&self) -> Vector3<Deg<f32>> {
         self.angles
     }
