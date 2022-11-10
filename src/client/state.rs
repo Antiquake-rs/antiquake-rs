@@ -360,15 +360,17 @@ impl ClientState {
     fn flush_gamestate_delta_buffer( &mut self  ){
 
         
-        while  !self.client_gamestate_delta_buffer.deltas.is_empty()   { 
+        while  !self.client_gamestate_delta_buffer.is_empty()   { 
         
-            let next_delta = self.client_gamestate_delta_buffer.deltas.pop();
+            let next_delta = self.client_gamestate_delta_buffer.pop();
             
             
             self.apply_gamestate_delta_buffer(   next_delta  );
 
 
         }
+
+        self.client_gamestate_delta_buffer.reset_flags();
 
     }
 
@@ -438,11 +440,11 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-           if self.client_gamestate_delta_buffer.deltas.len() > 25  {return;}
+           
 
            println!("push to delta");
 
-            self.client_gamestate_delta_buffer.deltas.push( GameStateDelta::new(
+            self.client_gamestate_delta_buffer.push( GameStateDelta::new(
                 delta_cmd, 
                 self.view_unit_id() as u32,
                 self.player_id() as u32,

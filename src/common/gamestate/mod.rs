@@ -13,8 +13,13 @@
 
 
 */
-use std::{fmt, rc::Rc};
-use cgmath::{Deg, Vector3};
+use std::{fmt, rc::Rc, collections::HashMap};
+use cgmath::{Deg, Vector3, Angle,InnerSpace};
+
+
+pub mod system;
+
+use self::system::physics::{ EntityPostureType, PhysBodyType};
 
 pub struct GameStateDelta {
 
@@ -60,10 +65,52 @@ impl fmt::Display for GameStateDelta {
 }
 
 
+bitflags! {
+pub struct DeltaCommandFlags: u16 {
+    const SetLookVector = 1 << 0;
+    const SetMovementVector = 1 << 1;
+    const ReportLocationVector = 1 << 2;
+    const ReportVelocityVector = 1 << 3;
+}
+}
+
+
+fn gamestate_delta_to_flag_type( d:&GameStateDelta ) -> Option<DeltaCommandFlags> {
+    match(d.command){
+        DeltaCommand::ReportLocationVector { .. } => Some( DeltaCommandFlags::ReportLocationVector),
+        DeltaCommand::ReportVelocityVector { .. } => Some( DeltaCommandFlags::ReportVelocityVector),
+        DeltaCommand::SetLookVector { .. } => Some(DeltaCommandFlags::SetLookVector),
+        DeltaCommand::SetMovementVector { .. } => Some(DeltaCommandFlags::ReportVelocityVector),
+        DeltaCommand::PerformEntityAction { .. } => None,
+    }
+}
+
+fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<u32,u16> ) -> bool {
+
+    let unit_flags:Option<&u16> = unit_cmd_flags.get(  &d.source_entity_id );
+
+    match unit_flags {
+        Some(u_flags) => {
+
+            let flag_type = gamestate_delta_to_flag_type(d);
+            
+            match flag_type {
+                Some(f_type) => {
+                    return u_flags & f_type.bits() == 0; 
+                }
+                None => return true
+            }
+        },
+        None => return true
+    }
+
+}
 
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
-    pub deltas: Box<Vec<GameStateDelta>>
+    deltas: Box<Vec<GameStateDelta>>,
+    unit_cmd_flags: HashMap<u32,u16>, //prevents from too many redundant cmds !
+    capacity: i16 //not used for now 
 
 }
 
@@ -71,11 +118,57 @@ impl GameStateDeltaBuffer {
 
     pub fn new() -> GameStateDeltaBuffer{
         GameStateDeltaBuffer {
-            deltas: Box::new( Vec::new() )
+            deltas: Box::new( Vec::new() ),
+            unit_cmd_flags: HashMap::new(),
+            capacity:100
         }
     }
 
+    pub fn reset_flags(&mut self){
+        self.unit_cmd_flags.clear();
+    }
 
+
+    //there should be a way this respects flags and a way it doesnt
+    pub fn push( &mut self, d: GameStateDelta  ){
+
+        if should_append_delta( &d , &self.unit_cmd_flags ) {
+            self.set_delta_flags( &d );
+            self.deltas.push(d);
+        } 
+
+    }
+
+    pub fn pop( &mut self ) -> Option<GameStateDelta> {
+
+        return self.deltas.pop();       
+
+    }
+
+    pub fn is_empty(&self) -> bool {
+        return self.deltas.is_empty()
+    }
+
+
+    fn set_delta_flags(&mut self, d:&GameStateDelta) -> Option<u16> {
+        let flag_type = gamestate_delta_to_flag_type(d);
+        
+        match flag_type {
+            Some(f_type) => {
+                let existing_flags = match self.unit_cmd_flags.get(&d.source_entity_id) {
+                        Some(f) => f.to_owned(),
+                        None => 0
+                };
+ 
+                let new_flags:u16 = (existing_flags | f_type.bits()); 
+                self.unit_cmd_flags.insert(d.source_entity_id, new_flags)
+            },
+            None => {
+                // do nothing as this type of command is not flaggable 
+                None
+            }
+        }
+    }
 
 
 
@@ -145,35 +238,3 @@ pub enum DeltaAction {
 
 }
 
-
-pub enum EntityPostureType {
-    Stand,
-    Crouch,
-    Prone 
-}
-
-pub enum PhysBodyType {
-    Walk,
-    Hover,
-    Fly,
-    NoClip
-}
- 
-pub fn movementIsConstrainedFlat(physBodyType: PhysBodyType) -> bool{
-
-    match physBodyType {
-        PhysBodyType::Walk => return true,
-        PhysBodyType::Hover => return true,
-        PhysBodyType::Fly => return false,
-        PhysBodyType::NoClip => return false,
-    }
-}
-pub fn physBodyHasCollision(physBodyType: PhysBodyType) -> bool{
-
-    match physBodyType {
-        PhysBodyType::Walk => return true,
-        PhysBodyType::Hover => return true,
-        PhysBodyType::Fly => return true,
-        PhysBodyType::NoClip => return false,
-    }
-}

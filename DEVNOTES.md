@@ -32,7 +32,7 @@ gfx pipelines yay!!!
 
 -allow the client to look around and move around !! (using game deltas in a buffer w ticks) 
 
---probs time for some quaternions !
+- getting the movement way better !! 
 
 -make the buffer work more like anymap where only 1 of certain cmd types (per entity) can be in there at a time - maybe use bit flags idk 
 

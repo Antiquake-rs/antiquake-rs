@@ -1,7 +1,4 @@
 
+pub mod physics;
 
-
-pub struct Component {
-
-    
-}
+ 
