@@ -32,7 +32,10 @@ gfx pipelines yay!!!
 
 -allow the client to look around and move around !! (using game deltas in a buffer w ticks) 
 
-- getting the movement way better !! 
+- need to be able to move and look in the same tick 
+- need the gamestate deltas to be applied to Components which are then applied to the render state.  
+
+
 
 -make the buffer work more like anymap where only 1 of certain cmd types (per entity) can be in there at a time - maybe use bit flags idk 
 

@@ -1797,6 +1797,6 @@ mod test {
 
     #[test]
     fn test_connect_listener_bind() {
-        let _listener = ConnectListener::bind("127.0.0.1:26000").unwrap();
+        let _listener = ServerConnectionManager::bind("127.0.0.1:26000",1).unwrap();
     }
 }

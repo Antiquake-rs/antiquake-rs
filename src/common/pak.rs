@@ -86,12 +86,12 @@ impl Pak {
     ///
     /// # Examples
     /// ```no_run
-    /// # extern crate richter;
-    /// use richter::common::pak::Pak;
+    ///  
+    ///  
     ///
     /// # fn main() {
-    /// let mut pak = Pak::new("pak0.pak").unwrap();
-    /// let progs_dat = pak.open("progs.dat").unwrap();
+    // let mut pak = Pak::new("pak0.pak").unwrap()
+    // let progs_dat = pak.open("progs.dat").unwrap()
     /// # }
     /// ```
     pub fn open<S>(&self, path: S) -> Result<&[u8], PakError>
