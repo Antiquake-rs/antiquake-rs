@@ -107,27 +107,12 @@ https://crates.io/crates/game-loop
 https://sunjay.dev/learn-game-dev/game-loop.html
 
 
+ 
+ 
+ - fix client/state.rs  788 
 
--now that client can load into their own local gameserver, make them spawn and render the map! 
--server needs to tell client to open the map bsp 
-
-
-This is failing in client state : 
-client has no self view entity id !!   how do they get that ?  
-   self.entities[self.view.entity_id()].origin,
-
-
-
-
-__ 
-On client/mod  L1370 , 
-state is a new stream 
-client.connection.conn_state =  ConnectionState::SignOn(SignOnStage::Prespawn),
-
-
-client/mod/308  is parse_server_msg   -- where client is handling qosck messages ( ithink) 
-
-
+ - do not send client cmd to the server !! instead, put that in a buffer which we flush every tick (  flush by applying to our own ECS then tell the server 
+ )
 
 
 

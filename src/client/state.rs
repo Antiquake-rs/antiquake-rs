@@ -783,6 +783,13 @@ impl ClientState {
         // send "raw" angles without any pitch/roll from movement or damage
         let angles = self.view.input_angles();
 
+
+
+        
+
+        //this sends a client cmd to the server but it should NOT work this way --- needs to go into an array buffer 
+
+
         ClientCmd::Move {
             send_time,
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
