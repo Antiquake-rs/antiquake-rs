@@ -35,8 +35,12 @@ pub const MAX_BEAMS: usize = 24;
 pub const MAX_TEMP_ENTITIES: usize = 64;
 pub const MAX_STATIC_ENTITIES: usize = 128;
 
-#[derive(Debug)]
+
+use bevy_ecs::{entity::{Entity as BevyEntity}};
+
+#[derive(Debug)]  ///deprecating this struct 
 pub struct ClientUnit {
+ 
     pub force_link: bool,
     pub baseline: UnitState,
     pub msg_time: Duration,
@@ -56,8 +60,10 @@ pub struct ClientUnit {
 }
 
 impl ClientUnit {
-    pub fn from_baseline(baseline: UnitState) -> ClientUnit {
+    pub fn from_baseline(unit_id:usize, baseline: UnitState) -> ClientUnit {
         ClientUnit {
+
+             
             force_link: false,
             baseline: baseline.clone(),
             msg_time: Duration::zero(),

@@ -1,7 +1,10 @@
+use bevy_ecs::prelude::Component;
+use cgmath::{Vector3, Deg};
+
 
 
 #[derive(Component)]
-struct PhysicsComponent {
+pub struct PhysicsComponent {
     
     
     pub origin: Vector3<f32>,

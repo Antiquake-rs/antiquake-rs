@@ -65,6 +65,7 @@ zip = "0.6.3"
 toml = "0.5.9"
 serde_derive = "1.0.147"
 bevy_ecs = "0.8.1"
+anymap = "0.12.1"
 
 [dev-dependencies]
 bitflags = "1"

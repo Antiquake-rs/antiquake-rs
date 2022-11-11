@@ -102,6 +102,7 @@ dependencies = [
 name = "antiquakeengine"
 version = "0.10.0"
 dependencies = [
+ "anymap",
  "arrayvec 0.7.2",
  "async-executor",
  "bevy_ecs",
@@ -158,6 +159,12 @@ dependencies = [
  "winit",
  "zip",
 ]
+
+[[package]]
+name = "anymap"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33954243bd79057c2de7338850b85983a44588021f8a5fee574a8888c6de4344"
 
 [[package]]
 name = "approx"

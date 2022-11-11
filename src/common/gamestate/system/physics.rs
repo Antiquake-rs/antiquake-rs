@@ -1,7 +1,8 @@
+use bevy_ecs::system::Query;
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
-
-
+use crate::common::gamestate::component::physics::{PhysicsComponent};
+ 
 
 pub enum EntityPostureType {
     Stand,
@@ -78,3 +79,25 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
     
 }
 
+
+
+
+pub fn update_physics_movement(
+    mut query: Query<(&mut PhysicsComponent)> 
+){
+
+    //flush the gamestate deltas ! they should be a resource 
+
+
+
+/* 
+    for (physicsComponent) in query.iter_mut() {
+ 
+
+        eprintln!("Entity has origin {:?}.",   physicsComponent.origin );
+
+        
+       
+    }*/
+
+}

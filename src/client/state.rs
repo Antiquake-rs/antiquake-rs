@@ -21,7 +21,11 @@ use crate::{
             self, BeamEntityKind, ButtonFlags, ColorShift, UnitEffects, ItemFlags, PlayerData,
             PointEntityKind, TempEntity,
         },
-        vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry, gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta},
+        vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
+         gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
+         system as ecs_systems,
+         component as ecs_components
+        },
     },
 };
 use arrayvec::ArrayVec;
@@ -35,7 +39,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld}, schedule::Schedule};
+use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -77,7 +81,9 @@ pub struct ClientState {
     pub static_sounds: Vec<StaticSound>,
 
     // entities and entity-like things -- REMOVE THESE
-    pub entities: Vec<ClientUnit>,
+   // pub entities: Vec<ClientUnit>,
+    pub entities: HashMap<usize, i32>, //quake entity_id to bevy_id  
+
     pub static_entities: Vec<ClientUnit>,
     pub temp_entities: Vec<ClientUnit>,
 
@@ -142,7 +148,7 @@ impl ClientState {
         
 
         //this is disgusting !!! break it into resources, components , systems 
-        ClientState {
+        let mut c_state = ClientState {
             rng: SmallRng::from_entropy(),
             models: vec![Model::none()],
             model_names: HashMap::new(),
@@ -150,7 +156,7 @@ impl ClientState {
             cached_sounds: HashMap::new(),
             static_sounds: Vec::new(),
 
-            entities: Vec::new(),
+            entities: HashMap::new(),
             static_entities: Vec::new(),
             temp_entities: Vec::new(),
 
@@ -208,7 +214,17 @@ impl ClientState {
             
             client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
 
-        }
+        };
+
+
+
+
+
+        c_state.init_ecs();
+
+
+
+        return c_state;
     }
 
     pub fn from_server_info(
@@ -256,6 +272,12 @@ impl ClientState {
             cached_sounds.insert(name.to_string(), AudioSource::load(vfs, name)?);
         }
 
+
+
+
+
+
+
         Ok(ClientState {
             models,
             model_names,
@@ -266,7 +288,26 @@ impl ClientState {
         })
     }
 
-  
+    
+   
+
+    
+    fn init_ecs(&mut self){
+        let primary_stage:&str = "primary";
+
+        //add plugins , add resources 
+
+
+
+        self.ecs_schedule.add_stage(primary_stage, SystemStage::parallel() );
+        self.ecs_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
+
+
+
+
+
+
+    }
 
 
     pub fn advance_time(&mut self, frame_time:Duration, cvars: &CvarRegistry, is_connected:bool) -> Result<Duration,ClientError>{
@@ -283,6 +324,10 @@ impl ClientState {
         let cl_nolerp = Client::cvar_value(cvars,"cl_nolerp")?;
         let sv_gravity = Client::cvar_value(cvars,"sv_gravity")?;
           
+
+
+            //MOVE ALL THESE INTO ECS 
+
         self.update_interp_ratio(cl_nolerp);
 
         //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
@@ -325,6 +370,13 @@ impl ClientState {
         return Ok(accum)
     }
 
+
+    //ecs help https://bevy-cheatbook.github.io/programming/queries.html
+
+
+
+
+
     //runs each 'tick_period' milliseconds to advance the virtual machine (to match the server)
     pub fn on_tick(&mut self){
         //println!("client run tick");
@@ -345,9 +397,11 @@ impl ClientState {
       
         // Add a Stage to our schedule. Each Stage in a schedule runs all of its systems
         // before moving on to the next Stage
-      /*  schedule.add_stage("update", SystemStage::parallel()
-            .with_system(movement)
-        );*/ 
+       /*  self.ecs_schedule.add_stage("update", SystemStage::parallel()
+            .with_system(ecs_systems::physics::update_physics_movement)
+        );  */
+
+        
     
         // Run the schedule once. If your app has a "loop", you would run this once per loop
         let world = &mut self.ecs_world;
@@ -380,7 +434,7 @@ impl ClientState {
         match gamestate_delta {
             Some(delta) => {
 
-             println!("apply gamestate delta !! {} ", &delta);   //this print goes infinite ?
+          //   println!("apply gamestate delta !! {} ", &delta);   //this print goes infinite ?
 
             ///just a test thing 
           
@@ -401,7 +455,7 @@ impl ClientState {
                                     let past_origin = c_ent.get_origin();
 
                                     let move_speed = 10.0;
-                                    println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
+                                    //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
                                     let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
                             
                                     //walk
@@ -1003,15 +1057,45 @@ impl ClientState {
         
 
     }
- 
+    
+
+    //https://github.com/bevyengine/bevy/blob/main/examples/ecs/ecs_guide.rs
 
     /// Spawn an entity with the given ID, also spawning any uninitialized
     /// entities between the former last entity and the new one.
     // TODO: skipping entities indicates that the entities have been freed by
     // the server. it may make more sense to use a HashMap to store entities by
     // ID since the lookup table is relatively sparse.
-    pub fn spawn_entities(&mut self, id: usize, baseline: UnitState) -> Result<(), ClientError> {
-        // don't clobber existing entities
+    pub fn spawn_entity(&mut self, id: usize, baseline: UnitState) -> Result<(), ClientError> {
+       
+       
+        let existing = self.entities.get( &id  );
+
+        match existing {
+
+            Some(_) => {Err(ClientError::EntityExists(id)) ;}
+            None => {
+
+                debug!(
+                    "Spawning entity with id {} from baseline {:?}",
+                    id, baseline
+                );
+                
+               // self.entities.push(ClientUnit::from_baseline(baseline));
+        
+
+                let bevy_id = self.ecs_world.spawn()
+                    .insert(ecs_components::physics::PhysicsComponent::new())
+                ;  
+
+                self.entities.insert( id, bevy_id  );
+
+               
+                 //all the data that was in client unit will be moved to components 
+            }
+        }
+       
+      /*  // don't clobber existing entities
         if id < self.entities.len() {
             Err(ClientError::EntityExists(id))?;
         }
@@ -1020,17 +1104,15 @@ impl ClientState {
         for i in self.entities.len()..id {
             debug!("Spawning uninitialized entity with ID {}", i);
             self.entities.push(ClientUnit::uninitialized());
-        }
+        } */
 
-        debug!(
-            "Spawning entity with id {} from baseline {:?}",
-            id, baseline
-        );
-        self.entities.push(ClientUnit::from_baseline(baseline));
-
+      
         Ok(())
     }
 
+
+
+    //change this to just store a statedelta!! 
 
     pub fn on_fast_update( &mut self, fast_update:EntityUpdate ) -> Result<(), ClientError> {
 

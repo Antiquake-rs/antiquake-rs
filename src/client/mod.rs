@@ -645,7 +645,7 @@ impl Connection {
                     origin,
                     angles,
                 } => {
-                    self.state.spawn_entities(
+                    self.state.spawn_entity(
                         ent_id as usize,
                         UnitState {
                             model_id: model_id as usize,
