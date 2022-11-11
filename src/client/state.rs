@@ -40,7 +40,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}, prelude::Component, system::Resource};
+use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -309,9 +309,9 @@ impl ClientState {
         self.ecs_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
 
 
-        self.ecs_schedule.insert_resource(GameStateDeltaBuffer::new());
+        self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
 
-        self.ecs_schedule.insert_resource(BevyEntityLookupRegistry::new());
+        self.ecs_world.insert_resource(BevyEntityLookupRegistry::new());
 
     }
 
@@ -341,7 +341,7 @@ impl ClientState {
        // self.update_entities()?;
 
         // update temp entities (lightning, etc.)
-        self.update_temp_entities()?;
+     //   self.update_temp_entities()?;    //RE IMPLEMENT ME 
 
         // remove expired lights
         self.lights.update(self.time);
@@ -514,26 +514,42 @@ impl ClientState {
 
 
 
-    pub fn get_resource<T>(&self) -> Option<&T> {
+    pub fn get_resource<T>(&self) -> Option<&T> 
+    where 
+    T: std::marker::Sync, 
+    T:std::marker::Send ,
+    {
 
         return self.ecs_world.get_resource::<T>();
     }
     
-    pub fn get_entity<Entity>(&self, unit_id:usize) -> Option<&Entity> {
+    pub fn get_entity(&self, unit_id:u16) -> Option< &Entity>
+    //where T:  Entity
+     {
 
         let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
 
-        let ent = lookup_registry.get(&unit_id)?;
+        let ent = lookup_registry.get(&unit_id) ;
  
         return ent
 
     }
 
-    pub fn get_component_of_entity<T>(&self, unit_id:usize) -> Option<&T> {
+    pub fn unit_exists(&self, unit_id:u16) -> bool {
 
-        let ent = self.get_entity(&unit_id)?;
+        match self.get_entity(unit_id) {
+            Some(_) => return true,
+            None => return false
+        }
+    }
 
-        let component = self.ecs_world.entity(ent).get::<T>();
+    pub fn get_component_of_entity<T>(&self, unit_id:u16) -> Option<&T>
+    where T: bevy_ecs::component::Component
+    {
+
+        let ent = self.get_entity( unit_id )?;
+
+        let component = self.ecs_world.entity(*ent).get::<T>();
 
         return component
 
@@ -838,7 +854,7 @@ impl ClientState {
         Ok(())
     }*/ 
 
-    pub fn update_temp_entities(&mut self) -> Result<(), ClientError> {
+  /*   pub fn update_temp_entities(&mut self) -> Result<(), ClientError> {
         lazy_static! {
             static ref ANGLE_DISTRIBUTION: Uniform<f32> = Uniform::new(0.0, 360.0);
         }
@@ -881,7 +897,7 @@ impl ClientState {
         }
 
         Ok(())
-    }
+    } */
 
     pub fn update_player(&mut self, update: PlayerData) {
         self.view
@@ -1047,7 +1063,16 @@ impl ClientState {
         health: u8,
         source: Vector3<f32>,
         kick_vars: KickVars,
-    ) {
+    ) { 
+        
+            //write something into a gamestate buffer ???  
+            // THen that will affect dmg component ????
+
+
+            //or maybe server is just authoritative about damage. like this.
+
+         
+        /*
         self.face_anim_time = self.time + Duration::milliseconds(200);
 
         let dmg_factor = (armor + health).min(20) as f32 / 2.0;
@@ -1080,6 +1105,7 @@ impl ClientState {
             source,
             kick_vars,
         );
+        */
     }
 
     pub fn calc_final_view(
@@ -1125,14 +1151,14 @@ impl ClientState {
     // TODO: skipping entities indicates that the entities have been freed by
     // the server. it may make more sense to use a HashMap to store entities by
     // ID since the lookup table is relatively sparse.
-    pub fn spawn_entity(&mut self, id: usize, baseline: UnitState) -> Result<(), ClientError> {
+    pub fn spawn_entity(&mut self, id: u16, baseline: UnitState) -> Result<(), ClientError> {
        
        
-        let existing = self.entities.get( &id  );
+       // let existing = self.entities.get( &id  );
 
-        match existing {
+        match self.get_entity(id) {
 
-            Some(_) => {Err(ClientError::EntityExists(id)) ;}
+            Some(_) => {Err(ClientError::EntityExists(id as usize)) ;}
             None => {
 
                 debug!(
@@ -1147,7 +1173,10 @@ impl ClientState {
                     .insert(ecs_components::physics::PhysicsComponent::new())
                 ;  
 
-                self.entities.insert( id, bevy_id  );
+                let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
+
+                lookup_registry.insert( id, bevy_id  );
+                //self.entities.insert( id, bevy_id  );
 
                
                  //all the data that was in client unit will be moved to components 

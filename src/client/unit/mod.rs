@@ -60,7 +60,7 @@ pub struct ClientUnit {
 }
 
 impl ClientUnit {
-    pub fn from_baseline(unit_id:usize, baseline: UnitState) -> ClientUnit {
+    pub fn from_baseline(  baseline: UnitState) -> ClientUnit {
         ClientUnit {
 
              

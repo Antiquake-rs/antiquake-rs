@@ -406,7 +406,7 @@ pub struct GameInput {
     bindings: Rc<RefCell<HashMap<BindInput, BindTarget>>>,
     action_states: Rc<RefCell<[bool; ACTION_COUNT]>>,
     mouse_delta: (f64, f64),
-    impulse: Rc 
+    impulse:Rc<Cell<u8>>,
 }
 
 impl GameInput {

@@ -601,7 +601,7 @@ impl Connection {
                 ServerCmd::Sound {
                     volume,
                     attenuation,
-                    entity_id,
+                    entity_id: unit_id,
                     channel,
                     sound_id,
                     position,
@@ -609,14 +609,14 @@ impl Connection {
                     trace!(
                         "starting sound with id {} on entity {} channel {}",
                         sound_id,
-                        entity_id,
+                        unit_id,
                         channel
                     );
 
-                    if entity_id as usize >= self.state.entities.len() {
+                    if !self.state.unit_exists( unit_id )  {
                         warn!(
-                            "server tried to start sound on nonexistent entity {}",
-                            entity_id
+                            "server tried to start sound on nonexistent unit {}",
+                            unit_id
                         );
                         break;
                     }
@@ -627,7 +627,7 @@ impl Connection {
                     self.state.mixer.start_sound(
                         self.state.sounds[sound_id as usize].clone(),
                         self.state.msg_times[0],
-                        Some(entity_id as usize),
+                        Some(unit_id as usize),
                         channel,
                         volume as f32 / 255.0,
                         attenuation,
@@ -646,7 +646,7 @@ impl Connection {
                     angles,
                 } => {
                     self.state.spawn_entity(
-                        ent_id as usize,
+                        ent_id  ,
                         UnitState {
                             model_id: model_id as usize,
                             frame_id: frame_id as usize,

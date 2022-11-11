@@ -97,7 +97,7 @@ pub fn update_physics_movement(
     mut query: Query<(&mut PhysicsComponent)> 
 ){
 
-
+    //for each delta buffer, apply it to the corresponding entitys phys component
     while  !delta_buffer.is_empty(){
         
         let next_delta = delta_buffer.pop();
@@ -105,16 +105,27 @@ pub fn update_physics_movement(
         match next_delta {
             Some(delta) => {
 
-                let unit_id = next_delta.source_unit_id;  
+                let unit_id = delta.source_unit_id;  
 
-                let bevy_entity_id = entity_lookup.get(unit_id);
-                  
-                match query.get_mut(bevy_entity_id) {
-                    Some(phys_comp) => {
-                        self::apply_gamestate_delta_buffer(   next_delta, phys_comp  );
+                let bevy_entity_id = entity_lookup.get(&unit_id);
+
+                match bevy_entity_id {
+                    Some(ent_id) => {
+
+                        match query.get_mut(*ent_id) {
+
+                            Ok(phys_comp) => {
+                                self::apply_gamestate_delta_buffer(   &delta,  phys_comp.as_mut()  );
+                            }
+                            _ => {}
+
+                        }
+
                     }
                     _ => {}
                 }
+                  
+               
                  
 
             }
@@ -133,7 +144,7 @@ pub fn update_physics_movement(
 
 fn apply_gamestate_delta_buffer( 
     delta:  &GameStateDelta ,
-    mut physComp: &PhysicsComponent
+     physComp: &mut PhysicsComponent
  ){
 
 
@@ -143,7 +154,7 @@ fn apply_gamestate_delta_buffer(
         DeltaCommand::SetLookVector { angle } => {},
         DeltaCommand::SetMovementVector { vector } => {
              
-            let past_origin = physComp.get_origin();
+            let past_origin = physComp.origin.clone();
 
             let move_speed = 10.0;
             //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);

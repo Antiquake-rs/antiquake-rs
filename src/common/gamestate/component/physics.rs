@@ -14,3 +14,17 @@ pub struct PhysicsComponent {
 
 }
 
+impl PhysicsComponent {
+
+    pub fn new() -> PhysicsComponent {
+        PhysicsComponent { 
+            origin: Vector3::new(0.0,0.0,0.0), 
+            angles: Vector3::new(Deg(0.0),Deg(0.0),Deg(0.0)) 
+        }
+    }
+
+    pub fn set_origin( &self, vec:Vector3<f32>  ) {
+        self.origin = vec.clone();
+    }
+
+}

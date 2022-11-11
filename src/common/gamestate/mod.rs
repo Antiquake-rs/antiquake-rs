@@ -25,7 +25,7 @@ use self::system::physics::{ EntityPostureType, PhysBodyType};
 pub struct GameStateDelta {
 
     pub command: DeltaCommand,
-    pub source_unit_id: u32,  //the quake unit id 
+    pub source_unit_id: u32,  //the quake unit id (not the bevy entity id)
 
     pub source_player_id: u32, //0 for server 
     pub source_tick_count: u32, 
@@ -57,7 +57,7 @@ impl fmt::Display for GameStateDelta {
         
         write!(f, "{} - {} - {} - {}", 
             self.command.to_string(), 
-            self.source_entity_id,
+            self.source_unit_id,
             self.source_player_id,
             self.source_tick_count 
          )
@@ -87,7 +87,7 @@ fn gamestate_delta_to_flag_type( d:&GameStateDelta ) -> Option<DeltaCommandFlags
 
 fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<u32,u16> ) -> bool {
 
-    let unit_flags:Option<&u16> = unit_cmd_flags.get(  &d.source_entity_id );
+    let unit_flags:Option<&u16> = unit_cmd_flags.get(  &d.source_unit_id );
 
     match unit_flags {
         Some(u_flags) => {
@@ -155,13 +155,13 @@ impl GameStateDeltaBuffer {
         
         match flag_type {
             Some(f_type) => {
-                let existing_flags = match self.unit_cmd_flags.get(&d.source_entity_id) {
+                let existing_flags = match self.unit_cmd_flags.get(&d.source_unit_id) {
                         Some(f) => f.to_owned(),
                         None => 0
                 };
  
                 let new_flags:u16 = (existing_flags | f_type.bits()); 
-                self.unit_cmd_flags.insert(d.source_entity_id, new_flags)
+                self.unit_cmd_flags.insert(d.source_unit_id, new_flags)
             },
             None => {
                 // do nothing as this type of command is not flaggable 

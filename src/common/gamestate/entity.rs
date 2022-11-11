@@ -6,7 +6,7 @@ use bevy_ecs::prelude::Entity;
  
 pub struct BevyEntityLookupRegistry {
 
-    entities: HashMap<u32, Entity>
+    entities: HashMap<u16, Entity>
 
 }
 
@@ -18,8 +18,11 @@ impl BevyEntityLookupRegistry {
         }
     }
 
-    pub fn get(&self, unit_id:&u32) {
+    pub fn get(&self, unit_id:&u16) -> Option<&Entity> {
         return self.entities.get(unit_id);
+    }
+    pub fn insert(&self, unit_id: u16, entity: Entity) {
+        self.entities.insert(unit_id,entity);
     }
 
 }
