@@ -406,9 +406,7 @@ pub struct GameInput {
     bindings: Rc<RefCell<HashMap<BindInput, BindTarget>>>,
     action_states: Rc<RefCell<[bool; ACTION_COUNT]>>,
     mouse_delta: (f64, f64),
-    impulse: Rc<Cell<u8>>,
-
-    previous_mouse_psn: Option<PhysicalPosition<f64>>
+    impulse: Rc 
 }
 
 impl GameInput {
@@ -418,8 +416,7 @@ impl GameInput {
             bindings: Rc::new(RefCell::new(HashMap::new())),
             action_states: Rc::new(RefCell::new([false; ACTION_COUNT])),
             mouse_delta: (0.0, 0.0),
-            impulse: Rc::new(Cell::new(0)),
-            previous_mouse_psn: None
+            impulse: Rc::new(Cell::new(0)) 
         }
     }
 
@@ -558,22 +555,7 @@ impl GameInput {
         }
     }
 
-
-    
-    fn on_cursor_moved( &mut self, position: PhysicalPosition<f64>   ){
-
-
-        match self.previous_mouse_psn {
-            Some(prev_psn) => {
-               
-                self.handle_mouse_motion( (position.x - prev_psn.x ,  position.y  - prev_psn.y)) ; 
-            },
-            None => {
-                self.previous_mouse_psn = Some(position.clone());
-            }
-        }
-
-    }
+ 
 
     fn handle_mouse_motion(&mut self, delta: (f64,f64) ){
  

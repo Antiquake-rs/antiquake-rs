@@ -39,7 +39,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}};
+use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}, prelude::Component, system::Resource};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -61,6 +61,11 @@ pub struct PlayerInfo {
     // translations: [u8; VID_GRADES],
 }
 
+
+pub struct UnitIdRegistry {
+    
+
+}
 // client information regarding the current level
 pub struct ClientState {
     // local rng
@@ -139,7 +144,7 @@ pub struct ClientState {
     pub ecs_schedule: Schedule,
 
     
-    pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
+  //  pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
 }
 
 impl ClientState {
@@ -212,7 +217,7 @@ impl ClientState {
             ecs_schedule: Schedule::default(),
 
             
-            client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
+           // client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
 
         };
 
@@ -303,7 +308,7 @@ impl ClientState {
         self.ecs_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
 
 
-
+        self.ecs_schedule.insert_resource(GameStateDeltaBuffer::new());
 
 
 
@@ -332,7 +337,7 @@ impl ClientState {
 
         //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
         // interpolate entity data and spawn particle effects, lights
-        self.update_entities()?;
+       // self.update_entities()?;
 
         // update temp entities (lightning, etc.)
         self.update_temp_entities()?;
@@ -386,7 +391,7 @@ impl ClientState {
 
         //flush gamestate delta buffer 
 
-       self.flush_gamestate_delta_buffer();
+       //self.flush_gamestate_delta_buffer();
 
 
 
@@ -411,7 +416,10 @@ impl ClientState {
 
 
 
-    fn flush_gamestate_delta_buffer( &mut self  ){
+
+    //DEPRECATED 
+
+   /* fn flush_gamestate_delta_buffer( &mut self  ){
 
         
         while  !self.client_gamestate_delta_buffer.is_empty()   { 
@@ -426,9 +434,13 @@ impl ClientState {
 
         self.client_gamestate_delta_buffer.reset_flags();
 
-    }
+    }*/ 
 
-    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta:   Option<GameStateDelta> ) {
+
+    //DEPRECATED 
+
+     /*
+    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta: Option<GameStateDelta> ) {
  
         
         match gamestate_delta {
@@ -436,9 +448,22 @@ impl ClientState {
 
           //   println!("apply gamestate delta !! {} ", &delta);   //this print goes infinite ?
 
-            ///just a test thing 
+           
+                let unit_id = delta.source_unit_id; 
+
+
+                let unit_phys_comp = self.get_component_of_entity::<ecs_components::physics::PhysicsComponent>(unit_id);
+
+                match unit_phys_comp {
+                    Some(phys_comp) => {
+
+                      //  ecs_systems::physics::applyPhysicsDeltaCommand(  delta.command );
+
+                    }
+                    _=> {} 
+                }
           
-                let controlled_entity =  self.entities.get_mut(self.view.unit_id()); //[self.view.unit_id()];
+              /*  let controlled_entity =  self.entities.get_mut(self.view.unit_id()); //[self.view.unit_id()];
                 
                 match controlled_entity {
                     Some(   c_ent) => {
@@ -471,7 +496,7 @@ impl ClientState {
 
                     _ =>{}
 
-                }
+                }*/ 
 
         
            
@@ -484,9 +509,24 @@ impl ClientState {
 
      
 
+    }*/
+
+
+
+    pub fn get_resource<T>(&self) -> Option<&T> {
+
+        return self.ecs_world.get_resource::<T>();
     }
 
+    pub fn get_component_of_entity<T>(&self, unit_id:usize) -> Option<&T> {
 
+        let entity_id = self.entities.get(&unit_id)?;
+
+        let component = self.ecs_world.entity(entity_id).get::<T>();
+
+        return component
+
+    }
 
 
 
@@ -494,14 +534,22 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-            self.client_gamestate_delta_buffer.push( GameStateDelta::new(
-                delta_cmd, 
-                self.view_unit_id() as u32,
-                self.player_id() as u32,
-                self.tick_count() as u32,
+            let delta_buffer = self.get_resource::<GameStateDeltaBuffer>();
 
-            ) 
-         );
+            match delta_buffer {
+                Some(buf) => {
+                    buf.push( GameStateDelta::new(
+                        delta_cmd, 
+                        self.view_unit_id() as u32,
+                        self.player_id() as u32,
+                        self.tick_count() as u32,
+        
+                    )  );
+                }
+                _ => {}
+            }
+
+           
     }
 
 
@@ -572,7 +620,7 @@ impl ClientState {
     ///   message
     /// - Spawning particles on entities with particle effects
     /// - Spawning dynamic lights on entities with lighting effects
-    pub fn update_entities(&mut self) -> Result<(), ClientError> {
+   /* pub fn update_entities(&mut self) -> Result<(), ClientError> {
         lazy_static! {
             static ref MFLASH_DIMLIGHT_DISTRIBUTION: Uniform<f32> = Uniform::new(200.0, 232.0);
             static ref BRIGHTLIGHT_DISTRIBUTION: Uniform<f32> = Uniform::new(400.0, 432.0);
@@ -777,7 +825,7 @@ impl ClientState {
         }
 
         Ok(())
-    }
+    }*/ 
 
     pub fn update_temp_entities(&mut self) -> Result<(), ClientError> {
         lazy_static! {

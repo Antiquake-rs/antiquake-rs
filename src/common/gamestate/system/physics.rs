@@ -1,7 +1,7 @@
-use bevy_ecs::system::Query;
+use bevy_ecs::system::{Query, Res};
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
-use crate::common::gamestate::component::physics::{PhysicsComponent};
+use crate::common::gamestate::{component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand};
  
 
 pub enum EntityPostureType {
@@ -82,22 +82,72 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 
 
 
+    //ecs help https://bevy-cheatbook.github.io/programming/queries.html
+
+
+
+//this is called now 
 pub fn update_physics_movement(
+    // unit id registry 
+    mut gamestateDeltaBuffer: Res<GameStateDeltaBuffer>,
     mut query: Query<(&mut PhysicsComponent)> 
 ){
 
-    //flush the gamestate deltas ! they should be a resource 
 
+    while  !gamestateDeltaBuffer.is_empty()   { 
+        
+        let next_delta = gamestateDeltaBuffer.pop();
+        
+        match next_delta {
+            Some(delta) => {
 
+                let unit_id = next_delta.source_unit_id; 
 
-/* 
-    for (physicsComponent) in query.iter_mut() {
+                 
+
+                query.get_component(entity)
+                
+                self::apply_gamestate_delta_buffer(   next_delta, phys_comp  );
+        
+
+            }
+            _ => {}
+
+        }
+     
+
+    }
+
+    gamestateDeltaBuffer.reset_flags();
+
  
 
-        eprintln!("Entity has origin {:?}.",   physicsComponent.origin );
-
-        
-       
-    }*/
-
 }
+
+fn apply_gamestate_delta_buffer( 
+    delta:  &GameStateDelta ,
+    mut physComp: &PhysicsComponent
+ ){
+
+
+    match delta.command {
+        DeltaCommand::ReportLocationVector { loc } => {},
+        DeltaCommand::ReportVelocityVector { angle } => {},
+        DeltaCommand::SetLookVector { angle } => {},
+        DeltaCommand::SetMovementVector { vector } => {
+             
+            let past_origin = physComp.get_origin();
+
+            let move_speed = 10.0;
+            //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
+            let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
+    
+            //walk
+            physComp.set_origin(    new_origin  ) ;
+
+        },
+        DeltaCommand::PerformEntityAction { action, target_id } => {},
+    }
+
+    
+ }

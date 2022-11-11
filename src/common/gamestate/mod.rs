@@ -24,7 +24,7 @@ use self::system::physics::{ EntityPostureType, PhysBodyType};
 pub struct GameStateDelta {
 
     pub command: DeltaCommand,
-    pub source_entity_id: u32, 
+    pub source_unit_id: u32,  //the quake unit id 
 
     pub source_player_id: u32, //0 for server 
     pub source_tick_count: u32, 
@@ -37,10 +37,10 @@ pub struct GameStateDelta {
 
 
 impl GameStateDelta{
-    pub fn new(delta_cmd:DeltaCommand, source_entity_id:u32, source_player_id:u32,source_tick_count:u32  ) -> GameStateDelta {
+    pub fn new(delta_cmd:DeltaCommand, source_unit_id:u32, source_player_id:u32,source_tick_count:u32  ) -> GameStateDelta {
         GameStateDelta { 
                 command: delta_cmd,
-                source_entity_id ,
+                source_unit_id ,
                 source_player_id ,
                 source_tick_count  
 
