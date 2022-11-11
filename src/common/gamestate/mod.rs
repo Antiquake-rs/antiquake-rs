@@ -18,6 +18,7 @@ use cgmath::{Deg, Vector3, Angle,InnerSpace};
 
 pub mod component;
 pub mod system;
+pub mod entity;
 
 use self::system::physics::{ EntityPostureType, PhysBodyType};
 
@@ -28,9 +29,7 @@ pub struct GameStateDelta {
 
     pub source_player_id: u32, //0 for server 
     pub source_tick_count: u32, 
-
-
-
+ 
 }
 
 
@@ -47,6 +46,7 @@ impl GameStateDelta{
         }
     }  
 }
+
 
 
 

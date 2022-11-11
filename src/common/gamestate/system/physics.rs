@@ -1,7 +1,10 @@
 use bevy_ecs::system::{Query, Res};
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
-use crate::common::gamestate::{component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand};
+use crate::common::gamestate::{
+    component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
+    entity::{BevyEntityLookupRegistry} 
+};
  
 
 pub enum EntityPostureType {
@@ -89,26 +92,30 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 //this is called now 
 pub fn update_physics_movement(
     // unit id registry 
-    mut gamestateDeltaBuffer: Res<GameStateDeltaBuffer>,
+    entity_lookup: Res<BevyEntityLookupRegistry>,
+    mut delta_buffer: Res<GameStateDeltaBuffer>,
     mut query: Query<(&mut PhysicsComponent)> 
 ){
 
 
-    while  !gamestateDeltaBuffer.is_empty()   { 
+    while  !delta_buffer.is_empty(){
         
-        let next_delta = gamestateDeltaBuffer.pop();
+        let next_delta = delta_buffer.pop();
         
         match next_delta {
             Some(delta) => {
 
-                let unit_id = next_delta.source_unit_id; 
+                let unit_id = next_delta.source_unit_id;  
 
+                let bevy_entity_id = entity_lookup.get(unit_id);
+                  
+                match query.get_mut(bevy_entity_id) {
+                    Some(phys_comp) => {
+                        self::apply_gamestate_delta_buffer(   next_delta, phys_comp  );
+                    }
+                    _ => {}
+                }
                  
-
-                query.get_component(entity)
-                
-                self::apply_gamestate_delta_buffer(   next_delta, phys_comp  );
-        
 
             }
             _ => {}
@@ -118,7 +125,7 @@ pub fn update_physics_movement(
 
     }
 
-    gamestateDeltaBuffer.reset_flags();
+    delta_buffer.reset_flags();
 
  
 

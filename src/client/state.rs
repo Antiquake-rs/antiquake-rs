@@ -24,7 +24,8 @@ use crate::{
         vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
          gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
          system as ecs_systems,
-         component as ecs_components
+         component as ecs_components,
+         entity::{BevyEntityLookupRegistry}
         },
     },
 };
@@ -87,7 +88,7 @@ pub struct ClientState {
 
     // entities and entity-like things -- REMOVE THESE
    // pub entities: Vec<ClientUnit>,
-    pub entities: HashMap<usize, i32>, //quake entity_id to bevy_id  
+   // pub entities: HashMap<usize, i32>, //quake entity_id to bevy_id  
 
     pub static_entities: Vec<ClientUnit>,
     pub temp_entities: Vec<ClientUnit>,
@@ -161,7 +162,7 @@ impl ClientState {
             cached_sounds: HashMap::new(),
             static_sounds: Vec::new(),
 
-            entities: HashMap::new(),
+            //entities: HashMap::new(),
             static_entities: Vec::new(),
             temp_entities: Vec::new(),
 
@@ -310,7 +311,7 @@ impl ClientState {
 
         self.ecs_schedule.insert_resource(GameStateDeltaBuffer::new());
 
-
+        self.ecs_schedule.insert_resource(BevyEntityLookupRegistry::new());
 
     }
 
@@ -517,12 +518,22 @@ impl ClientState {
 
         return self.ecs_world.get_resource::<T>();
     }
+    
+    pub fn get_entity<Entity>(&self, unit_id:usize) -> Option<&Entity> {
+
+        let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
+
+        let ent = lookup_registry.get(&unit_id)?;
+ 
+        return ent
+
+    }
 
     pub fn get_component_of_entity<T>(&self, unit_id:usize) -> Option<&T> {
 
-        let entity_id = self.entities.get(&unit_id)?;
+        let ent = self.get_entity(&unit_id)?;
 
-        let component = self.ecs_world.entity(entity_id).get::<T>();
+        let component = self.ecs_world.entity(ent).get::<T>();
 
         return component
 
