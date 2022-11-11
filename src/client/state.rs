@@ -400,7 +400,7 @@ impl ClientState {
                                      
                                     let past_origin = c_ent.get_origin();
 
-                                    let move_speed = 1.0;
+                                    let move_speed = 10.0;
                                     println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
                                     let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
                             

@@ -34,7 +34,7 @@ use winit::{
 };
 
 pub trait Program: Sized {
-    fn handle_event<T>(
+    fn handle_event_in_program<T : std::fmt::Debug>(
         &mut self,
         event: Event<T>,
         _target: &EventLoopWindowTarget<T>,
@@ -77,12 +77,16 @@ where
         }
     }
 
-    pub fn handle_event<T>(
+    pub fn handle_event_in_host<T>(
         &mut self,
         event: Event<T>,
         _target: &EventLoopWindowTarget<T>,
         control_flow: &mut ControlFlow,
-    ) {
+    ) 
+      where
+    T: std::fmt::Debug,
+    {
+ 
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
@@ -100,7 +104,7 @@ where
                 // - others...
             }
 
-            e => self.program.handle_event(e, _target, control_flow),
+            e => self.program.handle_event_in_program(e, _target, control_flow),
         }
     }
 

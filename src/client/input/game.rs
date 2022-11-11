@@ -407,6 +407,8 @@ pub struct GameInput {
     action_states: Rc<RefCell<[bool; ACTION_COUNT]>>,
     mouse_delta: (f64, f64),
     impulse: Rc<Cell<u8>>,
+
+    previous_mouse_psn: Option<PhysicalPosition<f64>>
 }
 
 impl GameInput {
@@ -417,6 +419,7 @@ impl GameInput {
             action_states: Rc::new(RefCell::new([false; ACTION_COUNT])),
             mouse_delta: (0.0, 0.0),
             impulse: Rc::new(Cell::new(0)),
+            previous_mouse_psn: None
         }
     }
 
@@ -472,43 +475,12 @@ impl GameInput {
         self.bindings.borrow().get(&input.into()).map(|t| t.clone())
     }
 
-    pub fn handle_event<T>(&mut self, outer_event: Event<T>) {
+    pub fn handle_event<T>(&mut self, outer_event: Event<T>)
+    where
+    T: std::fmt::Debug,
+     {
 
-        
-
-        match &outer_event {
-            Event::WindowEvent { event, .. } => match event {
-                WindowEvent::KeyboardInput {
-                    input:
-                        KeyboardInput {
-                            state,
-                            virtual_keycode: Some(key),
-                            ..
-                        },
-                    ..
-                } => { println!("keyboard event " );}
-
-                _ =>  {}
-            },
-
-            Event::DeviceEvent { event, .. } => match event {
-                DeviceEvent::MouseMotion { delta } => {
-                   
-                    
-                    //this stops happening when a keyboard key is pressed ! 
-                    println!("mouse event " );
-                    
-                   
-                }
-
-                _ =>  {} ,
-            },
-
-            _ =>  {} ,
-        }
-
-        
-
+         
         let (input, state): (BindInput, _) = match outer_event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::KeyboardInput {
@@ -524,16 +496,19 @@ impl GameInput {
                 WindowEvent::MouseInput { state, button, .. } => (button.into(), state),
                 WindowEvent::MouseWheel { delta, .. } => (delta.into(), ElementState::Pressed),
                 
+                WindowEvent::CursorMoved { position, .. } => {
+              
+
+                  return
+                }
   
                 
                 _ => return,
             },
-
+            
             Event::DeviceEvent { event, .. } => match event {
                 DeviceEvent::MouseMotion { delta } => {
-                   
                     
-                    //this stops happening when a keyboard key is pressed ! 
                     self.handle_mouse_motion( delta );
                     
                     return;
@@ -583,16 +558,27 @@ impl GameInput {
         }
     }
 
-    pub fn handle_mouse_motion(&mut self, delta: (f64,f64) ){
 
-        println!("Mouse delta {} {}", self.mouse_delta.0,self.mouse_delta.1);
+    
+    fn on_cursor_moved( &mut self, position: PhysicalPosition<f64>   ){
 
+
+        match self.previous_mouse_psn {
+            Some(prev_psn) => {
+               
+                self.handle_mouse_motion( (position.x - prev_psn.x ,  position.y  - prev_psn.y)) ; 
+            },
+            None => {
+                self.previous_mouse_psn = Some(position.clone());
+            }
+        }
+
+    }
+
+    fn handle_mouse_motion(&mut self, delta: (f64,f64) ){
+ 
         self.mouse_delta.0 += delta.0;
         self.mouse_delta.1 += delta.1;
-
-
-        //broadcast a message using bevy ??? 
-
 
     }
 

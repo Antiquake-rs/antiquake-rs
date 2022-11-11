@@ -380,12 +380,16 @@ impl ClientProgram {
 }
 
 impl Program for ClientProgram {
-    fn handle_event<T>(
+    fn handle_event_in_program<T>(
         &mut self,
         event: Event<T>,
         _target: &EventLoopWindowTarget<T>,
         _control_flow: &mut ControlFlow,
-    ) {
+    ) 
+    where
+    T: std::fmt::Debug,
+    {
+
         match event {
             Event::WindowEvent {
                 event: WindowEvent::Resized(_),
@@ -508,9 +512,7 @@ fn main() {
         //init rodio audio before other multithreaded libs -- see https://github.com/RustAudio/rodio/issues/214
         OutputStream::try_default().unwrap();
 
-
-
-
+ 
 
 
     let window = {
@@ -592,8 +594,17 @@ if let Some(ref server) = opt.connect {
 
 let mut host = Host::new(client_program);
 
+
+//example https://github.com/kvark/baryon/blob/main/src/window.rs
+
 event_loop.run(move |event, _target, control_flow| {
-    host.handle_event(event, _target, control_flow);
+
+
+    
+    *control_flow = ControlFlow::Poll;
+ 
+
+    host.handle_event_in_host(event, _target, control_flow);
 });
   
 }

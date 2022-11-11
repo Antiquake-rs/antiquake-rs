@@ -19,7 +19,7 @@ pub mod console;
 pub mod game;
 pub mod menu;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, fmt};
 
 use crate::{
     client::menu::Menu,
@@ -27,7 +27,7 @@ use crate::{
 };
 
 use failure::Error;
-use winit::event::{Event, WindowEvent};
+use winit::event::{Event, WindowEvent, KeyboardInput, DeviceEvent};
 
 use self::{
     console::ConsoleInput,
@@ -50,6 +50,8 @@ pub struct Input {
     console_input: ConsoleInput,
     menu_input: MenuInput,
 }
+ 
+
 
 impl Input {
     pub fn new(
@@ -67,7 +69,11 @@ impl Input {
         }
     }
 
-    pub fn handle_event<T>(&mut self, event: Event<T>) -> Result<(), Error> {
+    pub fn handle_event<T>(&mut self, event: Event<T>) -> Result<(), Error> 
+    where
+    T: std::fmt::Debug,
+    {
+        
         match event {
             // we're polling for hardware events, so we have to check window focus ourselves
             Event::WindowEvent {
