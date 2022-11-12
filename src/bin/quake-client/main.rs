@@ -304,7 +304,7 @@ impl ClientProgram {
         }
     }
 
-    //fix me 
+    
     fn recreate_texture_view(&self, present_mode: wgpu::PresentMode){
 
         let gfx_state = &self.gfx_state.borrow();

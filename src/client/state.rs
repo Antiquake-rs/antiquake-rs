@@ -1128,7 +1128,7 @@ impl ClientState {
         
 
                 let bevy_id = self.ecs_world.spawn()
-                    .insert(ecs_components::physics::PhysicsComponent::new())
+                    .insert(ecs_components::physics::PhysicsComponent::from_baseline(baseline))
                     .id();
                   
 
@@ -1623,6 +1623,7 @@ impl ClientState {
         match controlled_entity_phys_comp {
             Some( mut phys_comp  ) => {
 
+                    println!("set angles of my char {:?}", final_angles);
                     phys_comp.set_angles(Vector3::new(
                         final_angles.pitch,
                         final_angles.yaw,

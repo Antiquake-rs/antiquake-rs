@@ -1,6 +1,8 @@
 use bevy_ecs::prelude::Component;
 use cgmath::{Vector3, Deg};
 
+use crate::common::net::UnitState;
+
 
 
 #[derive(Component)]
@@ -21,6 +23,15 @@ impl PhysicsComponent {
             origin: Vector3::new(0.0,0.0,0.0), 
             angles: Vector3::new(Deg(0.0),Deg(0.0),Deg(0.0)) 
         }
+    }
+
+    pub fn from_baseline(baseline: UnitState) -> PhysicsComponent {
+
+        PhysicsComponent { 
+            origin: baseline.origin.clone(), 
+            angles: baseline.angles.clone()
+        }
+
     }
 
     pub fn set_origin( &mut self, vec:Vector3<f32>  ) {
