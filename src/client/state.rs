@@ -516,11 +516,27 @@ impl ClientState {
 
     pub fn get_resource<T>(&self) -> Option<&T> 
     where 
-    T: std::marker::Sync, 
-    T:std::marker::Send ,
+    T: Resource
     {
 
-        return self.ecs_world.get_resource::<T>();
+        return self.ecs_world.get_resource::<T >();
+    }
+
+    pub fn get_resource_mut<T>(&mut self) -> Option<&mut T> 
+    where  T: Resource
+    {
+        use std::borrow::BorrowMut;
+
+        let mut resource = self.ecs_world.get_resource_mut::<T>();
+
+        match resource {
+            Some( mut res) => {
+
+                let mut output = (&res).as_mut();
+                return Some(   output)
+            },
+            None => return None 
+        }
     }
     
     pub fn get_entity(&self, unit_id:usize) -> Option< &Entity>
@@ -556,17 +572,22 @@ impl ClientState {
         return component
 
     }
-    pub fn get_mut_component_of_entity<T>(&self, unit_id:usize) -> Option<&mut T>
+    pub fn get_mut_component_of_entity<T>(&mut self, unit_id:usize) -> Option<&mut T>
     where T: bevy_ecs::component::Component
     {
+        use std::borrow::BorrowMut;
 
         let ent = self.get_entity( unit_id )?;
 
         let component = self.ecs_world.get_mut::<T>(*ent);
-        //let component = self.ecs_world.entity(*ent).get::<T>();
+        
 
-        return component
+        match component {
+            Some(mut comp) => return Some(comp.borrow_mut()),
+            None => return None
+        }
 
+ 
     }
 
 
@@ -575,7 +596,7 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-            let delta_buffer = self.get_resource::<GameStateDeltaBuffer>();
+            let delta_buffer = self.get_resource_mut::<GameStateDeltaBuffer>();
 
             match delta_buffer {
                 Some(buf) => {
@@ -1604,6 +1625,7 @@ impl ClientState {
         }
     }
 
+   
     pub fn update_color_shifts(&mut self, frame_time: Duration) -> Result<(), ClientError> {
         let float_time = engine::duration_to_f32(frame_time);
 
@@ -1672,6 +1694,7 @@ impl ClientState {
 
         Ok(())
     }
+
 
     /// Update the view angles to the specified value, disabling interpolation.
     pub fn set_view_angles(&mut self, angles: Vector3<Deg<f32>>) {
