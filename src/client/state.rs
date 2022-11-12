@@ -142,7 +142,8 @@ pub struct ClientState {
     pub tick_counter: TickCounter,
 
     pub ecs_world: BevyWorld,
-    pub ecs_schedule: Schedule,
+    pub ecs_tick_schedule: Schedule, //runs every tick  -- physics 
+    pub ecs_frame_schedule: Schedule, //runs every frame -- render 
 
     
   //  pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
@@ -215,7 +216,8 @@ impl ClientState {
 
             tick_counter: TickCounter::new( Duration::milliseconds( 33 )  ),
             ecs_world: BevyWorld::new(),
-            ecs_schedule: Schedule::default(),
+            ecs_tick_schedule: Schedule::default(),
+            ecs_frame_schedule: Schedule::default(),
 
             
            // client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
@@ -305,8 +307,11 @@ impl ClientState {
 
 
 
-        self.ecs_schedule.add_stage(primary_stage, SystemStage::parallel() );
-        self.ecs_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
+        self.ecs_tick_schedule.add_stage(primary_stage, SystemStage::parallel() );
+        self.ecs_tick_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
+        
+        //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
+        //self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::update_physics_movement);
 
 
         self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
@@ -325,6 +330,8 @@ impl ClientState {
         if trigger {
             self.on_tick();            
         }
+
+        let pause_rendering = accum > Duration::milliseconds(1000);
 
 
         let cl_nolerp = Client::cvar_value(cvars,"cl_nolerp")?;
@@ -373,6 +380,12 @@ impl ClientState {
 
         }
 
+        if !pause_rendering {
+            let world = &mut self.ecs_world;
+            self.ecs_frame_schedule.run_once(world);
+        }
+       
+
         return Ok(accum)
     }
 
@@ -411,108 +424,13 @@ impl ClientState {
     
         // Run the schedule once. If your app has a "loop", you would run this once per loop
         let world = &mut self.ecs_world;
-        self.ecs_schedule.run_once(world);
+        self.ecs_tick_schedule.run_once(world);
 
     }
 
 
 
-
-    //DEPRECATED 
-
-   /* fn flush_gamestate_delta_buffer( &mut self  ){
-
-        
-        while  !self.client_gamestate_delta_buffer.is_empty()   { 
-        
-            let next_delta = self.client_gamestate_delta_buffer.pop();
-            
-            
-            self.apply_gamestate_delta_buffer(   next_delta  );
-
-
-        }
-
-        self.client_gamestate_delta_buffer.reset_flags();
-
-    }*/ 
-
-
-    //DEPRECATED 
-
-     /*
-    fn apply_gamestate_delta_buffer( &mut self, gamestate_delta: Option<GameStateDelta> ) {
  
-        
-        match gamestate_delta {
-            Some(delta) => {
-
-          //   println!("apply gamestate delta !! {} ", &delta);   //this print goes infinite ?
-
-           
-                let unit_id = delta.source_unit_id; 
-
-
-                let unit_phys_comp = self.get_component_of_entity::<ecs_components::physics::PhysicsComponent>(unit_id);
-
-                match unit_phys_comp {
-                    Some(phys_comp) => {
-
-                      //  ecs_systems::physics::applyPhysicsDeltaCommand(  delta.command );
-
-                    }
-                    _=> {} 
-                }
-          
-              /*  let controlled_entity =  self.entities.get_mut(self.view.unit_id()); //[self.view.unit_id()];
-                
-                match controlled_entity {
-                    Some(   c_ent) => {
-                            
-
-                            //affect ECS systems ??
-
-                            match delta.command {
-                                DeltaCommand::ReportLocationVector { loc } => {},
-                                DeltaCommand::ReportVelocityVector { angle } => {},
-                                DeltaCommand::SetLookVector { angle } => {},
-                                DeltaCommand::SetMovementVector { vector } => {
-                                     
-                                    let past_origin = c_ent.get_origin();
-
-                                    let move_speed = 10.0;
-                                    //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
-                                    let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
-                            
-                                    //walk
-                                    c_ent.set_origin(    new_origin  ) ;
-
-                                },
-                                DeltaCommand::PerformEntityAction { action, target_id } => {},
-                            }
-
-
-                            
-                    }
-
-                    _ =>{}
-
-                }*/ 
-
-        
-           
-
-           }
-           _ => {
-        
-           }
-        }
-
-     
-
-    }*/
-
-
 
     pub fn get_resource<T>(&self) -> &T
     where 
@@ -526,23 +444,16 @@ impl ClientState {
     pub fn get_resource_mut<T>(&mut self) -> Mut<T>
     where  T: Resource
     {
-      //  use std::borrow::BorrowMut;
+       
 
         let resource = self.ecs_world.get_resource_mut::<T>().unwrap();
 
         return resource
-        /*match resource {
-            Some( mut res) => {
-
-                let mut output = (&res).as_mut();
-                return Some(   output)
-            },
-            None => return None 
-        }*/
+       
     }
     
     pub fn get_entity(&self, unit_id:usize) -> Option< &Entity>
-    //where T:  Entity
+  
      {
 
         let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>();
@@ -569,7 +480,7 @@ impl ClientState {
 
         let component = self.ecs_world.get::<T>(*ent)?;
 
-       // let component = self.ecs_world.entity(*ent).get::<T>();
+    
 
         return Some(component)
 
@@ -577,19 +488,14 @@ impl ClientState {
     pub fn get_mut_component_of_entity<T>(&mut self, unit_id:usize) -> Option<Mut<T>>
     where T: bevy_ecs::component::Component
     {
-        use std::borrow::BorrowMut;
+    
 
         let ent = self.get_entity( unit_id )?;
 
         let mut component = self.ecs_world.get_mut::<T>(*ent) ;
 
         return component
-       /*
-        match component {
-            Some(mut comp) => return Some(comp.borrow_mut()),
-            None => return None
-        } */ 
-
+      
  
     }
 
@@ -1222,7 +1128,8 @@ impl ClientState {
         
 
                 let bevy_id = self.ecs_world.spawn()
-                    .insert(ecs_components::physics::PhysicsComponent::new()).id();
+                    .insert(ecs_components::physics::PhysicsComponent::new())
+                    .id();
                   
 
                 let mut lookup_registry = self.get_resource_mut::<BevyEntityLookupRegistry>();
@@ -1743,14 +1650,13 @@ impl ClientState {
 
         let controlled_entity_phys_comp = self.get_mut_component_of_entity::
         <ecs_components::physics::PhysicsComponent>
-        (self.view.unit_id()  ); 
-
-       
+        (  self.view.unit_id()  );  
          
          
         match controlled_entity_phys_comp {
             Some(mut phys_comp) => {
 
+                println!("Setting view angles of my comp !");
                 phys_comp.set_angles(Vector3::new(
                     final_angles.pitch,
                     final_angles.yaw,
@@ -1764,6 +1670,7 @@ impl ClientState {
       
     }
 
+    //each players view entity id == their player number (?)
     pub fn set_view_entity(&mut self, unit_id: usize) -> Result<(), ClientError> {
         // view entity may not have been spawned yet, so check
         // against both max_players and the current number of
@@ -1772,7 +1679,7 @@ impl ClientState {
             Err(ClientError::InvalidViewEntity(entity_id))?;
         } */
            
-        if !self.unit_exists(unit_id) {
+        if !self.unit_exists(unit_id) && unit_id > self.max_players {
             Err(ClientError::InvalidViewEntity(unit_id))?;
         }
 
@@ -1864,10 +1771,13 @@ impl ClientState {
         )
     }
 
-    /* 
+    //for testing
     pub fn fake_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
-        let angles = self.entities[self.view.unit_id()].angles;
+ 
+       // let angles = self.entities[self.view.unit_id()].angles;
+
+
         Camera::new(
             Vector3 {
                 x: -735.96875,
@@ -1875,13 +1785,13 @@ impl ClientState {
                 z:  112.4 
             },
             Angles {
-                pitch: angles.x,
-                roll: angles.z,
-                yaw: angles.y,
+                pitch: Deg(22.0),
+                roll: Deg(0.0),
+                yaw: Deg(0.0),
             },
             cgmath::perspective(fov_y, aspect, 4.0, 4096.0),
         )
-    }*/
+    } 
 
     pub fn lightstyle_values(&self) -> Result<ArrayVec<f32, 64>, ClientError> {
         let mut values = ArrayVec::new();

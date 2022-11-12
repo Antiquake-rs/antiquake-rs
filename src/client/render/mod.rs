@@ -715,7 +715,7 @@ impl ClientRenderer {
     ) {
         self.bump.reset();
 
-
+        
         if let Some(Connection {
             state: ref cl_state,
             ref conn_state,
@@ -731,7 +731,7 @@ impl ClientRenderer {
                         }
                         
                         ConnectionKind::Server { .. } => {
-                            cl_state.camera(width as f32 / height as f32, fov)
+                            cl_state.fake_camera(width as f32 / height as f32, fov)
                         }
                     };
 
@@ -744,7 +744,7 @@ impl ClientRenderer {
                             encoder.begin_render_pass(&init_pass_builder.descriptor());
 
 
-                        println!(  );
+                        //println!( "World render pass 2" );
 
                             //this is really rendering NOTHING ! 
 

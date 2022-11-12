@@ -30,7 +30,10 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- 
+ - get brushes to render again !
+ - be able to  walk around again (with ecs )!
+
+ - render using ECS (?)
  
 - need the gamestate deltas to be applied to Components (physics component) which are then applied to the render state.  (consider building a 'render system' within the ecs). will have to change how entities are stored and rendered...
 
@@ -39,7 +42,7 @@ render > world > mod .rs
 
 Entity_renderers can be components !!! 
 
-
+- fix world_render 
 
 
 -add collision 

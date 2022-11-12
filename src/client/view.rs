@@ -147,7 +147,7 @@ impl View {
             self.input_angles.yaw -= Deg(game_input.mouse_delta().0 as f32 * yaw_factor);
 
 
-            println!( "view mlook input angles {} {} ", self.input_angles.pitch.0, self.input_angles.yaw.0);
+           
 
         }
 
