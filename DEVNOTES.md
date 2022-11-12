@@ -30,7 +30,7 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- - get brushes to render again !
+ - get brushes to render again !  (not w fake camera!)  -- my dudes origin seems to be wrong 
  - be able to  walk around again (with ecs )!
 
  - render using ECS (?)
