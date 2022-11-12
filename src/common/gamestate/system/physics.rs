@@ -1,4 +1,4 @@
-use bevy_ecs::system::{Query, Res};
+use bevy_ecs::system::{Query, Res, ResMut};
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
 use crate::common::gamestate::{
@@ -93,7 +93,7 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 pub fn update_physics_movement(
     // unit id registry 
     entity_lookup: Res<BevyEntityLookupRegistry>,
-    mut delta_buffer: Res<GameStateDeltaBuffer>,
+    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
     mut query: Query<(&mut PhysicsComponent)> 
 ){
 
@@ -107,14 +107,14 @@ pub fn update_physics_movement(
 
                 let unit_id = delta.source_unit_id;  
 
-                let bevy_entity_id = entity_lookup.get(&unit_id);
+                let bevy_entity_id = entity_lookup.get( unit_id );
 
                 match bevy_entity_id {
                     Some(ent_id) => {
 
                         match query.get_mut(*ent_id) {
 
-                            Ok(phys_comp) => {
+                            Ok(mut phys_comp) => {
                                 self::apply_gamestate_delta_buffer(   &delta,  phys_comp.as_mut()  );
                             }
                             _ => {}
@@ -148,7 +148,7 @@ fn apply_gamestate_delta_buffer(
  ){
 
 
-    match delta.command {
+    match &delta.command {
         DeltaCommand::ReportLocationVector { loc } => {},
         DeltaCommand::ReportVelocityVector { angle } => {},
         DeltaCommand::SetLookVector { angle } => {},

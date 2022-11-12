@@ -735,11 +735,7 @@ impl ClientRenderer {
                         }
                     };
 
-
-                    
-                   // println!("CLIENT RENDER ");
  
-                    // initial render pass
                     {
                         let init_pass_builder =
                             gfx_state.initial_pass_target().render_pass_builder();

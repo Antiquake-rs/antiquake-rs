@@ -440,6 +440,16 @@ impl WorldRenderer {
         state.entity_uniform_buffer().flush(state.queue());
     }
 
+    
+
+    pub fn render_pass_using_ecs<'a, E, P>(){
+
+
+        
+    }
+
+
+
     pub fn render_pass<'a, E, P>(
         &'a self,
         state: &'a GraphicsState,

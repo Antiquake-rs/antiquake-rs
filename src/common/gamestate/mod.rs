@@ -25,10 +25,10 @@ use self::system::physics::{ EntityPostureType, PhysBodyType};
 pub struct GameStateDelta {
 
     pub command: DeltaCommand,
-    pub source_unit_id: u32,  //the quake unit id (not the bevy entity id)
+    pub source_unit_id: usize,  //the quake unit id (not the bevy entity id)
 
-    pub source_player_id: u32, //0 for server 
-    pub source_tick_count: u32, 
+    pub source_player_id: usize, //0 for server 
+    pub source_tick_count: usize, 
  
 }
 
@@ -36,7 +36,7 @@ pub struct GameStateDelta {
 
 
 impl GameStateDelta{
-    pub fn new(delta_cmd:DeltaCommand, source_unit_id:u32, source_player_id:u32,source_tick_count:u32  ) -> GameStateDelta {
+    pub fn new(delta_cmd:DeltaCommand, source_unit_id:usize, source_player_id:usize,source_tick_count:usize  ) -> GameStateDelta {
         GameStateDelta { 
                 command: delta_cmd,
                 source_unit_id ,
@@ -85,9 +85,9 @@ fn gamestate_delta_to_flag_type( d:&GameStateDelta ) -> Option<DeltaCommandFlags
     }
 }
 
-fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<u32,u16> ) -> bool {
+fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<usize,u16> ) -> bool {
 
-    let unit_flags:Option<&u16> = unit_cmd_flags.get(  &d.source_unit_id );
+    let unit_flags:Option<&u16> = unit_cmd_flags.get(  &d.source_unit_id   );
 
     match unit_flags {
         Some(u_flags) => {
@@ -109,7 +109,7 @@ fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<u32,u16> ) ->
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
     deltas: Box<Vec<GameStateDelta>>,
-    unit_cmd_flags: HashMap<u32,u16>, //prevents from too many redundant cmds !
+    unit_cmd_flags: HashMap<usize,u16>, //unit_id => current cmd flags 
     capacity: i16 //not used for now 
 
 }

@@ -588,12 +588,12 @@ impl Connection {
 
                 ServerCmd::SetAngle { angles } => self.state.set_view_angles(angles),
 
-                ServerCmd::SetView { ent_id } => {
+                ServerCmd::SetView { ent_id     } => {
                     if ent_id <= 0 {
                         Err(ClientError::InvalidViewEntity(ent_id as usize))?;
                     }
 
-                    self.state.set_view_entity(ent_id as usize)?;
+                    self.state.set_view_entity(ent_id as usize )?;
                 }
 
                 ServerCmd::SignOnStage { stage } => self.handle_signon(stage, gfx_state)?,
@@ -613,7 +613,7 @@ impl Connection {
                         channel
                     );
 
-                    if !self.state.unit_exists( unit_id )  {
+                    if !self.state.unit_exists( unit_id as usize )  {
                         warn!(
                             "server tried to start sound on nonexistent unit {}",
                             unit_id
@@ -646,7 +646,7 @@ impl Connection {
                     angles,
                 } => {
                     self.state.spawn_entity(
-                        ent_id  ,
+                        ent_id as usize ,
                         UnitState {
                             model_id: model_id as usize,
                             frame_id: frame_id as usize,
@@ -1333,6 +1333,8 @@ impl Client {
         }
     }
 
+    /*  
+    //What is this for ?
     pub fn trace<'a, I>(&self, entity_ids: I) -> Result<TraceFrame, ClientError>
     where
         I: IntoIterator<Item = &'a usize>,
@@ -1349,8 +1351,13 @@ impl Client {
                     entities: HashMap::new(),
                 };
 
+
+
+
                 for id in entity_ids.into_iter() {
                     let ent = &state.entities[*id];
+
+                    
 
                     let msg_origins = [ent.msg_origins[0].into(), ent.msg_origins[1].into()];
                     let msg_angles_deg = [
@@ -1381,7 +1388,7 @@ impl Client {
 
             None => Err(ClientError::NotConnected),
         }
-    }
+    }*/
 }
 
 impl std::ops::Drop for Client {

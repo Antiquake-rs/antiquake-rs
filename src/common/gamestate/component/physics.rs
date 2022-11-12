@@ -23,8 +23,12 @@ impl PhysicsComponent {
         }
     }
 
-    pub fn set_origin( &self, vec:Vector3<f32>  ) {
+    pub fn set_origin( &mut self, vec:Vector3<f32>  ) {
         self.origin = vec.clone();
+    }
+
+    pub fn set_angles( &mut self, vec:Vector3<Deg<f32>>  ) {
+        self.angles = vec.clone();
     }
 
 }

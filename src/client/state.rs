@@ -523,19 +523,19 @@ impl ClientState {
         return self.ecs_world.get_resource::<T>();
     }
     
-    pub fn get_entity(&self, unit_id:u16) -> Option< &Entity>
+    pub fn get_entity(&self, unit_id:usize) -> Option< &Entity>
     //where T:  Entity
      {
 
         let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
 
-        let ent = lookup_registry.get(&unit_id) ;
+        let ent = lookup_registry.get( unit_id ) ;
  
         return ent
 
     }
 
-    pub fn unit_exists(&self, unit_id:u16) -> bool {
+    pub fn unit_exists(&self, unit_id:usize) -> bool {
 
         match self.get_entity(unit_id) {
             Some(_) => return true,
@@ -543,13 +543,27 @@ impl ClientState {
         }
     }
 
-    pub fn get_component_of_entity<T>(&self, unit_id:u16) -> Option<&T>
+    pub fn get_component_of_entity<T>(&self, unit_id:usize) -> Option<&T>
     where T: bevy_ecs::component::Component
     {
 
         let ent = self.get_entity( unit_id )?;
 
-        let component = self.ecs_world.entity(*ent).get::<T>();
+        let component = self.ecs_world.get::<T>(*ent);
+
+       // let component = self.ecs_world.entity(*ent).get::<T>();
+
+        return component
+
+    }
+    pub fn get_mut_component_of_entity<T>(&self, unit_id:usize) -> Option<&mut T>
+    where T: bevy_ecs::component::Component
+    {
+
+        let ent = self.get_entity( unit_id )?;
+
+        let component = self.ecs_world.get_mut::<T>(*ent);
+        //let component = self.ecs_world.entity(*ent).get::<T>();
 
         return component
 
@@ -567,9 +581,9 @@ impl ClientState {
                 Some(buf) => {
                     buf.push( GameStateDelta::new(
                         delta_cmd, 
-                        self.view_unit_id() as u32,
-                        self.player_id() as u32,
-                        self.tick_count() as u32,
+                        self.view_unit_id()  ,
+                        self.player_id() ,
+                        self.tick_count()  ,
         
                     )  );
                 }
@@ -1116,26 +1130,39 @@ impl ClientState {
         bob_vars: BobVars,
     ) {
         
+        let controlled_entity_phys_comp = self.get_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()  );
 
-       
-        let entity_origin = self.entities[self.view.unit_id()].origin;
+
+        match controlled_entity_phys_comp {
+            Some(phys_comp) => {
+                let entity_origin = phys_comp.origin.clone();
+
+                self.view.calc_final_angles(
+                    self.time,
+                    self.intermission.as_ref(),
+                    self.velocity,
+                    idle_vars,
+                    kick_vars,
+                    roll_vars,
+                );
+                self.view.calc_final_origin(
+                    self.time,
+                    entity_origin,
+                    self.velocity,
+                    bob_vars,
+                );
+
+            }
+            _ => {}
+        }
+
+       // let entity_origin = self.entities[self.view.unit_id()].origin;
 
       //  println!("calc_final_view entity origin {} {} {}", entity_origin.x,entity_origin.y,entity_origin.z);
  
-        self.view.calc_final_angles(
-            self.time,
-            self.intermission.as_ref(),
-            self.velocity,
-            idle_vars,
-            kick_vars,
-            roll_vars,
-        );
-        self.view.calc_final_origin(
-            self.time,
-            entity_origin,
-            self.velocity,
-            bob_vars,
-        );
+       
 
       //  println!("calc_final_view ->  {} {} {}", self.view.final_origin().x,self.view.final_origin().y,self.view.final_origin().z);
           
@@ -1151,14 +1178,16 @@ impl ClientState {
     // TODO: skipping entities indicates that the entities have been freed by
     // the server. it may make more sense to use a HashMap to store entities by
     // ID since the lookup table is relatively sparse.
-    pub fn spawn_entity(&mut self, id: u16, baseline: UnitState) -> Result<(), ClientError> {
+    pub fn spawn_entity(&mut self, id: usize, baseline: UnitState) -> Result<(), ClientError> {
        
        
        // let existing = self.entities.get( &id  );
 
         match self.get_entity(id) {
 
-            Some(_) => {Err(ClientError::EntityExists(id as usize)) ;}
+            Some(_) => {
+                return Err(ClientError::EntityExists(id as usize)) 
+            }
             None => {
 
                 debug!(
@@ -1170,12 +1199,16 @@ impl ClientState {
         
 
                 let bevy_id = self.ecs_world.spawn()
-                    .insert(ecs_components::physics::PhysicsComponent::new())
-                ;  
+                    .insert(ecs_components::physics::PhysicsComponent::new()).id();
+                  
 
-                let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
+                let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>().unwrap();
 
-                lookup_registry.insert( id, bevy_id  );
+
+                lookup_registry.insert( id, bevy_id   );
+
+
+              
                 //self.entities.insert( id, bevy_id  );
 
                
@@ -1206,7 +1239,11 @@ impl ClientState {
 
         let unit_id = fast_update.ent_id as usize;
         //self.state.on_fast_update(unit_id, fast_update)?;
-        self.update_entity(unit_id,fast_update)?;
+        //self.update_entity(unit_id,fast_update)?;
+
+
+
+        // add this as a gamestate delta !! this is really a delta from the server (should be)! 
 
 
         
@@ -1228,7 +1265,7 @@ impl ClientState {
         Ok(())
     }
 
-    pub fn update_entity(&mut self, id: usize, update: EntityUpdate) -> Result<(), ClientError> {
+    /*pub fn update_entity(&mut self, id: usize, update: EntityUpdate) -> Result<(), ClientError> {
         if id >= self.entities.len() {
             let baseline = UnitState {
                 origin: Vector3::new(
@@ -1277,7 +1314,7 @@ impl ClientState {
         }
 
         Ok(())
-    }
+    }*/
 
     pub fn spawn_temp_entity(&mut self, temp_entity: &TempEntity) {
         lazy_static! {
@@ -1495,8 +1532,14 @@ impl ClientState {
     }
 
     pub fn update_listener(&self) {
-        // TODO: update to self.view_origin()
-        let view_origin = self.entities[self.view.unit_id()].origin;
+
+        let controlled_entity_phys_comp = self.get_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()).unwrap();
+ 
+
+ 
+        let view_origin = controlled_entity_phys_comp.origin;
         let world_translate = Matrix4::from_translation(view_origin);
 
         let left_base = Vector3::new(0.0, 4.0, self.view.view_height());
@@ -1516,12 +1559,22 @@ impl ClientState {
         self.update_listener();
 
         // update entity sounds
+        // do this in a system ! ECS
         for e_channel in self.mixer.iter_entity_channels() {
+ 
+
             if let Some(ent_id) = e_channel.entity_id() {
+
+  
+                let controlled_entity_phys_comp = self.get_component_of_entity::
+                <ecs_components::physics::PhysicsComponent>
+                (self.view.unit_id()).unwrap();
+          
+
                 if e_channel.channel().in_use() {
                     e_channel
                         .channel()
-                        .update(self.entities[ent_id].origin, &self.listener);
+                        .update(controlled_entity_phys_comp.origin, &self.listener);
                 }
             }
         }
@@ -1533,10 +1586,17 @@ impl ClientState {
     }
 
     fn view_leaf_contents(&self) -> Result<bsp::BspLeafContents, ClientError> {
+
+        let controlled_entity_phys_comp = self.get_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()).unwrap();
+ 
+
+        
         match self.models[1].kind() {
             ModelKind::Brush(ref bmodel) => {
                 let bsp_data = bmodel.bsp_data();
-                let leaf_id = bsp_data.find_leaf(self.entities[self.view.unit_id()].origin);
+                let leaf_id = bsp_data.find_leaf(controlled_entity_phys_comp.origin);
                 let leaf = &bsp_data.leaves()[leaf_id];
                 Ok(leaf.contents)
             }
@@ -1621,36 +1681,73 @@ impl ClientState {
             yaw: angles.y,
         });
         let final_angles = self.view.final_angles();
-        self.entities[self.view.unit_id()].set_angles(Vector3::new(
-            final_angles.pitch,
-            final_angles.yaw,
-            final_angles.roll,
-        ));
+
+
+        let controlled_entity_phys_comp = self.get_mut_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()  );
+ 
+
+        match controlled_entity_phys_comp {
+            Some(&mut phys_comp) => {
+
+                    phys_comp.set_angles(Vector3::new(
+                        final_angles.pitch,
+                        final_angles.yaw,
+                        final_angles.roll,
+                    ));
+
+                }
+            _ => {} 
+        }
+
     }
 
     /// Update the view angles to the specified value, enabling interpolation.
+    /// isnt this deprecated ?
     pub fn update_view_angles(&mut self, angles: Vector3<Deg<f32>>) {
+
+        let controlled_entity_phys_comp = self.get_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()  );
+ 
+
         self.view.update_input_angles(Angles {
             pitch: angles.x,
             roll: angles.z,
             yaw: angles.y,
         });
         let final_angles = self.view.final_angles();
-        self.entities[self.view.unit_id()].update_angles(Vector3::new(
-            final_angles.pitch,
-            final_angles.yaw,
-            final_angles.roll,
-        ));
+
+        match controlled_entity_phys_comp {
+            Some(phys_comp) => {
+
+                phys_comp.set_angles(Vector3::new(
+                    final_angles.pitch,
+                    final_angles.yaw,
+                    final_angles.roll,
+                ));
+
+            }
+            _ => {} 
+        }
+
+      
     }
 
-    pub fn set_view_entity(&mut self, entity_id: usize) -> Result<(), ClientError> {
+    pub fn set_view_entity(&mut self, unit_id: usize) -> Result<(), ClientError> {
         // view entity may not have been spawned yet, so check
         // against both max_players and the current number of
         // entities
-        if entity_id > self.max_players && entity_id >= self.entities.len() {
+        /*if entity_id > self.max_players && entity_id >= self.entities.len() {
             Err(ClientError::InvalidViewEntity(entity_id))?;
+        } */
+           
+        if !self.unit_exists(unit_id) {
+            Err(ClientError::InvalidViewEntity(unit_id))?;
         }
-        self.view.set_unit_id(entity_id);
+
+        self.view.set_unit_id(unit_id);
         Ok(())
     }
 
@@ -1666,13 +1763,21 @@ impl ClientState {
         }
     }
 
+   // we dont do this in ecs!   old way to render...
+    
     pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {
-        self.visible_entity_ids
-            .iter()
+        
+        //pass in an iterator of component bundle ? 
+
+        return  self.temp_entities.iter().chain(self.static_entities.iter())
+        
+        /* self.visible_entity_ids
+             .iter()
             .map(move |i| &self.entities[*i])
             .chain(self.temp_entities.iter())
-            .chain(self.static_entities.iter())
+            .chain(self.static_entities.iter()) */
     }
+ 
 
     pub fn iter_particles(&self) -> impl Iterator<Item = &Particle> {
         self.particles.iter()
@@ -1710,7 +1815,15 @@ impl ClientState {
 
     pub fn demo_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
-        let angles = self.entities[self.view.unit_id()].angles;
+
+        let phys_comp = self.get_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()).unwrap();
+
+    
+        let angles = phys_comp.angles;
+
+
         Camera::new(
             self.view.final_origin(),
             Angles {
@@ -1816,13 +1929,13 @@ impl ClientState {
         })
     }
 
-    pub fn check_entity_id(&self, id: usize) -> Result<(), ClientError> {
+   /*  pub fn check_entity_id(&self, id: usize) -> Result<(), ClientError> {
         match id {
             0 => Err(ClientError::NullEntity),
             e if e >= self.entities.len() => Err(ClientError::NoSuchEntity(id)),
             _ => Ok(()),
         }
-    }
+    }*/
 
     pub fn check_player_id(&self, id: usize) -> Result<(), ClientError> {
         if id >= net::MAX_CLIENTS {
