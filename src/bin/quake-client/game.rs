@@ -126,11 +126,11 @@ impl Game {
 
         // if there's an active trace, record this frame
         if let Some(ref mut trace_frames) = *self.trace.borrow_mut() {
-            trace_frames.push(
+           /*  trace_frames.push(
                 self.client
                     .trace(&[self.client.view_entity_id().unwrap()])
                     .unwrap(),
-            );
+            );*/
         }
     }
 

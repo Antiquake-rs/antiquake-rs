@@ -40,7 +40,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource};
+use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -514,36 +514,38 @@ impl ClientState {
 
 
 
-    pub fn get_resource<T>(&self) -> Option<&T> 
+    pub fn get_resource<T>(&self) -> &T
     where 
     T: Resource
     {
+        let resource = self.ecs_world.get_resource::<T >().unwrap();
 
-        return self.ecs_world.get_resource::<T >();
+        return resource;
     }
 
-    pub fn get_resource_mut<T>(&mut self) -> Option<&mut T> 
+    pub fn get_resource_mut<T>(&mut self) -> Mut<T>
     where  T: Resource
     {
-        use std::borrow::BorrowMut;
+      //  use std::borrow::BorrowMut;
 
-        let mut resource = self.ecs_world.get_resource_mut::<T>();
+        let resource = self.ecs_world.get_resource_mut::<T>().unwrap();
 
-        match resource {
+        return resource
+        /*match resource {
             Some( mut res) => {
 
                 let mut output = (&res).as_mut();
                 return Some(   output)
             },
             None => return None 
-        }
+        }*/
     }
     
     pub fn get_entity(&self, unit_id:usize) -> Option< &Entity>
     //where T:  Entity
      {
 
-        let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>()?;
+        let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>();
 
         let ent = lookup_registry.get( unit_id ) ;
  
@@ -565,27 +567,28 @@ impl ClientState {
 
         let ent = self.get_entity( unit_id )?;
 
-        let component = self.ecs_world.get::<T>(*ent);
+        let component = self.ecs_world.get::<T>(*ent)?;
 
        // let component = self.ecs_world.entity(*ent).get::<T>();
 
-        return component
+        return Some(component)
 
     }
-    pub fn get_mut_component_of_entity<T>(&mut self, unit_id:usize) -> Option<&mut T>
+    pub fn get_mut_component_of_entity<T>(&mut self, unit_id:usize) -> Option<Mut<T>>
     where T: bevy_ecs::component::Component
     {
         use std::borrow::BorrowMut;
 
         let ent = self.get_entity( unit_id )?;
 
-        let component = self.ecs_world.get_mut::<T>(*ent);
-        
+        let mut component = self.ecs_world.get_mut::<T>(*ent) ;
 
+        return component
+       /*
         match component {
             Some(mut comp) => return Some(comp.borrow_mut()),
             None => return None
-        }
+        } */ 
 
  
     }
@@ -596,21 +599,20 @@ impl ClientState {
         
         //really should not push a move or angle if there already are some there !
 
-            let delta_buffer = self.get_resource_mut::<GameStateDeltaBuffer>();
+            let new_delta = GameStateDelta::new(
+                delta_cmd, 
+                self.view_unit_id()  ,
+                self.player_id() ,
+                self.tick_count()  ,
 
-            match delta_buffer {
-                Some(buf) => {
-                    buf.push( GameStateDelta::new(
-                        delta_cmd, 
-                        self.view_unit_id()  ,
-                        self.player_id() ,
-                        self.tick_count()  ,
-        
-                    )  );
-                }
-                _ => {}
-            }
+            ) ;
 
+            let mut delta_buffer = self.get_resource_mut::<GameStateDeltaBuffer>();
+
+           
+            delta_buffer.push( new_delta );
+                
+            
            
     }
 
@@ -1223,7 +1225,7 @@ impl ClientState {
                     .insert(ecs_components::physics::PhysicsComponent::new()).id();
                   
 
-                let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>().unwrap();
+                let mut lookup_registry = self.get_resource_mut::<BevyEntityLookupRegistry>();
 
 
                 lookup_registry.insert( id, bevy_id   );
@@ -1712,7 +1714,7 @@ impl ClientState {
  
 
         match controlled_entity_phys_comp {
-            Some(&mut phys_comp) => {
+            Some( mut phys_comp  ) => {
 
                     phys_comp.set_angles(Vector3::new(
                         final_angles.pitch,
@@ -1730,20 +1732,24 @@ impl ClientState {
     /// isnt this deprecated ?
     pub fn update_view_angles(&mut self, angles: Vector3<Deg<f32>>) {
 
-        let controlled_entity_phys_comp = self.get_component_of_entity::
-        <ecs_components::physics::PhysicsComponent>
-        (self.view.unit_id()  );
- 
-
         self.view.update_input_angles(Angles {
             pitch: angles.x,
             roll: angles.z,
             yaw: angles.y,
         });
+
         let final_angles = self.view.final_angles();
 
+
+        let controlled_entity_phys_comp = self.get_mut_component_of_entity::
+        <ecs_components::physics::PhysicsComponent>
+        (self.view.unit_id()  ); 
+
+       
+         
+         
         match controlled_entity_phys_comp {
-            Some(phys_comp) => {
+            Some(mut phys_comp) => {
 
                 phys_comp.set_angles(Vector3::new(
                     final_angles.pitch,
