@@ -24,7 +24,7 @@ use crate::{
         vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
          gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
          system as ecs_systems,
-         component as ecs_components,
+         component::{self as ecs_components, physics::PhysicsComponent},
          entity::{BevyEntityLookupRegistry}
         },
     },
@@ -40,7 +40,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource};
+use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource, query::QueryIter};
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -1701,7 +1701,25 @@ impl ClientState {
     }
 
    // we dont do this in ecs!   old way to render...
-    
+
+
+   pub fn query_visible_entities(&self) ->  QueryIter<'w, 's, Q::ReadOnly, F::ReadOnly> {
+        
+    //pass in an iterator of component bundle ? 
+
+    //filtered?  
+ 
+
+      //query for physics components and model components and whatever else --- for the render state 
+
+    let query = self.ecs_world.query::<(&PhysicsComponent)>();
+
+    return query.iter(&self.ecs_world)
+     
+  
+    }
+
+
     pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {
         
         //pass in an iterator of component bundle ? 

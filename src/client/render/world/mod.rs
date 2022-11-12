@@ -33,6 +33,7 @@ use crate::{
     },
 };
 
+use bevy_ecs::query::QueryState;
 use bumpalo::Bump;
 use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4};
 use chrono::Duration;
@@ -450,19 +451,21 @@ impl WorldRenderer {
 
 
 
-    pub fn render_pass<'a, E, P>(
+    pub fn render_pass<'a, R, E, P>(
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
         time: Duration,
-        entities: E,
+        entities_query: R,
+        entitiesIteratorLegacy: E,
         particles: P,
         lightstyle_values: &[f32],
         viewmodel_id: usize,
         cvars: &CvarRegistry,
     ) where
+        R: QueryIter<Q>,  //use this instead of iterator
         E: Iterator<Item = &'a ClientUnit> + Clone,
         P: Iterator<Item = &'a Particle>,
     {
@@ -472,7 +475,7 @@ impl WorldRenderer {
             state,
             camera,
             time,
-            entities.clone(),
+            entitiesIteratorLegacy.clone(),
             lightstyle_values,
             cvars,
         );
@@ -505,7 +508,7 @@ impl WorldRenderer {
 
         // draw entities
         info!("Drawing entities");
-        for (ent_pos, ent) in entities.enumerate() {
+        for (ent_pos, ent) in entitiesIteratorLegacy.enumerate() {
             pass.set_bind_group(
                 BindGroupLayoutId::PerEntity as u32,
                 &state.world_bind_groups()[BindGroupLayoutId::PerEntity as usize],
