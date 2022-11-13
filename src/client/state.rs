@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use super::{view::BobVars, Client};
+use super::{view::BobVars, Client, };
 use crate::{
     client::{
         unit::{
@@ -8,7 +8,7 @@ use crate::{
             Beam, ClientUnit, Light, LightDesc, Lights, MAX_BEAMS, MAX_LIGHTS, MAX_TEMP_ENTITIES,
         },
         input::game::{Action, GameInput},
-        render::Camera,
+        render::{Camera, RenderQuery},
         sound::{AudioSource, EntityMixer, Listener, StaticSound},
         view::{IdleVars, KickVars, MouseVars, RollVars, View},
         ClientError, ColorShiftCode, IntermissionKind, MoveVars, MAX_STATS,
@@ -40,7 +40,8 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource, query::QueryIter};
+use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource, query::{QueryIter, WorldQuery}};
+ 
 
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -1703,7 +1704,9 @@ impl ClientState {
    // we dont do this in ecs!   old way to render...
 
 
-   pub fn query_visible_entities(&self) ->  QueryIter<'w, 's, Q::ReadOnly, F::ReadOnly> {
+   pub fn query_visible_entities<'w , 's  >(&mut self)  ->   QueryIter<  RenderQuery , () >
+    
+    {
         
     //pass in an iterator of component bundle ? 
 
@@ -1712,10 +1715,11 @@ impl ClientState {
 
       //query for physics components and model components and whatever else --- for the render state 
 
-    let query = self.ecs_world.query::<(&PhysicsComponent)>();
+    let  mut query =  self.ecs_world.query::< RenderQuery >();
 
-    return query.iter(&self.ecs_world)
-     
+    let iter = query.iter(&self.ecs_world);
+        
+    return  iter;
   
     }
 

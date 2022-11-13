@@ -29,14 +29,16 @@ use crate::{
         math::Angles,
         model::{Model, ModelKind},
         sprite::SpriteKind,
-        util::any_as_bytes,
+        util::any_as_bytes, gamestate::component::physics::PhysicsComponent,
     },
 };
 
-use bevy_ecs::query::QueryState;
+use bevy_ecs::{query::{QueryState, QueryIter, WorldQuery}, prelude::Bundle};
 use bumpalo::Bump;
 use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4};
 use chrono::Duration;
+
+use super::RenderQuery;
 
 lazy_static! {
     static ref BIND_GROUP_LAYOUT_DESCRIPTOR_BINDINGS: [Vec<wgpu::BindGroupLayoutEntry>; 2] = [
@@ -97,6 +99,10 @@ lazy_static! {
         },
     ];
 }
+
+
+
+
 
 struct WorldPipelineBase;
 
@@ -450,22 +456,27 @@ impl WorldRenderer {
     }
 
 
+    //w is world 
+    // s is gamestate 
 
-    pub fn render_pass<'a, R, E, P>(
+    //consider less generics here! kind of insane haha 
+
+    pub fn render_pass<'a,   E, P,  >(
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
         time: Duration,
-        entities_query: R,
+        entities_query:  QueryIter<RenderQuery , () >,
         entitiesIteratorLegacy: E,
         particles: P,
         lightstyle_values: &[f32],
         viewmodel_id: usize,
         cvars: &CvarRegistry,
     ) where
-        R: QueryIter<Q>,  //use this instead of iterator
+     
+        
         E: Iterator<Item = &'a ClientUnit> + Clone,
         P: Iterator<Item = &'a Particle>,
     {

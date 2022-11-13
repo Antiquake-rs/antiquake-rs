@@ -55,6 +55,7 @@ mod uniform;
 mod warp;
 mod world;
 
+use bevy_ecs::{prelude::Bundle, query::WorldQuery};
 pub use cvars::register_renderer_cvars;
 pub use error::{RenderError, RenderErrorKind};
 pub use palette::Palette;
@@ -105,7 +106,7 @@ use crate::{
         model::Model,
         net::SignOnStage,
         vfs::Vfs,
-        wad::Wad,
+        wad::Wad, gamestate::component::physics::PhysicsComponent,
     },
 };
 
@@ -123,6 +124,21 @@ const LIGHT_ATTACHMENT_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8U
 const DIFFUSE_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 const FULLBRIGHT_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
 const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
+
+
+
+
+
+//#[derive(Bundle)]
+#[derive(WorldQuery)]
+pub struct RenderQuery  {
+    // A bundle can contain components
+    physics: &'static  PhysicsComponent ,
+        //model component ...
+}
+
+
+
 
 /// Create a `wgpu::TextureDescriptor` appropriate for the provided texture data.
 pub fn texture_descriptor<'a>(
@@ -754,7 +770,8 @@ impl ClientRenderer {
                             &self.bump,
                             &camera,
                             cl_state.time(),
-                            cl_state.iter_visible_entities(),
+                            cl_state.query_visible_entities() ,
+                            cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
                             cl_state.iter_particles(),
                             cl_state.lightstyle_values().unwrap().as_slice(),
                             cl_state.viewmodel_id(),   //what is a viewmodel ?
