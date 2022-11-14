@@ -134,7 +134,7 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
 
  
  
-pub struct WorldspawnRenderData<'a> {
+pub struct WorldspawnRenderData  {
 
     pub bsp_data: Rc<BspData>,  
     pub face_range: Range<usize>,
@@ -142,7 +142,7 @@ pub struct WorldspawnRenderData<'a> {
 
 }
 
-impl WorldspawnRenderData<'_> {
+impl WorldspawnRenderData  {
 
     pub fn new( models: &[Model] , worldmodel_id: usize ) -> WorldspawnRenderData{
 
