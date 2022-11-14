@@ -777,7 +777,7 @@ impl ClientRenderer {
 
 
                     
-                       // let iter_particles  =  cl_state.iter_particles() ;
+                      
                         
                         let client_viewmodel_id = cl_state.viewmodel_id();
                         let state_time =  cl_state.time();
@@ -790,13 +790,7 @@ impl ClientRenderer {
                         //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
                         let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
                         let mut unit_iter = phys_render_query.iter( ecs_world ) ;
-                       
-                       // let mut particle_query =  ecs_world.query::< ( &PhysicsComponent, &ParticleComponent  ) >();
-                        //let mut particle_iter = particle_query.iter( ecs_world ) ;
-
                         
-
-
                         world.render_pass(
                             gfx_state,
                             &mut init_pass,
@@ -809,6 +803,7 @@ impl ClientRenderer {
                             &mut unit_iter,  
                         );
 
+                        //still render particles the old way - not ECS - for now 
                         world.render_particles(
                             gfx_state,
                             &mut init_pass,

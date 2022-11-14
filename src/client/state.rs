@@ -869,6 +869,7 @@ impl ClientState {
         Ok(())
     } */
 
+    //this should not happen like this --- do more like ECS 
     pub fn update_player(&mut self, update: PlayerData) {
         self.view
             .set_view_height(update.view_height.unwrap_or(net::DEFAULT_VIEWHEIGHT));
@@ -947,6 +948,8 @@ impl ClientState {
        
     }
 
+
+ 
     pub fn build_move_cmd(
         game_input: &mut GameInput,
         frame_time: Duration,
@@ -1004,18 +1007,9 @@ impl ClientState {
         if !mlook {
             // TODO: IN_Move (mouse / joystick / gamepad)
         }
+        
 
-
-        //waht was this 
-          //   let send_time = self.msg_times[0];
-
-        // send "raw" angles without any pitch/roll from movement or damage
-        //let angles = self.view.input_angles();
- 
-
-        //this sends a client cmd to the server but it should NOT work this way --- needs to go into an array buffer 
-
-
+        // this is used to generate delta commands ! 
         ClientCmd::Move {
             send_time:Duration::milliseconds(20),// stub for now 
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
@@ -1759,7 +1753,7 @@ impl ClientState {
         
     return  iter.collect();
   
-    }*/
+    }
 
 
     pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {
@@ -1773,7 +1767,7 @@ impl ClientState {
             .map(move |i| &self.entities[*i])
             .chain(self.temp_entities.iter())
             .chain(self.static_entities.iter()) */
-    }
+    }*/
  
 
     pub fn iter_particles(&mut self) -> impl Iterator<Item = &Particle> {

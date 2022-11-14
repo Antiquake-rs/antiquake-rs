@@ -30,7 +30,10 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- -  add in particles (ecs) 
+ -  build in gravity and collision for the player character 
+ - see server/world/phys for some early physics stuff 
+ - going to need to somehow put brushes into components so they can be used/queried for collisions 
+- maybe convert worldrenderer to ECS so the brushes shapes are in the ecs ?
 
  -  keep refactoring stuff out of ClientState 
   
@@ -38,28 +41,16 @@ gfx pipelines yay!!!
  
 -add collision   (in the gamedeltas system -- need to borrow the RenderModels to know abt collision size maybe ?  )
  
-
-
--make the buffer work more like anymap where only 1 of certain cmd types (per entity) can be in there at a time - maybe use bit flags idk 
-
-
-- fix the 11 errors from cargo test and start doing TDD 
-
+ 
+ 
 
 - upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server.  (see fn frame() )
 
 
 -client 'parse_server_msg' is very goofy why are 5 raw values being passed in just for that.. 
 
-
-- upgrade src/client/mod so it accumulates 'input actions' as gamestatedeltas in an array buffer and then send them to the server in a bundle every 33 ms (see  fn handle_input) 
-
-
-
-
-
-
-
+ 
+ 
  
 - Improve the networking code so it is more like QuakeWorld (client side prediction and rubber banding -- clients just need to know abt physics engine and sim it themselves ) 
 
