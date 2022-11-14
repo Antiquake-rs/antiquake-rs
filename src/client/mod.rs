@@ -1141,10 +1141,20 @@ impl Client {
         let cvars = self.cvars.borrow();
         let console = self.console.borrow();
 
+
+      /*   let mut connectionRef = self.conn.borrow_mut();
+        let connectionOption = connectionRef.as_mut() ;
+
+        let connMut =  connectionOption.unwrap() ;
+        let st = &mut connMut.state;*/
+
+
         self.renderer.render(
+            //  st ,
             gfx_state,
             encoder,
-            self.conn.borrow().as_ref(),
+
+            (self.conn.borrow_mut()).as_mut(), //give conn as mut now ! so we can get mut world (bevy ecs world access..)
             width,
             height,
             fov,

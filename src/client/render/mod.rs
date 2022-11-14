@@ -110,7 +110,7 @@ use crate::{
     },
 };
 
-use super::ConnectionState;
+use super::{ConnectionState, state::ClientState};
 use bumpalo::Bump;
 use cgmath::{Deg, InnerSpace, Vector3, Zero};
 use chrono::{DateTime, Duration, Utc};
@@ -127,14 +127,12 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
 
 
 
-
-
-//#[derive(Bundle)]
+ 
 #[derive(WorldQuery)]
 pub struct RenderQuery  {
-    // A bundle can contain components
+     
     physics: &'static  PhysicsComponent ,
-        //model component ...
+        
 }
 
 
@@ -718,9 +716,10 @@ impl ClientRenderer {
 
     pub fn render(
         &mut self,
+     //   client_state: &mut ClientState,  //pass in mut ref here -- not from connection 
         gfx_state: &GraphicsState,
         encoder: &mut wgpu::CommandEncoder,
-        conn: Option<&Connection>,
+        conn: Option<&mut Connection>,
         width: u32,
         height: u32,
         fov: Deg<f32>,
@@ -733,10 +732,13 @@ impl ClientRenderer {
 
         
         if let Some(Connection {
-            state: ref cl_state,
+            state: ref mut cl_state,  
             ref conn_state,
             ref kind,
         }) = conn
+
+
+
         {
             match conn_state {
                 ConnectionState::Connected(ref world) => {
@@ -760,22 +762,31 @@ impl ClientRenderer {
                             encoder.begin_render_pass(&init_pass_builder.descriptor());
 
 
-                        //println!( "World render pass 2" );
+                    
 
-                            //this is really rendering NOTHING ! 
+
+                        //same as cl_state. query_visible_entities
+                        let mut ecs_world =  cl_state.get_world_mut();
+                      //  let components = ecs_world.components();
+
+                       
+                       
+                        let client_viewmodel_id = cl_state.viewmodel_id();
+                        let state_time =  cl_state.time();
 
                         world.render_pass(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
                             &camera,
-                            cl_state.time(),
-                            cl_state.query_visible_entities() ,
-                            cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
-                            cl_state.iter_particles(),
-                            cl_state.lightstyle_values().unwrap().as_slice(),
-                            cl_state.viewmodel_id(),   //what is a viewmodel ?
+                            state_time,
+                            
+                          //  cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
+                          //  cl_state.iter_particles(),
+                          //  cl_state.lightstyle_values().unwrap().as_slice(),
+                            client_viewmodel_id,   
                             cvars,
+                            cl_state.get_world_mut()  ,
                         );
                     }
 

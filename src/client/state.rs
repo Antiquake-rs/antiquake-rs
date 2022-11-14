@@ -8,7 +8,7 @@ use crate::{
             Beam, ClientUnit, Light, LightDesc, Lights, MAX_BEAMS, MAX_LIGHTS, MAX_TEMP_ENTITIES,
         },
         input::game::{Action, GameInput},
-        render::{Camera, RenderQuery},
+        render::{Camera, RenderQuery, RenderQueryItem},
         sound::{AudioSource, EntityMixer, Listener, StaticSound},
         view::{IdleVars, KickVars, MouseVars, RollVars, View},
         ClientError, ColorShiftCode, IntermissionKind, MoveVars, MAX_STATS,
@@ -40,7 +40,7 @@ use rand::{
 };
 use rodio::OutputStreamHandle;
 
-use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity}, system::Resource, query::{QueryIter, WorldQuery}};
+use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStage}, prelude::{Component, Entity, EventWriter}, system::{Resource, SystemState, Query}, query::{QueryIter, WorldQuery}};
  
 
 
@@ -68,8 +68,12 @@ pub struct UnitIdRegistry {
     
 
 }
+ 
+ 
+
+
 // client information regarding the current level
-pub struct ClientState {
+pub struct ClientState  {
     // local rng
     rng: SmallRng,
 
@@ -145,8 +149,7 @@ pub struct ClientState {
     pub ecs_world: BevyWorld,
     pub ecs_tick_schedule: Schedule, //runs every tick  -- physics 
     pub ecs_frame_schedule: Schedule, //runs every frame -- render 
-
-    
+ 
   //  pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
 }
 
@@ -219,7 +222,7 @@ impl ClientState {
             ecs_world: BevyWorld::new(),
             ecs_tick_schedule: Schedule::default(),
             ecs_frame_schedule: Schedule::default(),
-
+             
             
            // client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
 
@@ -299,10 +302,13 @@ impl ClientState {
 
     
    
-
+    pub fn get_world_mut(&mut self) -> & mut BevyWorld {
+        return &mut self.ecs_world; 
+    }
     
     fn init_ecs(&mut self){
         let primary_stage:&str = "primary";
+        let render_stage:&str = "render";
 
         //add plugins , add resources 
 
@@ -314,10 +320,18 @@ impl ClientState {
         //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
         //self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::update_physics_movement);
 
+        //doing render in ecs would suck.. how would we do the menu then ?
+      //  self.ecs_frame_schedule.add_stage(render_stage, SystemStage::single_threaded() );
+     //   self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::render_pass);
+        
 
         self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
 
         self.ecs_world.insert_resource(BevyEntityLookupRegistry::new());
+
+        //https://docs.rs/bevy/0.8.0/bevy/ecs/system/struct.SystemState.html
+        
+        
 
     }
 
@@ -1703,25 +1717,26 @@ impl ClientState {
 
    // we dont do this in ecs!   old way to render...
 
-
-   pub fn query_visible_entities<'w , 's  >(&mut self)  ->   QueryIter<  RenderQuery , () >
+/* 
+   pub fn query_visible_entities<'w , 's  >(&self)  -> dyn FromIterator<&PhysicsComponent> + 'static
     
-    {
-        
+    {        
     //pass in an iterator of component bundle ? 
 
     //filtered?  
  
+    //query for physics components and model components and whatever else --- for the render state 
 
-      //query for physics components and model components and whatever else --- for the render state 
+    let ecs_world =  &self.ecs_world;
 
-    let  mut query =  self.ecs_world.query::< RenderQuery >();
+    let query =   ecs_world.query::<  (&PhysicsComponent) >();
+ 
 
     let iter = query.iter(&self.ecs_world);
         
-    return  iter;
+    return  iter.collect();
   
-    }
+    }*/
 
 
     pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {

@@ -33,12 +33,12 @@ use crate::{
     },
 };
 
-use bevy_ecs::{query::{QueryState, QueryIter, WorldQuery}, prelude::Bundle};
+use bevy_ecs::{query::{QueryState, QueryIter, WorldQuery}, prelude::Bundle, world::World as BevyWorld} ;
 use bumpalo::Bump;
 use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4};
 use chrono::Duration;
 
-use super::RenderQuery;
+use super::{RenderQuery,RenderQueryItem};
 
 lazy_static! {
     static ref BIND_GROUP_LAYOUT_DESCRIPTOR_BINDINGS: [Vec<wgpu::BindGroupLayoutEntry>; 2] = [
@@ -461,25 +461,38 @@ impl WorldRenderer {
 
     //consider less generics here! kind of insane haha 
 
-    pub fn render_pass<'a,   E, P,  >(
+    pub fn render_pass<'a,    >(
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
         time: Duration,
-        entities_query:  QueryIter<RenderQuery , () >,
-        entitiesIteratorLegacy: E,
-        particles: P,
-        lightstyle_values: &[f32],
+   
+     //   entitiesIteratorLegacy: E,
+     //   particles: P,
+     //   lightstyle_values: &[f32],   //should be an ecs resource ? 
         viewmodel_id: usize,
         cvars: &CvarRegistry,
+        ecs_world:  &mut BevyWorld,
     ) where
-     
+       
         
-        E: Iterator<Item = &'a ClientUnit> + Clone,
-        P: Iterator<Item = &'a Particle>,
-    {
+       // E: Iterator<Item = &'a ClientUnit> + Clone,
+       // P: Iterator<Item = &'a Particle>,
+    {   
+
+        let mut query =  ecs_world.query::<  &PhysicsComponent  >();
+        let ecs_iter = query.iter( ecs_world ) ;
+
+       
+
+        for    phys_comp in ecs_iter {
+
+              println!("A phys comp is here ");
+         } 
+
+
         use PushConstantUpdate::*;
         info!("Updating uniform buffers");
         self.update_uniform_buffers(
