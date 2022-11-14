@@ -389,12 +389,23 @@ impl WorldRenderer {
         state: &GraphicsState,
         camera: &Camera,
         time: Duration,
-        entities: I,
+
+        entities: QueryIter<&PhysicsComponent, ()>,
+
+
         lightstyle_values: &[f32],
         cvars: &CvarRegistry,
-    ) where
-        I: Iterator<Item = &'a ClientUnit>,
+    ) //where
+        //I:  Iterator<Item = &'a ClientUnit>,
     {
+
+
+           /*  for    phys_comp in ecs_iter {
+
+              println!("A phys comp is here ");
+         } */
+
+
         trace!("Updating frame uniform buffer");
         state
             .queue()
@@ -471,10 +482,10 @@ impl WorldRenderer {
    
      //   entitiesIteratorLegacy: E,
      //   particles: P,
-     //   lightstyle_values: &[f32],   //should be an ecs resource ? 
+        lightstyle_values: &[f32],   //should be an ecs resource ? 
         viewmodel_id: usize,
         cvars: &CvarRegistry,
-        ecs_world:  &mut BevyWorld,
+        ecs_world:  &mut BevyWorld, //not ideal -- is there  a better way to pass less in here ?
     ) where
        
         
@@ -483,15 +494,13 @@ impl WorldRenderer {
     {   
         //why must ecs world be mut to query !? 
         let mut query =  ecs_world.query::<  &PhysicsComponent  >();
-        let ecs_iter = query.iter( ecs_world ) ;
+        let phys_comp_iter = query.iter( ecs_world ) ;
+        
+        
+       //let lightstyle_values = ecs_world.get_resource(); 
 
-       
-
-        for    phys_comp in ecs_iter {
-
-              println!("A phys comp is here ");
-         } 
-
+    
+        
 
         use PushConstantUpdate::*;
         info!("Updating uniform buffers");
@@ -499,7 +508,7 @@ impl WorldRenderer {
             state,
             camera,
             time,
-            entitiesIteratorLegacy.clone(),
+            phys_comp_iter ,//entitiesIteratorLegacy.clone(),
             lightstyle_values,
             cvars,
         );

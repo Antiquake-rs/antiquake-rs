@@ -76,7 +76,7 @@ use std::{
     rc::Rc,
     io::{BufReader},
     fs::{File},
-    path::{PathBuf}
+    path::{PathBuf}, collections::HashMap
 };
 
 use crate::{
@@ -134,9 +134,20 @@ pub struct RenderQuery  {
     physics: &'static  PhysicsComponent ,
         
 }
+//an ecs resource 
+pub struct RenderSceneConstants{
+    pub light_styles: HashMap<u8, String>,
 
+}
 
+impl RenderSceneConstants {
+    pub fn new() -> RenderSceneConstants {
+        RenderSceneConstants { 
+            light_styles: HashMap::new(),
 
+         }
+    }
+}
 
 /// Create a `wgpu::TextureDescriptor` appropriate for the provided texture data.
 pub fn texture_descriptor<'a>(
@@ -783,7 +794,7 @@ impl ClientRenderer {
                             
                           //  cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
                           //  cl_state.iter_particles(),
-                          //  cl_state.lightstyle_values().unwrap().as_slice(),
+                            cl_state.lightstyle_values().unwrap().as_slice(),
                             client_viewmodel_id,   
                             cvars,
                             cl_state.get_world_mut()  ,

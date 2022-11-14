@@ -508,7 +508,7 @@ impl Connection {
 
                 ServerCmd::LightStyle { id, value } => {
                     trace!("Inserting light style {} with value {}", id, &value);
-                    let _ = self.state.light_styles.insert(id, value);
+                    let _ = self.state.insert_lightstyle(id, value ); //light_styles.insert(id, value);
                 }
 
                 ServerCmd::Particle {

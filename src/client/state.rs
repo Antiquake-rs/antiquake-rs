@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use super::{view::BobVars, Client, };
+use super::{view::BobVars, Client, render::RenderSceneConstants, };
 use crate::{
     client::{
         unit::{
@@ -63,16 +63,19 @@ pub struct PlayerInfo {
     // translations: [u8; VID_GRADES],
 }
 
-
-pub struct UnitIdRegistry {
+/* pub struct UnitIdRegistry {
     
 
-}
+}*/
  
- 
+
+
+
 
 
 // client information regarding the current level
+
+//move more and more of this into ECS resources
 pub struct ClientState  {
     // local rng
     rng: SmallRng,
@@ -110,7 +113,7 @@ pub struct ClientState  {
     // visible entities, rebuilt per-frame
     pub visible_entity_ids: Vec<usize>,
 
-    pub light_styles: HashMap<u8, String>,
+    //pub light_styles: HashMap<u8, String>,
 
     // various values relevant to the player and level (see common::net::ClientStat)
     pub stats: [i32; MAX_STATS],
@@ -175,7 +178,7 @@ impl ClientState {
             beams: [None; MAX_BEAMS],
             particles: Particles::with_capacity(MAX_PARTICLES),
             visible_entity_ids: Vec::new(),
-            light_styles: HashMap::new(),
+        //    light_styles: HashMap::new(),
             stats: [0; MAX_STATS],
             max_players: 0,
             player_info: Default::default(),
@@ -326,6 +329,7 @@ impl ClientState {
         
 
         self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
+        self.ecs_world.insert_resource(RenderSceneConstants::new());
 
         self.ecs_world.insert_resource(BevyEntityLookupRegistry::new());
 
@@ -1831,11 +1835,24 @@ impl ClientState {
         )
     } 
 
+    pub fn insert_lightstyle( &mut self, id:u8, value: String ) {
+
+        let scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
+
+        scene_render_constants.light_styles.insert(id, value);
+
+    }
+
+    //ridiculous that we need mut self now (due to bevy query) but oh well ? 
     pub fn lightstyle_values(&self) -> Result<ArrayVec<f32, 64>, ClientError> {
         let mut values = ArrayVec::new();
 
+        let scene_render_constants = self.get_resource::<RenderSceneConstants>();
+
+        let light_styles = scene_render_constants.light_styles;
+
         for lightstyle_id in 0..64 {
-            match self.light_styles.get(&lightstyle_id) {
+            match light_styles.get(&lightstyle_id) {
                 Some(ls) => {
                     let float_time = engine::duration_to_f32(self.time);
                     let frame = if ls.len() == 0 {
