@@ -1813,7 +1813,7 @@ impl ClientState {
         )
     }
 
-    //for testing
+    //for testing  e1m3 
     pub fn fake_camera(&self, aspect: f32, fov: Deg<f32>) -> Camera {
         let fov_y = math::fov_x_to_fov_y(fov, aspect).unwrap();
  
