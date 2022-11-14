@@ -30,23 +30,14 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- - get brushes to render again !  (not w fake camera!)  -- my dudes origin seems to be wrong 
- - be able to  walk around again (with ecs )!
+ -  add in particles (ecs) 
 
- - render using ECS (?)
+ -  keep refactoring stuff out of ClientState 
+  
  
-- need the gamestate deltas to be applied to Components (physics component) which are then applied to the render state.  (consider building a 'render system' within the ecs). will have to change how entities are stored and rendered...
-
-
-render > world > mod .rs 
-
-Entity_renderers can be components !!! 
-
-- fix world_render 
-
-
--add collision 
-
+ 
+-add collision   (in the gamedeltas system -- need to borrow the RenderModels to know abt collision size maybe ?  )
+ 
 
 
 -make the buffer work more like anymap where only 1 of certain cmd types (per entity) can be in there at a time - maybe use bit flags idk 

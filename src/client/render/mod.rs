@@ -106,7 +106,7 @@ use crate::{
         model::Model,
         net::SignOnStage,
         vfs::Vfs,
-        wad::Wad, gamestate::component::physics::PhysicsComponent,
+        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
     },
 };
 
@@ -777,16 +777,22 @@ impl ClientRenderer {
 
 
                     
-
-
-                        //same as cl_state. query_visible_entities
-                        let mut ecs_world =  cl_state.get_world_mut();
-                      //  let components = ecs_world.components();
-
-                       
-                       
+ 
+                        
                         let client_viewmodel_id = cl_state.viewmodel_id();
                         let state_time =  cl_state.time();
+                        let lightstyle_values = cl_state.lightstyle_values().unwrap();
+                        let lightstyle_value_slices  = lightstyle_values.as_slice();
+
+                        //why do bevy query need world as mutable ?
+                        let   ecs_world =  cl_state.get_world_mut();
+
+                        //should really only render VISIBLE entities -- might need to fix that later 
+                        let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
+                        let mut unit_iter = phys_render_query.iter( ecs_world ) ;
+                       
+                        let mut particle_query =  ecs_world.query::< ( &PhysicsComponent, &ParticleComponent  ) >();
+                        let mut particle_iter = particle_query.iter( ecs_world ) ;
 
                         world.render_pass(
                             gfx_state,
@@ -797,10 +803,12 @@ impl ClientRenderer {
                             
                           //  cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
                           //  cl_state.iter_particles(),
-                            cl_state.lightstyle_values().unwrap().as_slice(),
+                          lightstyle_value_slices,
                             client_viewmodel_id,   
                             cvars,
-                            cl_state.get_world_mut()  ,
+                            &mut unit_iter,
+                            &mut particle_iter, 
+                          //  cl_state.get_world_mut()  ,
                         );
                     }
 

@@ -108,7 +108,7 @@ pub struct ClientState  {
     // lightning bolts and grappling hook cable
     pub beams: [Option<Beam>; MAX_BEAMS],
     // particle effects
-    pub particles: Particles,
+   // pub particles: Particles,
 
     // visible entities, rebuilt per-frame
     pub visible_entity_ids: Vec<usize>,
@@ -373,8 +373,7 @@ impl ClientState {
         self.lights.update(self.time);
 
         // apply particle physics and remove expired particles
-        self.particles
-            .update(self.time, frame_time, sv_gravity);
+        self.particles  .update(self.time, frame_time, sv_gravity);
 
 
 
@@ -1266,6 +1265,16 @@ impl ClientState {
         Ok(())
     }*/
 
+
+
+    /*
+    
+        When particles spawn, they need to spawn as an entity 
+
+        Need to have particle update systems  (ECS) 
+    
+    */
+
     pub fn spawn_temp_entity(&mut self, temp_entity: &TempEntity) {
         lazy_static! {
             static ref ZERO_ONE_DISTRIBUTION: Uniform<f32> = Uniform::new(0.0, 1.0);
@@ -1758,9 +1767,9 @@ impl ClientState {
     }
  
 
-    pub fn iter_particles(&self) -> impl Iterator<Item = &Particle> {
+   /* pub fn iter_particles(&self) -> impl Iterator<Item = &Particle> {
         self.particles.iter()
-    }
+    } */
 
     pub fn iter_lights(&self) -> impl Iterator<Item = &Light> {
         self.lights.iter()

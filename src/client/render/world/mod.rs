@@ -29,7 +29,7 @@ use crate::{
         math::Angles,
         model::{Model, ModelKind},
         sprite::SpriteKind,
-        util::any_as_bytes, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent},
+        util::any_as_bytes, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
     },
 };
 
@@ -473,28 +473,23 @@ impl WorldRenderer {
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
-        time: Duration,
-   
-     //   entitiesIteratorLegacy: E,
+        time: Duration, 
+     
      //   particles: P,
-        lightstyle_values: &[f32],   //should be an ecs resource ? 
-        viewmodel_id: usize,
+        lightstyle_values: &[f32],  
+        viewmodel_id: usize,  //the viewmodel of the player character 
         cvars: &CvarRegistry,
-        ecs_world:  &mut BevyWorld, //not ideal -- is there  a better way to pass less in here ?
+
+        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
+        particle_iter: &mut QueryIter<  ( &PhysicsComponent, &ParticleComponent ), () > ,
     ) //where
-       
         
-       // E: Iterator<Item = &'a ClientUnit> + Clone,
        // P: Iterator<Item = &'a Particle>,
     {   
         //why must ecs world be mut to query !? 
 
         //find all entities that have a physicscomponent AND rendermodel component
-        let mut query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
-        let mut comp_iter = query.iter( ecs_world ) ;
-        
-        
-       //let lightstyle_values = ecs_world.get_resource(); 
+       
  
 
         use PushConstantUpdate::*;
@@ -503,7 +498,7 @@ impl WorldRenderer {
             state,
             camera,
             time,
-             &mut comp_iter ,//entitiesIteratorLegacy.clone(),
+            unit_iter , 
             lightstyle_values,
             cvars,
         );
@@ -536,7 +531,7 @@ impl WorldRenderer {
 
         // draw entities
         info!("Drawing entities");
-        for (ent_pos, (phys_comp, render_model_comp)) in (comp_iter).enumerate() { 
+        for (ent_pos, (phys_comp, render_model_comp)) in (unit_iter).enumerate() { 
 
             let unit_origin = phys_comp.origin.clone();
             let unit_angles = phys_comp.angles.clone();
@@ -620,14 +615,14 @@ impl WorldRenderer {
             _ => warn!("non-alias viewmodel"),  //was unreachable 
         }
 
-        /* 
-        Add in particle draw again once they are in ECS system !
+        
+       // Add in particle draw again once they are in ECS system !
 
         log::debug!("Drawing particles");
         state
             .particle_pipeline()
-            .record_draw(pass, &bump, camera, particles);
-        */
+            .record_draw(pass, &bump, camera, particle_iter);
+         
 
     }
 
