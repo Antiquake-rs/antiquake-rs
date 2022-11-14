@@ -18,7 +18,7 @@
 //! Physics and collision detection.
 
 use crate::{
-    common::{bsp::BspLeafContents, math::Hyperplane},
+    common::{bsp::BspLeafPhysMaterial, math::Hyperplane},
     server::world::EntityId,
 };
 
@@ -224,13 +224,13 @@ impl TraceEnd {
 pub struct Trace {
     start: TraceStart,
     end: TraceEnd,
-    contents: BspLeafContents,
+    contents: BspLeafPhysMaterial,
     start_solid: bool,
 }
 
 impl Trace {
-    pub fn new(start: TraceStart, end: TraceEnd, contents: BspLeafContents) -> Trace {
-        let start_solid = contents == BspLeafContents::Solid;
+    pub fn new(start: TraceStart, end: TraceEnd, contents: BspLeafPhysMaterial) -> Trace {
+        let start_solid = contents == BspLeafPhysMaterial::Solid;
         Trace {
             start,
             end,
@@ -277,7 +277,7 @@ impl Trace {
             };
         }
 
-        if self.contents == BspLeafContents::Solid && other.contents != BspLeafContents::Solid {
+        if self.contents == BspLeafPhysMaterial::Solid && other.contents != BspLeafPhysMaterial::Solid {
             return Trace {
                 start: self.start,
                 end: other.end,
@@ -322,7 +322,7 @@ impl Trace {
 
     /// Returns true if the entire trace is within solid leaves.
     pub fn all_solid(&self) -> bool {
-        self.contents == BspLeafContents::Solid
+        self.contents == BspLeafPhysMaterial::Solid
     }
 
     /// Returns true if the trace began in a solid leaf but ended outside it.
@@ -331,11 +331,11 @@ impl Trace {
     }
 
     pub fn in_open(&self) -> bool {
-        self.contents == BspLeafContents::Empty
+        self.contents == BspLeafPhysMaterial::Empty
     }
 
     pub fn in_water(&self) -> bool {
-        self.contents != BspLeafContents::Empty && self.contents != BspLeafContents::Solid
+        self.contents != BspLeafPhysMaterial::Empty && self.contents != BspLeafPhysMaterial::Solid
     }
 
     /// Returns whether the trace ended without a collision.

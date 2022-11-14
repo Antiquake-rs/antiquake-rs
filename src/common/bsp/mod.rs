@@ -130,6 +130,8 @@ use chrono::Duration;
 
 pub use self::load::{load, BspFileError};
 
+use std::ops::Range;
+
 // this is 4 in the original source, but the 4th hull is never used.
 const MAX_HULLS: usize = 3;
 
@@ -291,7 +293,7 @@ pub struct BspFace {
 
 /// The contents of a leaf in the BSP tree, specifying how it should look and behave.
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
-pub enum BspLeafContents {
+pub enum BspLeafPhysMaterial {
     /// The leaf has nothing in it. Vision is unobstructed and movement is unimpeded.
     Empty = 1,
 
@@ -316,29 +318,29 @@ pub enum BspLeafContents {
     // This is removed during map compilation
     // Origin = 7,
 
-    // This is converted to `BspLeafContents::Solid`
+    // This is converted to `BspLeafPhysMaterial::Solid`
     // Collide = 8,
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the positive
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the positive
     /// x-direction (east).
     Current0 = 9,
 
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the positive
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the positive
     /// y-direction (north).
     Current90 = 10,
 
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the negative
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the negative
     /// x-direction (west).
     Current180 = 11,
 
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the negative
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the negative
     /// y-direction (south).
     Current270 = 12,
 
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the positive
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the positive
     /// z-direction (up).
     CurrentUp = 13,
 
-    /// Same as `BspLeafContents::Water`, but the player is constantly pushed in the negative
+    /// Same as `BspLeafPhysMaterial::Water`, but the player is constantly pushed in the negative
     /// z-direction (down).
     CurrentDown = 14,
 }
@@ -346,7 +348,7 @@ pub enum BspLeafContents {
 #[derive(Debug)]
 pub enum BspCollisionNodeChild {
     Node(usize),
-    Contents(BspLeafContents),
+    Contents(BspLeafPhysMaterial),
 }
 
 #[derive(Debug)]
@@ -370,7 +372,7 @@ impl BspCollisionHull {
     /// Constructs a collision hull with the given minimum and maximum bounds.
     ///
     /// This generates six planes which intersect to form a rectangular prism. The interior of the
-    /// prism is `BspLeafContents::Solid`; the exterior is `BspLeafContents::Empty`.
+    /// prism is `BspLeafPhysMaterial::Solid`; the exterior is `BspLeafPhysMaterial::Empty`.
     pub fn for_bounds(
         mins: Vector3<f32>,
         maxs: Vector3<f32>,
@@ -392,7 +394,7 @@ impl BspCollisionHull {
         nodes.push(BspCollisionNode {
             plane_id: 0,
             children: [
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
                 BspCollisionNodeChild::Node(1),
             ],
         });
@@ -403,7 +405,7 @@ impl BspCollisionHull {
             plane_id: 1,
             children: [
                 BspCollisionNodeChild::Node(2),
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
             ],
         });
 
@@ -412,7 +414,7 @@ impl BspCollisionHull {
         nodes.push(BspCollisionNode {
             plane_id: 2,
             children: [
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
                 BspCollisionNodeChild::Node(3),
             ],
         });
@@ -423,7 +425,7 @@ impl BspCollisionHull {
             plane_id: 3,
             children: [
                 BspCollisionNodeChild::Node(4),
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
             ],
         });
 
@@ -432,7 +434,7 @@ impl BspCollisionHull {
         nodes.push(BspCollisionNode {
             plane_id: 4,
             children: [
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
                 BspCollisionNodeChild::Node(5),
             ],
         });
@@ -442,8 +444,8 @@ impl BspCollisionHull {
         nodes.push(BspCollisionNode {
             plane_id: 5,
             children: [
-                BspCollisionNodeChild::Contents(BspLeafContents::Solid),
-                BspCollisionNodeChild::Contents(BspLeafContents::Empty),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Solid),
+                BspCollisionNodeChild::Contents(BspLeafPhysMaterial::Empty),
             ],
         });
 
@@ -466,7 +468,7 @@ impl BspCollisionHull {
     }
 
     /// Returns the leaf contents at the given point in this hull.
-    pub fn contents_at_point(&self, point: Vector3<f32>) -> Result<BspLeafContents, BspError> {
+    pub fn contents_at_point(&self, point: Vector3<f32>) -> Result<BspLeafPhysMaterial, BspError> {
         self.contents_at_point_node(self.node_id, point)
     }
 
@@ -474,7 +476,7 @@ impl BspCollisionHull {
         &self,
         node: usize,
         point: Vector3<f32>,
-    ) -> Result<BspLeafContents, BspError> {
+    ) -> Result<BspLeafPhysMaterial, BspError> {
         let mut current_node = &self.nodes[node];
 
         loop {
@@ -651,13 +653,24 @@ impl BspCollisionHull {
 
 #[derive(Debug)]
 pub struct BspLeaf {
-    pub contents: BspLeafContents,
+    pub contents: BspLeafPhysMaterial, //the physics material 
     pub vis_offset: Option<usize>,
     pub min: [i16; 3],
     pub max: [i16; 3],
     pub facelist_id: usize,
     pub facelist_count: usize,
     pub sounds: [u8; MAX_SOUNDS],
+}
+
+impl BspLeaf {
+
+    //could cache this to increase speed but its already so fast ..
+    pub fn get_facelist_range(&self) -> Range<usize> {
+
+        return self.facelist_id..self.facelist_id + self.facelist_count
+
+    }
+
 }
 
 #[derive(Debug)]
@@ -828,9 +841,12 @@ impl BspData {
         }
     }
 
+    //how does this work ? 
+    //why is there a leaf id and a leaf count ? 
     pub fn get_pvs(&self, leaf_id: usize, leaf_count: usize) -> Vec<usize> {
         // leaf 0 is outside the map, everything is visible
         if leaf_id == 0 {
+            
             return Vec::new();
         }
 
@@ -1043,7 +1059,7 @@ mod test {
         for point in empty_points {
             assert_eq!(
                 hull.contents_at_point(point).unwrap(),
-                BspLeafContents::Empty
+                BspLeafPhysMaterial::Empty
             );
         }
 
@@ -1064,7 +1080,7 @@ mod test {
         for point in solid_points {
             assert_eq!(
                 hull.contents_at_point(point).unwrap(),
-                BspLeafContents::Solid
+                BspLeafPhysMaterial::Solid
             );
         }
     }

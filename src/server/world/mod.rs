@@ -48,7 +48,7 @@ pub use self::{
 use crate::{
     common::{
         bsp,
-        bsp::{BspCollisionHull, BspLeafContents},
+        bsp::{BspCollisionHull, BspLeafPhysMaterial},
         mdl,
         model::{Model, ModelKind},
         parse, sprite,
@@ -986,7 +986,7 @@ impl World {
         let mut trace = Trace::new(
             TraceStart::new(Vector3::zero(), 0.0),
             TraceEnd::terminal(Vector3::zero()),
-            BspLeafContents::Empty,
+            BspLeafPhysMaterial::Empty,
         );
 
         let mut collide_entity = None;

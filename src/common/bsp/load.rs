@@ -25,7 +25,7 @@ use std::{
 use crate::common::{
     bsp::{
         BspCollisionHull, BspCollisionNode, BspCollisionNodeChild, BspData, BspEdge,
-        BspEdgeDirection, BspEdgeIndex, BspFace, BspFaceSide, BspLeaf, BspLeafContents, BspModel,
+        BspEdgeDirection, BspEdgeIndex, BspFace, BspFaceSide, BspLeaf, BspLeafPhysMaterial, BspModel,
         BspRenderNode, BspRenderNodeChild, BspTexInfo, BspTexture, MAX_HULLS, MAX_LIGHTSTYLES,
         MIPLEVELS,
     },
@@ -790,7 +790,7 @@ where
         };
 
         let front = match reader.read_i16::<LittleEndian>()? {
-            x if x < 0 => match BspLeafContents::from_i16(-x) {
+            x if x < 0 => match BspLeafPhysMaterial::from_i16(-x) {
                 Some(c) => BspCollisionNodeChild::Contents(c),
                 None => bail!("Invalid leaf contents ({})", -x),
             },
@@ -798,7 +798,7 @@ where
         };
 
         let back = match reader.read_i16::<LittleEndian>()? {
-            x if x < 0 => match BspLeafContents::from_i16(-x) {
+            x if x < 0 => match BspLeafPhysMaterial::from_i16(-x) {
                 Some(c) => BspCollisionNodeChild::Contents(c),
                 None => bail!("Invalid leaf contents ({})", -x),
             },
@@ -843,7 +843,7 @@ where
 
     let mut leaves = Vec::with_capacity(leaf_count);
     // leaves.push(BspLeaf {
-    // contents: BspLeafContents::Solid,
+    // contents: BspLeafPhysMaterial::Solid,
     // vis_offset: None,
     // min: [-32768, -32768, -32768],
     // max: [32767, 32767, 32767],
@@ -857,7 +857,7 @@ where
         // them from plane IDs)
         let contents_id = -reader.read_i32::<LittleEndian>()?;
 
-        let contents = match BspLeafContents::from_i32(contents_id) {
+        let contents = match BspLeafPhysMaterial::from_i32(contents_id) {
             Some(c) => c,
             None => bail!("Invalid leaf contents ({})", contents_id),
         };

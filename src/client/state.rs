@@ -1,3 +1,4 @@
+use core::panic;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::{view::BobVars, Client, render::RenderSceneConstants, };
@@ -8,7 +9,7 @@ use crate::{
             Beam, ClientUnit, Light, LightDesc, Lights, MAX_BEAMS, MAX_LIGHTS, MAX_TEMP_ENTITIES,
         },
         input::game::{Action, GameInput},
-        render::{Camera, RenderQuery, RenderQueryItem},
+        render::{Camera, WorldspawnRenderData, },
         sound::{AudioSource, EntityMixer, Listener, StaticSound},
         view::{IdleVars, KickVars, MouseVars, RollVars, View},
         ClientError, ColorShiftCode, IntermissionKind, MoveVars, MAX_STATS,
@@ -46,6 +47,9 @@ use bevy_ecs::{world::{World as BevyWorld, Mut}, schedule::{Schedule, SystemStag
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/* 
+
+what was this?  a hack for the demo ? 
 const CACHED_SOUND_NAMES: &[&'static str] = &[
     "hknight/hit.wav",
     "weapons/r_exp3.wav",
@@ -55,6 +59,7 @@ const CACHED_SOUND_NAMES: &[&'static str] = &[
     "weapons/tink1.wav",
     "wizard/hit.wav",
 ];
+*/
 
 pub struct PlayerInfo {
     pub name: String,
@@ -63,14 +68,34 @@ pub struct PlayerInfo {
     // translations: [u8; VID_GRADES],
 }
 
-/* pub struct UnitIdRegistry {
-    
 
-}*/
- 
+// this is an ecs resource 
+pub struct LoadedAssetsCache {
+    pub models: Vec<Model>, 
+    pub model_names: HashMap<String, usize>,    
+    pub sounds: Vec<AudioSource>,
+    pub sound_names: HashMap<String,usize>
+  //  pub cached_sounds: HashMap<String, AudioSource>,
+}
 
+impl LoadedAssetsCache {
+    pub fn new() -> LoadedAssetsCache {
+        LoadedAssetsCache {
+            models: vec![Model::none()],
+            model_names: HashMap::new(),
+            sounds: Vec::new(),
+            sound_names: HashMap::new(),
 
+         }
+    }
 
+    pub fn get_sound(&self,name:&str) -> Option<AudioSource> {
+
+        let sound_id = self.sound_names.get(&name.to_string())?;
+
+        return Some(self.sounds[*sound_id]);
+    }
+}
 
 
 // client information regarding the current level
@@ -81,15 +106,15 @@ pub struct ClientState  {
     rng: SmallRng,
 
     // model precache
-    pub models: Vec<Model>,
+  //  pub models: Vec<Model>,   //this should be in a resource !! in ECS ! 
     // name-to-id map
-    pub model_names: HashMap<String, usize>,
+   // pub model_names: HashMap<String, usize>,   //this should be in a resource !! in ECS ! 
 
     // audio source precache
-    pub sounds: Vec<AudioSource>,
+  //  pub sounds: Vec<AudioSource>, //this should be in a resource !! in ECS ! 
 
     // sounds that are always needed even if not in precache
-    cached_sounds: HashMap<String, AudioSource>,
+   // cached_sounds: HashMap<String, AudioSource>, //this should be in a resource !! in ECS ! 
 
     // ambient sounds (infinite looping, static position)
     pub static_sounds: Vec<StaticSound>,
@@ -98,6 +123,7 @@ pub struct ClientState  {
    // pub entities: Vec<ClientUnit>,
    // pub entities: HashMap<usize, i32>, //quake entity_id to bevy_id  
 
+   //move these to ECS 
     pub static_entities: Vec<ClientUnit>,
     pub temp_entities: Vec<ClientUnit>,
 
@@ -147,7 +173,7 @@ pub struct ClientState  {
     // --------
 
 
-
+    pub loaded_assets_cache: LoadedAssetsCache,
 
     pub intermission: Option<IntermissionKind>,
     pub start_time: Duration,
@@ -160,7 +186,10 @@ pub struct ClientState  {
 
     pub ecs_world: BevyWorld,
     pub ecs_tick_schedule: Schedule, //runs every tick  -- physics 
-    pub ecs_frame_schedule: Schedule, //runs every frame -- render 
+    pub ecs_frame_schedule: Schedule,
+
+
+    pub worldspawn_render_data: Option<WorldspawnRenderData>,  
  
   //  pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
 }
@@ -173,10 +202,16 @@ impl ClientState {
         //this is disgusting !!! break it into resources, components , systems 
         let mut c_state = ClientState {
             rng: SmallRng::from_entropy(),
-            models: vec![Model::none()],
+
+            loaded_assets_cache: LoadedAssetsCache::new(),
+            worldspawn_render_data: None,
+
+         /*   models: vec![Model::none()],
             model_names: HashMap::new(),
             sounds: Vec::new(),
-            cached_sounds: HashMap::new(),
+            cached_sounds: HashMap::new(),*/ 
+
+            //put these into ECS 
             static_sounds: Vec::new(),
 
             //entities: HashMap::new(),
@@ -258,6 +293,10 @@ impl ClientState {
         model_precache: Vec<String>,
         sound_precache: Vec<String>,
     ) -> Result<ClientState, ClientError> {
+
+
+        // Add these models and sounds to the assets precache resource !!! 
+
         // TODO: validate submodel names
         let mut models = Vec::with_capacity(model_precache.len());
         models.push(Model::none()); // this is bc the map is slot 0 ? 
@@ -266,7 +305,7 @@ impl ClientState {
             // BSPs can have more than one model
             if mod_name.ends_with(".bsp") {
                 let bsp_data = vfs.open(&mod_name)?;
-                let (mut brush_models, _) = bsp::load(bsp_data).unwrap();
+                let (mut brush_models, _) = bsp::load(bsp_data).unwrap(); 
                 for bmodel in brush_models.drain(..) {
                     let id = models.len();
                     let name = bmodel.name().to_owned();
@@ -284,30 +323,27 @@ impl ClientState {
             // TODO: send keepalive message?
         }
 
-        let mut sounds = vec![AudioSource::load(&vfs, "misc/null.wav")?];
-        for ref snd_name in sound_precache {
-            debug!("Loading sound {}: {}", sounds.len(), snd_name);
-            sounds.push(AudioSource::load(vfs, snd_name)?);
-            // TODO: send keepalive message?
+     
+        let mut sounds= Vec::with_capacity(sound_precache.len());
+        let mut sound_names = HashMap::new();
+        for ref snd_name in sound_precache {            
+            let id=sounds.len();
+            sounds.push( AudioSource::load(vfs, snd_name)?);
+            sound_names.insert(snd_name.to_string(), id);
         }
 
-        let mut cached_sounds = HashMap::new();
-        for name in CACHED_SOUND_NAMES {
-            cached_sounds.insert(name.to_string(), AudioSource::load(vfs, name)?);
-        }
-
-
-
-
-
-
+ 
 
         Ok(ClientState {
-            models,
-            model_names,
-            sounds,
-            cached_sounds,
-            max_players: max_clients as usize,
+           
+            loaded_assets_cache:LoadedAssetsCache {
+                models,
+                model_names,
+                sounds,
+                sound_names,
+             },
+            worldspawn_render_data: Some( WorldspawnRenderData::new(&models , 1) ) ,
+            max_players: max_clients as usize,  //put this in an ecs resource -- like server info 
             ..ClientState::new(stream)
         })
     }
@@ -317,6 +353,16 @@ impl ClientState {
     pub fn get_world_mut(&mut self) -> & mut BevyWorld {
         return &mut self.ecs_world; 
     }
+
+
+    /*
+    
+    WorldRenderer::new(
+                        gfx_state,
+                        self.state.models(),
+                        1,*/
+
+
     
     fn init_ecs(&mut self){
         let primary_stage:&str = "primary";
@@ -339,8 +385,11 @@ impl ClientState {
 
         self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
         self.ecs_world.insert_resource(RenderSceneConstants::new());
+      
 
         self.ecs_world.insert_resource(BevyEntityLookupRegistry::new());
+
+        self.build_bsp_collision_hulls(  );
 
         //https://docs.rs/bevy/0.8.0/bevy/ecs/system/struct.SystemState.html
         
@@ -608,6 +657,30 @@ impl ClientState {
             f => f,
         }
     }
+
+
+
+    fn build_bsp_collision_hulls(&mut self){
+
+       // let models = self.models(); 
+
+        match self.worldspawn_render_data  {
+
+            Some( worldspawn ) => { 
+
+
+            },
+
+
+            None => panic!("No worldspawn render data to generate collision hulls")
+
+        }
+
+        //for each model, if its worldspawn add an entity to ECS that has a physics collision hull -- use that for gamestate deltas 
+
+
+    }
+
 
     /// Update all entities in the game world.
     ///
@@ -1325,7 +1398,7 @@ impl ClientState {
 
                         if let Some(snd) = sound {
                             self.mixer.start_sound(
-                                self.cached_sounds.get(snd).unwrap().clone(),
+                                self.loaded_assets_cache.get_sound(snd).unwrap().clone(),
                                 self.time,
                                 None,
                                 0,
@@ -1352,8 +1425,8 @@ impl ClientState {
                         );
 
                         self.mixer.start_sound(
-                            self.cached_sounds
-                                .get("weapons/r_exp3.wav")
+                            self.loaded_assets_cache
+                                .get_sound("weapons/r_exp3.wav")
                                 .unwrap()
                                 .clone(),
                             self.time,
@@ -1388,8 +1461,8 @@ impl ClientState {
                         );
 
                         self.mixer.start_sound(
-                            self.cached_sounds
-                                .get("weapons/r_exp3.wav")
+                            self.loaded_assets_cache
+                                .get_sound("weapons/r_exp3.wav")
                                 .unwrap()
                                 .clone(),
                             self.time,
@@ -1406,8 +1479,8 @@ impl ClientState {
                         self.particles.create_spawn_explosion(self.time, *origin);
 
                         self.mixer.start_sound(
-                            self.cached_sounds
-                                .get("weapons/r_exp3.wav")
+                            self.loaded_assets_cache
+                                .get_sound("weapons/r_exp3.wav")
                                 .unwrap()
                                 .clone(),
                             self.time,
@@ -1448,7 +1521,7 @@ impl ClientState {
                 self.spawn_beam(
                     self.time,
                     *entity_id as usize,
-                    *self.model_names.get(&model_name).unwrap(),
+                    *self.loaded_assets_cache.model_names.get(&model_name).unwrap(),
                     *start,
                     *end,
                 );
@@ -1547,15 +1620,16 @@ impl ClientState {
         }
     }
 
-    fn view_leaf_contents(&self) -> Result<bsp::BspLeafContents, ClientError> {
+    fn view_leaf_contents(&self) -> Result<bsp::BspLeafPhysMaterial, ClientError> {
 
         let controlled_entity_phys_comp = self.get_component_of_entity::
         <ecs_components::physics::PhysicsComponent>
         (self.view.unit_id()).unwrap();
  
 
+        let world_model_kind = self.loaded_assets_cache.models[1].kind();
         
-        match self.models[1].kind() {
+        match world_model_kind {
             ModelKind::Brush(ref bmodel) => {
                 let bsp_data = bmodel.bsp_data();
                 let leaf_id = bsp_data.find_leaf(controlled_entity_phys_comp.origin);
@@ -1573,15 +1647,15 @@ impl ClientState {
         // set color for leaf contents
         self.color_shifts[ColorShiftCode::Contents as usize].replace(
             match self.view_leaf_contents()? {
-                bsp::BspLeafContents::Empty => ColorShift {
+                bsp::BspLeafPhysMaterial::Empty => ColorShift {
                     dest_color: [0, 0, 0],
                     percent: 0,
                 },
-                bsp::BspLeafContents::Lava => ColorShift {
+                bsp::BspLeafPhysMaterial::Lava => ColorShift {
                     dest_color: [255, 80, 0],
                     percent: 150,
                 },
-                bsp::BspLeafContents::Slime => ColorShift {
+                bsp::BspLeafPhysMaterial::Slime => ColorShift {
                     dest_color: [0, 25, 5],
                     percent: 150,
                 },
@@ -1721,7 +1795,24 @@ impl ClientState {
     }
 
     pub fn models(&self) -> &[Model] {
-        &self.models
+        &self.loaded_assets_cache.models
+    } 
+
+ 
+
+    pub fn play_sound(&self,sound_id:usize,volume:u8,channel:i8,attenuation:f32, unit_id:usize, position:Vector3<f32>) {
+         // TODO: apply volume, attenuation, spatialization
+         self.mixer.start_sound(
+            self.loaded_assets_cache.sounds[sound_id as usize].clone(),
+            self.msg_times[0],
+            Some(unit_id as usize),
+            channel,
+            volume as f32 / 255.0,
+            attenuation,
+            position,
+            &self.listener,
+        );
+
     }
 
     //i guess this is the model of the weapon you are holding 

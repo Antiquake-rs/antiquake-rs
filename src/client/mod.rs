@@ -199,7 +199,7 @@ enum ConnectionState {
     SignOn(SignOnStage),
 
     /// The client is fully connected.
-    Connected(WorldRenderer),
+    Connected(WorldRenderer) ,
 }
 
 /// Possible targets that a client can be connected to.
@@ -337,12 +337,23 @@ impl Connection {
                     // still signing on, advance to the new stage
                     Prespawn | ClientInfo | Begin => ConnectionState::SignOn(new_stage),
 
-                    // finished signing on, build world renderer
-                    Done => ConnectionState::Connected(WorldRenderer::new(
+                   
+                    Done => {
+                         // finished signing on, build world renderer
+
+                      //  self.state.handle_on_connected();
+
+                         //get the map data from a resource -- get the models out of it (from OnServerInfo )
+
+                         let models = self.state.models();
+
+                        ConnectionState::Connected(WorldRenderer::new(gfx_state, models, 1))
+
+                    }/*(WorldRenderer::new(
                         gfx_state,
                         self.state.models(),
                         1,
-                    )),
+                    ))*/,
                 }
             }
 
@@ -623,17 +634,10 @@ impl Connection {
 
                     let volume = volume.unwrap_or(DEFAULT_SOUND_PACKET_VOLUME);
                     let attenuation = attenuation.unwrap_or(DEFAULT_SOUND_PACKET_ATTENUATION);
-                    // TODO: apply volume, attenuation, spatialization
-                    self.state.mixer.start_sound(
-                        self.state.sounds[sound_id as usize].clone(),
-                        self.state.msg_times[0],
-                        Some(unit_id as usize),
-                        channel,
-                        volume as f32 / 255.0,
-                        attenuation,
-                        position,
-                        &self.state.listener,
-                    );
+
+
+                    self.state.play_sound( sound_id as usize, volume,channel, attenuation, unit_id as usize, position);
+                   
                 }
 
                 ServerCmd::SpawnBaseline {
@@ -689,10 +693,13 @@ impl Connection {
                     volume,
                     attenuation,
                 } => {
+
+                    //put this in ECS !! 
+
                     self.state.static_sounds.push(StaticSound::new(
                         &self.state.mixer.stream(),
                         origin,
-                        self.state.sounds[sound_id as usize].clone(),
+                        self.state.loaded_assets_cache.sounds[sound_id as usize].clone(),
                         volume as f32 / 255.0,
                         attenuation as f32 / 64.0,
                         &self.state.listener,
@@ -864,7 +871,7 @@ impl Connection {
 
         //if gametick_accumulator is very high (more that 100ms) we need to pause the render loop 
 
-        let is_connected = matches! (self.conn_state , ConnectionState::Connected(_));
+        let is_connected = matches! (self.conn_state , ConnectionState::Connected(_) );
         
         let accum =  self.state.advance_time(frame_time, cvars, is_connected)?;
 

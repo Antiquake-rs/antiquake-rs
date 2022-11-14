@@ -31,6 +31,24 @@ gfx pipelines yay!!!
 #### Next Steps 
  
  -plan how to load BSP  collision boxes into ECS as a resource 
+
+
+// MOVE these to ECS !! 
+
+//bsp_data: Rc<BspData>,
+//leaves: Option<Vec<BrushLeaf>>,
+
+--there is collision code in common-bsp-mod 
+
+
+Maybe leaves DO need to be in the ecs -- maybe a leaf   has a collision hull AND a range of faces to render ... 
+
+
+
+ -see hull_for_entity
+ -pre compute collision hulls while loading in  
+
+
  - maybe we render the brushes from ECS  -- ? ? so its unified 
 
  -  build in gravity and collision for the player character 

@@ -324,7 +324,13 @@ struct BrushFace {
     draw_flag: Cell<bool>,
 }
 
-struct BrushLeaf {
+/*
+    Leaves are just a lookup table for PVS for facelists 
+
+    Input is the camera origin, output is the array of faces that are relevant to render 
+*/
+
+/*struct BrushLeaf {
     facelist_ids: Range<usize>,
 }
 
@@ -335,16 +341,18 @@ where
     fn from(bsp_leaf: B) -> Self {
         let bsp_leaf = bsp_leaf.borrow();
         BrushLeaf {
-            facelist_ids: bsp_leaf.facelist_id..bsp_leaf.facelist_id + bsp_leaf.facelist_count,
+            facelist_ids:  bsp_leaf.get_facelist_range(),
         }
     }
-}
+}*/
 
 pub struct BrushRendererBuilder {
-    bsp_data: Rc<BspData>,
-    face_range: Range<usize>,
+   /*bsp_data: Rc<BspData>,
+    face_range: Range<usize>,*/
 
-    leaves: Option<Vec<BrushLeaf>>,
+    //leaves: Option<Vec<BrushLeaf>>,
+
+    
 
     per_texture_bind_groups: RefCell<Vec<wgpu::BindGroup>>,
     per_face_bind_groups: Vec<wgpu::BindGroup>,
@@ -358,20 +366,9 @@ pub struct BrushRendererBuilder {
 }
 
 impl BrushRendererBuilder {
-    pub fn new(bsp_model: &BspModel, worldmodel: bool) -> BrushRendererBuilder {
-        BrushRendererBuilder {
-            bsp_data: bsp_model.bsp_data().clone(),
-            face_range: bsp_model.face_id..bsp_model.face_id + bsp_model.face_count,
-            leaves: if worldmodel {
-                Some(
-                    bsp_model
-                        .iter_leaves()
-                        .map(|leaf| BrushLeaf::from(leaf))
-                        .collect(),
-                )
-            } else {
-                None
-            },
+    pub fn new( ) -> BrushRendererBuilder {
+        BrushRendererBuilder {  
+
             per_texture_bind_groups: RefCell::new(Vec::new()),
             per_face_bind_groups: Vec::new(),
             vertices: Vec::new(),
@@ -383,17 +380,51 @@ impl BrushRendererBuilder {
         }
     }
 
-    fn create_face(&mut self, state: &GraphicsState, face_id: usize) -> BrushFace {
-        let face = &self.bsp_data.faces()[face_id];
+    
+    
+
+    pub fn get_bsp_data ( bsp_model: &BspModel  ) ->   Rc<BspData>  {
+
+        return  bsp_model.bsp_data.clone()
+
+    }
+
+    /*pub fn get_bsp_leaves ( bsp_model: &BspModel, worldmodel: bool ) ->   Option<Vec<BrushLeaf>>  {
+
+
+        let leaves = if worldmodel {
+            Some(
+                bsp_model
+                    .iter_leaves()
+                    .map(|leaf| BrushLeaf::from(leaf))
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        return   leaves 
+
+    }*/
+
+    pub fn get_face_range ( bsp_model: &BspModel  ) ->  Range<usize> {
+
+        return bsp_model.face_id..bsp_model.face_id + bsp_model.face_count
+
+    }
+
+
+    fn create_face(&mut self, bsp_data: Rc<BspData>, state: &GraphicsState, face_id: usize) -> BrushFace {
+        let face = &bsp_data.faces()[face_id];
         let face_vert_id = self.vertices.len();
-        let texinfo = &self.bsp_data.texinfo()[face.texinfo_id];
-        let tex = &self.bsp_data.textures()[texinfo.tex_id];
+        let texinfo = &bsp_data.texinfo()[face.texinfo_id];
+        let tex =  &bsp_data.textures()[texinfo.tex_id];
 
         let mut min = Vector3::new(f32::INFINITY, f32::INFINITY, f32::INFINITY);
         let mut max = Vector3::new(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
 
         let no_collinear =
-            math::remove_collinear(self.bsp_data.face_iter_vertices(face_id).collect());
+            math::remove_collinear(bsp_data.face_iter_vertices(face_id).collect());
 
         for vert in no_collinear.iter() {
             for component in 0..3 {
@@ -460,7 +491,7 @@ impl BrushRendererBuilder {
 
         // build the lightmaps
         let lightmaps = if !texinfo.special {
-            self.bsp_data.face_lightmaps(face_id)
+            bsp_data.face_lightmaps(face_id)
         } else {
             Vec::new()
         };
@@ -665,18 +696,24 @@ impl BrushRendererBuilder {
         }
     }
 
-    pub fn build(mut self, state: &GraphicsState) -> Result<BrushRenderer, Error> {
+
+
+    //can the face range requirement be removed somehow ? it comes from bspModel 
+    
+    pub fn build(mut self, state: &GraphicsState , bsp_data: Rc<BspData>, face_range: Range<usize> ) -> Result<BrushRenderer, Error> {
         // create the diffuse and fullbright textures
-        for tex in self.bsp_data.textures().iter() {
+        for tex in bsp_data.textures().iter() {
             self.textures.push(self.create_brush_texture(state, tex));
         }
+
+        
 
         // generate faces, vertices and lightmaps
         // bsp_face_id is the id of the face in the bsp data
         // face_id is the new id of the face in the renderer
-        for bsp_face_id in self.face_range.start..self.face_range.end {
+        for bsp_face_id in face_range.start..face_range.end {
             let face_id = self.faces.len();
-            let face = self.create_face(state, bsp_face_id);
+            let face = self.create_face(bsp_data, state, bsp_face_id);
             self.faces.push(face);
 
             let face_tex_id = self.faces[face_id].texture_id;
@@ -700,10 +737,12 @@ impl BrushRendererBuilder {
                 usage: wgpu::BufferUsages::VERTEX,
             });
 
+        
+
         Ok(BrushRenderer {
-            bsp_data: self.bsp_data,
+         //   bsp_data: self.bsp_data,
             vertex_buffer,
-            leaves: self.leaves,
+         //   leaves,
             per_texture_bind_groups: self.per_texture_bind_groups.into_inner(),
             per_face_bind_groups: self.per_face_bind_groups,
             texture_chains: self.texture_chains,
@@ -715,14 +754,23 @@ impl BrushRendererBuilder {
     }
 }
 
-pub struct BrushRenderer {
-    bsp_data: Rc<BspData>,
 
-    leaves: Option<Vec<BrushLeaf>>,
+
+// MOVE these to ECS !! 
+
+//bsp_data: Rc<BspData>,
+//leaves: Option<Vec<BrushLeaf>>,
+
+pub struct BrushRenderer {
+
+    // leaves: Option<Vec<BrushLeaf>>,  // dont store the facelist ranges here-- store in ecs 
+   
 
     vertex_buffer: wgpu::Buffer,
     per_texture_bind_groups: Vec<wgpu::BindGroup>,
     per_face_bind_groups: Vec<wgpu::BindGroup>,
+
+
 
     // faces are grouped by texture to reduce the number of texture rebinds
     // texture_chains maps texture ids to face ids
@@ -734,63 +782,82 @@ pub struct BrushRenderer {
 }
 
 impl BrushRenderer {
+
+
+    /*
+        camera origin -> find leaf  (a range of FaceId) -> arm all of those faces for rendering 
+    */
+
+    pub fn update_face_draw_flags<'a>(
+        & self,
+        bsp_data: &'a BspData,       
+        camera: &Camera,
+      ){ 
+
+          // in the demo the leaf id is something real!         
+
+          // if leaf id = 0 then should draw all faces ..?  make sure this works for brush entities... 
+
+               let leaves = bsp_data.leaves();
+
+                let leafId = bsp_data.find_leaf( camera.origin());
+
+                 let pvs = bsp_data.get_pvs(leafId, leaves.len());
+
+                // only draw faces in pvs
+                for leaf_id in pvs { 
+
+                    let facelist_id_range = leaves[leaf_id].get_facelist_range();
+                    
+                    for facelist_id in facelist_id_range.clone() {                    
+    
+                        let face = &self.faces[bsp_data.facelist()[facelist_id]];
+    
+                        // TODO: frustum culling
+                        face.draw_flag.set(true);
+                    }                
+
+                }
+
+
+                if pvs.len() == 0 {
+                   self.update_faces_draw_all()
+                    
+                }
+
+            
+
+          
+           
+
+ 
+           
+    }
+ 
+    pub fn update_faces_draw_all(&self ){
+          //mark all faces to render 
+          for f_id in 0..self.faces.len() {
+            let face = &self.faces[f_id];
+
+            // TODO: frustum culling
+            face.draw_flag.set(true);
+        }
+    }
+
+
     /// Record the draw commands for this brush model to the given `wgpu::RenderPass`.
-    pub fn record_draw<'a>(
+    pub fn record_draw<'a>( 
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
-        time: Duration,
-        camera: &Camera,
-        frame_id: usize,
+        time: Duration,        
+        frame_id: usize 
     ) {
         pass.set_pipeline(state.brush_pipeline().pipeline());
         pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
 
-        
-        let mut outside_of_level = false ;
-
-        // if this is a worldmodel, mark faces to be drawn
-        //is this logic totally wrong ?? i dont get it 
-        if let Some(ref leaves) = self.leaves {
-
-
-            // in the demo the leaf id is something real! 
-            let leafId = self.bsp_data.find_leaf( camera.origin());
-
-            //println!("brush renderer using cam origin id {} {} {} ",  camera.origin().x,  camera.origin().y,  camera.origin().z);
-            //println!("brush renderer using cam angles id {} {} {} ",  camera.angles().pitch.0,  camera.angles().roll.0,  camera.angles().yaw.0);
-           // println!("brush renderer using leaf id {}", leafId);
-
-           if leaves.len() == 0 {
-            outside_of_level = true;
-           }
-
-
-            let pvs = self
-                .bsp_data
-                .get_pvs(leafId, leaves.len());
-
-            // only draw faces in pvs
-            for leaf_id in pvs {  //THIS IS NOT WORKING 
-                
-                for facelist_id in leaves[leaf_id].facelist_ids.clone() {
-                  //  println!("marking leaf  {}", leaf_id);
-
-                    let face = &self.faces[self.bsp_data.facelist()[facelist_id]];
-
-                    // TODO: frustum culling
-                    face.draw_flag.set(true);
-                }
-            }
-        }
-
-
-        let drawPerFace = true;
-
-
-        if(drawPerFace){
-
+         
 
 
         for (tex_id, face_ids) in self.texture_chains.iter() {
@@ -835,7 +902,8 @@ impl BrushRenderer {
                 let face = &self.faces[*face_id];
 
                 // only skip the face if we have visibility data but it's not marked
-                if !outside_of_level && self.leaves.is_some() && !face.draw_flag.replace(false) {
+                // when we render each face, set its draw flag to false 
+                if /* !outside_of_level && leaves.is_some() && */  !face.draw_flag.replace(false) {
                   continue;
                 }
 
@@ -851,9 +919,7 @@ impl BrushRenderer {
 
 
             }
-        }//if draw per face
-
-
+       
 
 
     }

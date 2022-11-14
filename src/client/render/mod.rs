@@ -103,12 +103,16 @@ use crate::{
     },
     common::{
         console::{Console, CvarRegistry},
-        model::Model,
+        model::{Model, ModelKind},
         net::SignOnStage,
         vfs::Vfs,
-        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
+        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent}, bsp::BspData,
     },
 };
+
+ 
+
+use self::world::brush::BrushRendererBuilder;
 
 use super::{ConnectionState, state::ClientState, unit::particle::Particle};
 use bumpalo::Bump;
@@ -128,6 +132,39 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
 
 
  
+
+//change this to RC ? 
+pub struct WorldspawnRenderData {
+
+    pub bsp_data: Rc<BspData>,  
+
+}
+
+impl WorldspawnRenderData {
+
+    pub fn new( models: &[Model] , worldmodel_id: usize ) -> WorldspawnRenderData{
+
+        let worldspawn_model = models[worldmodel_id];
+
+        match *worldspawn_model.kind() {
+            ModelKind::Brush(ref bmodel) => {
+
+                //this is for worldspawn that never moves -- built once 
+                let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
+                //let leaves = BrushRendererBuilder::get_bsp_leaves(bmodel, true);
+                let face_range = BrushRendererBuilder::get_face_range(bmodel);
+
+                WorldspawnRenderData {
+                    bsp_data: bsp_data , 
+                }
+            }
+            _ => panic!("Invalid worldmodel"),
+        }
+
+    }
+}
+
+
 #[derive(WorldQuery)]
 pub struct RenderQuery  {
      
@@ -755,7 +792,7 @@ impl ClientRenderer {
 
         {
             match conn_state {
-                ConnectionState::Connected(ref world) => {
+                ConnectionState::Connected ( ref world_renderer ) => {
                     // if client is fully connected, draw world
                     let camera = match kind {
                         ConnectionKind::Demo(_) => {
@@ -785,26 +822,34 @@ impl ClientRenderer {
                         let lightstyle_value_slices  = lightstyle_values.as_slice();
 
                         //why do bevy query need world as mutable ?
-                        let   ecs_world =  cl_state.get_world_mut();
+                        let ecs_world =  cl_state.get_world_mut();
 
                         //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
                         let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
                         let mut unit_iter = phys_render_query.iter( ecs_world ) ;
+
+
+                        let worldspawn_render_data = cl_state.worldspawn_render_data;
+                        // get the world data from the ECS , it should not be baked into 'world' 
+
+
+                        //render pass should be done by a renderer class not a world class 
                         
-                        world.render_pass(
+                        world_renderer.render_pass(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
                             &camera,
                             state_time,    
-                          lightstyle_value_slices,
+                            lightstyle_value_slices,
                             client_viewmodel_id,   
                             cvars, 
                             &mut unit_iter,  
+                            worldspawn_render_data
                         );
 
                         //still render particles the old way - not ECS - for now 
-                        world.render_particles(
+                        world_renderer.render_particles(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
@@ -920,7 +965,7 @@ impl ClientRenderer {
             }) = conn
             {
                 // only postprocess if client is in the game
-                if let ConnectionState::Connected(_) = conn_state {
+                if let ConnectionState::Connected(_)= conn_state {
                     self.postprocess_renderer
                         .rebuild(gfx_state, gfx_state.deferred_pass_target.color_view());
                     self.postprocess_renderer.record_draw(

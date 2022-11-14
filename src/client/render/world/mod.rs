@@ -29,7 +29,7 @@ use crate::{
         math::Angles,
         model::{Model, ModelKind},
         sprite::SpriteKind,
-        util::any_as_bytes, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
+        util::any_as_bytes, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent}, bsp::{BspData, BspLeaf},
     },
 };
 
@@ -38,7 +38,7 @@ use bumpalo::Bump;
 use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4, Deg};
 use chrono::Duration;
 
-use super::{RenderQuery,RenderQueryItem};
+use super::{RenderQuery,RenderQueryItem, WorldspawnRenderData};
 
 lazy_static! {
     static ref BIND_GROUP_LAYOUT_DESCRIPTOR_BINDINGS: [Vec<wgpu::BindGroupLayoutEntry>; 2] = [
@@ -310,6 +310,8 @@ enum EntityRenderer {
     None,
 }
 
+
+
 /// Top-level renderer.
 pub struct WorldRenderer {
     worldmodel_renderer: BrushRenderer,
@@ -318,8 +320,15 @@ pub struct WorldRenderer {
     world_uniform_block: DynamicUniformBufferBlock<EntityUniforms>,
     entity_uniform_blocks: RefCell<Vec<DynamicUniformBufferBlock<EntityUniforms>>>,
 }
+ 
 
+//loads in all the faces for all the BSP models -- precomputes the face vertices 
 impl WorldRenderer {
+
+
+    // pass in the models from a resource -- loaded from the map file 
+
+
     pub fn new(state: &GraphicsState, models: &[Model], worldmodel_id: usize) -> WorldRenderer {
         let mut worldmodel_renderer = None;
         let mut entity_renderers = Vec::new();
@@ -340,10 +349,15 @@ impl WorldRenderer {
                 match *model.kind() {
                     ModelKind::Brush(ref bmodel) => {
 
+                        //this is for worldspawn that never moves -- built once 
+                        let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
+                      //  let leaves = BrushRendererBuilder::get_bsp_leaves(bmodel, true);
+                        let face_range = BrushRendererBuilder::get_face_range(bmodel);
+
                         println!("Building world renderer {}", model.name());
                         worldmodel_renderer = Some(
-                            BrushRendererBuilder::new(bmodel, true)
-                                .build(state)
+                            BrushRendererBuilder::new()
+                                .build(state, bsp_data,face_range)
                                 .unwrap(),
                         );
                     }
@@ -356,9 +370,14 @@ impl WorldRenderer {
                     )),
 
                     ModelKind::Brush(ref bmodel) => {
+                        let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
+                       // let leaves = BrushRendererBuilder::get_bsp_leaves(bmodel, false);
+                        let face_range = BrushRendererBuilder::get_face_range(bmodel);
+
+                        //this is for worldspawn that will never change as well i think 
                         entity_renderers.push(EntityRenderer::Brush(
-                            BrushRendererBuilder::new(bmodel, false)
-                                .build(state)
+                            BrushRendererBuilder::new( )
+                                .build(state, bsp_data, face_range)
                                 .unwrap(),
                         ));
                     }
@@ -461,11 +480,7 @@ impl WorldRenderer {
 
      
 
-
-    //w is world 
-    // s is gamestate 
-
-    //consider less generics here! kind of insane haha 
+ 
 
     pub fn render_pass<'a  >(
         &'a self,
@@ -481,9 +496,12 @@ impl WorldRenderer {
         cvars: &CvarRegistry,
         
         unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
+
+        worldspawn_render_data: Option<WorldspawnRenderData>,
        
     )  {  
-        
+
+        //pass in bsp data and leaves from a resource 
  
 
         use PushConstantUpdate::*;
@@ -519,10 +537,23 @@ impl WorldRenderer {
             BindGroupLayoutId::PerEntity as u32,
             &state.world_bind_groups()[BindGroupLayoutId::PerEntity as usize],
             &[self.world_uniform_block.offset()],
-        );
-        self.worldmodel_renderer
-            .record_draw(state, pass, &bump, time, camera, 0);
+        );  
+        
 
+        match worldspawn_render_data {
+            Some(render_data) => {
+
+                self.worldmodel_renderer
+                .update_face_draw_flags(&render_data.bsp_data,   camera);
+                 self.worldmodel_renderer
+                .record_draw(state, pass, &bump, time, 0);
+    
+
+            }
+            None => { debug!("No worldspawn render data to render ")}
+        }
+       
+            
         // draw entities
         info!("Drawing entities");
         for (ent_pos, (phys_comp, render_model_comp)) in (unit_iter).enumerate() { 
@@ -552,7 +583,8 @@ impl WorldRenderer {
                         Clear,
                         Clear,
                     );
-                    bmodel.record_draw(state, pass, &bump, time, camera, unit_frame_id);
+                    bmodel.update_faces_draw_all( );
+                    bmodel.record_draw(state, pass, &bump, time,  unit_frame_id);
                 }
                 EntityRenderer::Alias(ref alias) => {
                     pass.set_pipeline(state.alias_pipeline().pipeline());
