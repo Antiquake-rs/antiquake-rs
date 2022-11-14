@@ -107,7 +107,7 @@ use crate::{
         model::{Model, ModelKind},
         net::SignOnStage,
         vfs::Vfs,
-        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent}, bsp::BspData,
+        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent}, bsp::{BspData, BspCollisionHull},
     },
 };
 
@@ -134,14 +134,15 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
 
  
  
-pub struct WorldspawnRenderData {
+pub struct WorldspawnRenderData<'a> {
 
     pub bsp_data: Rc<BspData>,  
-    pub face_range: Range<usize>
+    pub face_range: Range<usize>,
+   // pub hulls: &'a [BspCollisionHull]  //this does exist in here remember that 
 
 }
 
-impl WorldspawnRenderData {
+impl WorldspawnRenderData<'_> {
 
     pub fn new( models: &[Model] , worldmodel_id: usize ) -> WorldspawnRenderData{
 
@@ -157,7 +158,8 @@ impl WorldspawnRenderData {
 
                 WorldspawnRenderData {
                     bsp_data: bsp_data , 
-                    face_range
+                    face_range,
+                  //  hulls: bsp_data.hulls()
                 }
             }
             _ => panic!("Invalid worldmodel"),

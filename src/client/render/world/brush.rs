@@ -775,14 +775,12 @@ impl BrushRendererBuilder {
 
 
 // MOVE these to ECS !! 
-
-//bsp_data: Rc<BspData>,
-//leaves: Option<Vec<BrushLeaf>>,
+ 
 
 pub struct BrushRenderer {
 
     bsp_data: Rc<BspData>,
-    // leaves: Option<Vec<BrushLeaf>>,  // dont store the facelist ranges here-- store in ecs 
+    
     facelist_range_leaves: Vec<FacelistRangeLeaf>,
 
     vertex_buffer: wgpu::Buffer,
