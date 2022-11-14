@@ -76,7 +76,8 @@ use std::{
     rc::Rc,
     io::{BufReader},
     fs::{File},
-    path::{PathBuf}, collections::HashMap
+    path::{PathBuf}, collections::HashMap,
+    ops::Range
 };
 
 use crate::{
@@ -132,11 +133,11 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
 
 
  
-
-//change this to RC ? 
+ 
 pub struct WorldspawnRenderData {
 
     pub bsp_data: Rc<BspData>,  
+    pub face_range: Range<usize>
 
 }
 
@@ -156,6 +157,7 @@ impl WorldspawnRenderData {
 
                 WorldspawnRenderData {
                     bsp_data: bsp_data , 
+                    face_range
                 }
             }
             _ => panic!("Invalid worldmodel"),

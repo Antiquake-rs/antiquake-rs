@@ -414,7 +414,7 @@ impl BrushRendererBuilder {
     }
 
 
-    fn create_face(&mut self, bsp_data: Rc<BspData>, state: &GraphicsState, face_id: usize) -> BrushFace {
+    fn create_face(&mut self, bsp_data: &Rc<BspData>, state: &GraphicsState, face_id: usize) -> BrushFace {
         let face = &bsp_data.faces()[face_id];
         let face_vert_id = self.vertices.len();
         let texinfo = &bsp_data.texinfo()[face.texinfo_id];
@@ -700,7 +700,7 @@ impl BrushRendererBuilder {
 
     //can the face range requirement be removed somehow ? it comes from bspModel 
     
-    pub fn build(mut self, state: &GraphicsState , bsp_data: Rc<BspData>, face_range: Range<usize> ) -> Result<BrushRenderer, Error> {
+    pub fn build(mut self, state: &GraphicsState , bsp_data: &Rc<BspData>, face_range: Range<usize> ) -> Result<BrushRenderer, Error> {
         // create the diffuse and fullbright textures
         for tex in bsp_data.textures().iter() {
             self.textures.push(self.create_brush_texture(state, tex));
@@ -804,6 +804,9 @@ impl BrushRenderer {
 
                  let pvs = bsp_data.get_pvs(leafId, leaves.len());
 
+                 let pvs_len = pvs.len();
+
+
                 // only draw faces in pvs
                 for leaf_id in pvs { 
 
@@ -820,16 +823,11 @@ impl BrushRenderer {
                 }
 
 
-                if pvs.len() == 0 {
+                if pvs_len == 0 {
                    self.update_faces_draw_all()
                     
                 }
-
-            
-
-          
-           
-
+ 
  
            
     }

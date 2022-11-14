@@ -204,8 +204,9 @@ impl ClientState {
             rng: SmallRng::from_entropy(),
 
             loaded_assets_cache: LoadedAssetsCache::new(),
-            worldspawn_render_data: None,
 
+            worldspawn_render_data: None,
+            
          /*   models: vec![Model::none()],
             model_names: HashMap::new(),
             sounds: Vec::new(),
@@ -342,7 +343,7 @@ impl ClientState {
                 sounds,
                 sound_names,
              },
-            worldspawn_render_data: Some( WorldspawnRenderData::new(&models , 1) ) ,
+            
             max_players: max_clients as usize,  //put this in an ecs resource -- like server info 
             ..ClientState::new(stream)
         })
@@ -659,12 +660,22 @@ impl ClientState {
     }
 
 
+ 
+
+
+
+
+
 
     fn build_bsp_collision_hulls(&mut self){
 
        // let models = self.models(); 
 
-        match self.worldspawn_render_data  {
+       self.worldspawn_render_data = Some( WorldspawnRenderData::new(self.models(), 1) );
+
+       
+
+      /* match worldspawn_bsp_data  {
 
             Some( worldspawn ) => { 
 
@@ -674,7 +685,7 @@ impl ClientState {
 
             None => panic!("No worldspawn render data to generate collision hulls")
 
-        }
+        } */ 
 
         //for each model, if its worldspawn add an entity to ECS that has a physics collision hull -- use that for gamestate deltas 
 

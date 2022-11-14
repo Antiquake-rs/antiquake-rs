@@ -357,7 +357,7 @@ impl WorldRenderer {
                         println!("Building world renderer {}", model.name());
                         worldmodel_renderer = Some(
                             BrushRendererBuilder::new()
-                                .build(state, bsp_data,face_range)
+                                .build(state, &bsp_data,face_range)
                                 .unwrap(),
                         );
                     }
@@ -377,7 +377,7 @@ impl WorldRenderer {
                         //this is for worldspawn that will never change as well i think 
                         entity_renderers.push(EntityRenderer::Brush(
                             BrushRendererBuilder::new( )
-                                .build(state, bsp_data, face_range)
+                                .build(state, &bsp_data, face_range)
                                 .unwrap(),
                         ));
                     }
