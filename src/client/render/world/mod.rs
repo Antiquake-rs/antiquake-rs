@@ -349,15 +349,11 @@ impl WorldRenderer {
                 match *model.kind() {
                     ModelKind::Brush(ref bmodel) => {
 
-                        //this is for worldspawn that never moves -- built once 
-                        let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
-                        let leaves = BrushRendererBuilder::get_facelist_range_leaves(bmodel, true);
-                        let face_range = BrushRendererBuilder::get_face_range(bmodel);
-
+                       
                         println!("Building world renderer {}", model.name());
                         worldmodel_renderer = Some(
-                            BrushRendererBuilder::new()
-                                .build(state, bsp_data,face_range, leaves)
+                            BrushRendererBuilder::new(bmodel,true)
+                                .build(state)
                                 .unwrap(),
                         );
                     }
@@ -370,15 +366,11 @@ impl WorldRenderer {
                     )),
 
                     ModelKind::Brush(ref bmodel) => {
-                        let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
-                      
-                       let leaves = BrushRendererBuilder::get_facelist_range_leaves(bmodel, false);
-                        let face_range = BrushRendererBuilder::get_face_range(bmodel);
-
+                     
                         //this is for worldspawn that will never change as well i think 
                         entity_renderers.push(EntityRenderer::Brush(
-                            BrushRendererBuilder::new( )
-                                .build(state, bsp_data, face_range, leaves)
+                            BrushRendererBuilder::new( bmodel, false )
+                                .build(state)
                                 .unwrap(),
                         ));
                     }
@@ -565,10 +557,9 @@ impl WorldRenderer {
         match worldspawn_render_data {
             Some(render_data) => {
 
-                self.worldmodel_renderer
-                .update_face_draw_flags(   camera);
+               
                  self.worldmodel_renderer
-                .record_draw(state, pass, &bump, time, 0);
+                .record_draw(state, pass, &bump, time, camera, 0);
     
 
             }
@@ -642,8 +633,8 @@ impl WorldRenderer {
                         Clear,
                         Clear,
                     );
-                    bmodel.update_faces_draw_all( );
-                    bmodel.record_draw(state, pass, &bump, time,  unit_frame_id);
+                //    bmodel.update_faces_draw_all( );
+                    bmodel.record_draw(state, pass, &bump, time, camera, unit_frame_id);
                 }
                 EntityRenderer::Alias(ref alias) => {
                     pass.set_pipeline(state.alias_pipeline().pipeline());
