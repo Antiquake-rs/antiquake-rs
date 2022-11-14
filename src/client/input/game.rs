@@ -533,8 +533,7 @@ impl GameInput {
 
        
         if let Some(target) = self.bindings.borrow().get(&bind_input) {
-            
-            println!("handle input {:?}: {:?}", &bind_input, state);
+             
             
             match *target {
                 BindTarget::Action { trigger, action } => {

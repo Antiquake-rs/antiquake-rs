@@ -725,6 +725,9 @@ impl ClientRenderer {
         }
     }
 
+
+
+    //ecs guide https://github.com/bevyengine/bevy/blob/main/examples/ecs/ecs_guide.rs
     pub fn render(
         &mut self,
      //   client_state: &mut ClientState,  //pass in mut ref here -- not from connection 

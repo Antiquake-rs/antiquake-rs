@@ -390,7 +390,7 @@ impl WorldRenderer {
         camera: &Camera,
         time: Duration,
 
-        entities: &QueryIter< ( &PhysicsComponent, &RenderModelComponent ), ()>,
+        entities: &mut QueryIter< ( &PhysicsComponent, &RenderModelComponent ), ()>,
 
 
         lightstyle_values: &[f32],
@@ -435,7 +435,7 @@ impl WorldRenderer {
 
          
 
-        for (ent_pos, (phys_comp, render_model_comp)) in entities  {
+        for (ent_pos, (phys_comp, render_model_comp)) in entities.by_ref().enumerate()  {
             let unit_origin = phys_comp.origin.clone();
             let unit_angles = phys_comp.angles.clone();
             let unit_model_id = render_model_comp.model_id;
@@ -491,7 +491,7 @@ impl WorldRenderer {
 
         //find all entities that have a physicscomponent AND rendermodel component
         let mut query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
-        let comp_iter = query.iter( ecs_world ) ;
+        let mut comp_iter = query.iter( ecs_world ) ;
         
         
        //let lightstyle_values = ecs_world.get_resource(); 
@@ -503,7 +503,7 @@ impl WorldRenderer {
             state,
             camera,
             time,
-             &comp_iter ,//entitiesIteratorLegacy.clone(),
+             &mut comp_iter ,//entitiesIteratorLegacy.clone(),
             lightstyle_values,
             cvars,
         );
@@ -536,7 +536,7 @@ impl WorldRenderer {
 
         // draw entities
         info!("Drawing entities");
-        for (ent_pos, (phys_comp, render_model_comp)) in (&comp_iter).enumerate() { 
+        for (ent_pos, (phys_comp, render_model_comp)) in (comp_iter).enumerate() { 
 
             let unit_origin = phys_comp.origin.clone();
             let unit_angles = phys_comp.angles.clone();
