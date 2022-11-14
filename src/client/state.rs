@@ -1147,7 +1147,8 @@ impl ClientState {
         
 
                 let bevy_id = self.ecs_world.spawn()
-                    .insert(ecs_components::physics::PhysicsComponent::from_baseline(baseline))
+                    .insert(ecs_components::physics::PhysicsComponent::from_baseline(&baseline))
+                    .insert(ecs_components::rendermodel::RenderModelComponent::from_baseline(&baseline))
                     .id();
                   
 
@@ -1837,7 +1838,7 @@ impl ClientState {
 
     pub fn insert_lightstyle( &mut self, id:u8, value: String ) {
 
-        let scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
+        let mut scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
 
         scene_render_constants.light_styles.insert(id, value);
 
@@ -1849,7 +1850,7 @@ impl ClientState {
 
         let scene_render_constants = self.get_resource::<RenderSceneConstants>();
 
-        let light_styles = scene_render_constants.light_styles;
+        let light_styles = &scene_render_constants.light_styles;
 
         for lightstyle_id in 0..64 {
             match light_styles.get(&lightstyle_id) {

@@ -25,7 +25,7 @@ impl PhysicsComponent {
         }
     }
 
-    pub fn from_baseline(baseline: UnitState) -> PhysicsComponent {
+    pub fn from_baseline(baseline: &UnitState) -> PhysicsComponent {
 
         PhysicsComponent { 
             origin: baseline.origin.clone(), 
