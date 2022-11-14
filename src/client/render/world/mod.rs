@@ -481,7 +481,7 @@ impl WorldRenderer {
        // E: Iterator<Item = &'a ClientUnit> + Clone,
        // P: Iterator<Item = &'a Particle>,
     {   
-
+        //why must ecs world be mut to query !? 
         let mut query =  ecs_world.query::<  &PhysicsComponent  >();
         let ecs_iter = query.iter( ecs_world ) ;
 
