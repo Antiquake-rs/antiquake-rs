@@ -106,11 +106,11 @@ use crate::{
         model::Model,
         net::SignOnStage,
         vfs::Vfs,
-        wad::Wad, gamestate::component::physics::PhysicsComponent,
+        wad::Wad, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
     },
 };
 
-use super::{ConnectionState, state::ClientState};
+use super::{ConnectionState, state::ClientState, unit::particle::Particle};
 use bumpalo::Bump;
 use cgmath::{Deg, InnerSpace, Vector3, Zero};
 use chrono::{DateTime, Duration, Utc};
@@ -725,6 +725,9 @@ impl ClientRenderer {
         }
     }
 
+
+
+    //ecs guide https://github.com/bevyengine/bevy/blob/main/examples/ecs/ecs_guide.rs
     pub fn render(
         &mut self,
      //   client_state: &mut ClientState,  //pass in mut ref here -- not from connection 
@@ -774,30 +777,39 @@ impl ClientRenderer {
 
 
                     
-
-
-                        //same as cl_state. query_visible_entities
-                        let mut ecs_world =  cl_state.get_world_mut();
-                      //  let components = ecs_world.components();
-
-                       
-                       
+                      
+                        
                         let client_viewmodel_id = cl_state.viewmodel_id();
                         let state_time =  cl_state.time();
+                        let lightstyle_values = cl_state.lightstyle_values().unwrap();
+                        let lightstyle_value_slices  = lightstyle_values.as_slice();
 
+                        //why do bevy query need world as mutable ?
+                        let   ecs_world =  cl_state.get_world_mut();
+
+                        //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
+                        let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
+                        let mut unit_iter = phys_render_query.iter( ecs_world ) ;
+                        
                         world.render_pass(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
                             &camera,
-                            state_time,
-                            
-                          //  cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
-                          //  cl_state.iter_particles(),
-                            cl_state.lightstyle_values().unwrap().as_slice(),
+                            state_time,    
+                          lightstyle_value_slices,
                             client_viewmodel_id,   
-                            cvars,
-                            cl_state.get_world_mut()  ,
+                            cvars, 
+                            &mut unit_iter,  
+                        );
+
+                        //still render particles the old way - not ECS - for now 
+                        world.render_particles(
+                            gfx_state,
+                            &mut init_pass,
+                            &self.bump,
+                            &camera,  
+                            cl_state.iter_particles()  
                         );
                     }
 

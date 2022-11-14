@@ -107,7 +107,8 @@ pub struct ClientState  {
     pub lights: Lights,
     // lightning bolts and grappling hook cable
     pub beams: [Option<Beam>; MAX_BEAMS],
-    // particle effects
+
+    // particle effects  --should be part of the ECS but i dont think every particle should be an entity ?
     pub particles: Particles,
 
     // visible entities, rebuilt per-frame
@@ -134,12 +135,20 @@ pub struct ClientState  {
     pub color_shifts: [Rc<RefCell<ColorShift>>; 4],
     pub view: View,
 
+
+
+    // These should def not exist in here !! 
     pub msg_velocity: [Vector3<f32>; 2],
     pub velocity: Vector3<f32>,
 
     // paused: bool,
     pub on_ground: bool,
     pub in_water: bool,
+    // --------
+
+
+
+
     pub intermission: Option<IntermissionKind>,
     pub start_time: Duration,
     pub completion_time: Option<Duration>,
@@ -373,8 +382,7 @@ impl ClientState {
         self.lights.update(self.time);
 
         // apply particle physics and remove expired particles
-        self.particles
-            .update(self.time, frame_time, sv_gravity);
+        self.particles  .update(self.time, frame_time, sv_gravity);
 
 
 
@@ -861,6 +869,7 @@ impl ClientState {
         Ok(())
     } */
 
+    //this should not happen like this --- do more like ECS 
     pub fn update_player(&mut self, update: PlayerData) {
         self.view
             .set_view_height(update.view_height.unwrap_or(net::DEFAULT_VIEWHEIGHT));
@@ -939,6 +948,8 @@ impl ClientState {
        
     }
 
+
+ 
     pub fn build_move_cmd(
         game_input: &mut GameInput,
         frame_time: Duration,
@@ -996,18 +1007,9 @@ impl ClientState {
         if !mlook {
             // TODO: IN_Move (mouse / joystick / gamepad)
         }
+        
 
-
-        //waht was this 
-          //   let send_time = self.msg_times[0];
-
-        // send "raw" angles without any pitch/roll from movement or damage
-        //let angles = self.view.input_angles();
- 
-
-        //this sends a client cmd to the server but it should NOT work this way --- needs to go into an array buffer 
-
-
+        // this is used to generate delta commands ! 
         ClientCmd::Move {
             send_time:Duration::milliseconds(20),// stub for now 
             angles: Vector3::new(angles.pitch, angles.yaw, angles.roll),
@@ -1147,7 +1149,8 @@ impl ClientState {
         
 
                 let bevy_id = self.ecs_world.spawn()
-                    .insert(ecs_components::physics::PhysicsComponent::from_baseline(baseline))
+                    .insert(ecs_components::physics::PhysicsComponent::from_baseline(&baseline))
+                    .insert(ecs_components::rendermodel::RenderModelComponent::from_baseline(&baseline))
                     .id();
                   
 
@@ -1264,6 +1267,16 @@ impl ClientState {
 
         Ok(())
     }*/
+
+
+
+    /*
+    
+        When particles spawn, they need to spawn as an entity 
+
+        particles should use ECS.. ? 
+    
+    */
 
     pub fn spawn_temp_entity(&mut self, temp_entity: &TempEntity) {
         lazy_static! {
@@ -1740,7 +1753,7 @@ impl ClientState {
         
     return  iter.collect();
   
-    }*/
+    }
 
 
     pub fn iter_visible_entities(&self) -> impl Iterator<Item = &ClientUnit> + Clone {
@@ -1754,12 +1767,12 @@ impl ClientState {
             .map(move |i| &self.entities[*i])
             .chain(self.temp_entities.iter())
             .chain(self.static_entities.iter()) */
-    }
+    }*/
  
 
-    pub fn iter_particles(&self) -> impl Iterator<Item = &Particle> {
+    pub fn iter_particles(&mut self) -> impl Iterator<Item = &Particle> {
         self.particles.iter()
-    }
+    }  
 
     pub fn iter_lights(&self) -> impl Iterator<Item = &Light> {
         self.lights.iter()
@@ -1837,7 +1850,7 @@ impl ClientState {
 
     pub fn insert_lightstyle( &mut self, id:u8, value: String ) {
 
-        let scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
+        let mut scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
 
         scene_render_constants.light_styles.insert(id, value);
 
@@ -1849,7 +1862,7 @@ impl ClientState {
 
         let scene_render_constants = self.get_resource::<RenderSceneConstants>();
 
-        let light_styles = scene_render_constants.light_styles;
+        let light_styles = &scene_render_constants.light_styles;
 
         for lightstyle_id in 0..64 {
             match light_styles.get(&lightstyle_id) {

@@ -29,13 +29,13 @@ use crate::{
         math::Angles,
         model::{Model, ModelKind},
         sprite::SpriteKind,
-        util::any_as_bytes, gamestate::component::physics::PhysicsComponent,
+        util::any_as_bytes, gamestate::component::{physics::PhysicsComponent, rendermodel::RenderModelComponent, particle::ParticleComponent},
     },
 };
 
 use bevy_ecs::{query::{QueryState, QueryIter, WorldQuery}, prelude::Bundle, world::World as BevyWorld} ;
 use bumpalo::Bump;
-use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4};
+use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4, Deg};
 use chrono::Duration;
 
 use super::{RenderQuery,RenderQueryItem};
@@ -384,13 +384,13 @@ impl WorldRenderer {
         }
     }
 
-    pub fn update_uniform_buffers<'a, I>(
+    pub fn update_uniform_buffers (
         &self,
         state: &GraphicsState,
         camera: &Camera,
         time: Duration,
 
-        entities: QueryIter<&PhysicsComponent, ()>,
+        entities: &mut QueryIter< ( &PhysicsComponent, &RenderModelComponent ), ()>,
 
 
         lightstyle_values: &[f32],
@@ -399,12 +399,7 @@ impl WorldRenderer {
         //I:  Iterator<Item = &'a ClientUnit>,
     {
 
-
-           /*  for    phys_comp in ecs_iter {
-
-              println!("A phys comp is here ");
-         } */
-
+ 
 
         trace!("Updating frame uniform buffer");
         state
@@ -438,10 +433,16 @@ impl WorldRenderer {
             .entity_uniform_buffer_mut()
             .write_block(&self.world_uniform_block, world_uniforms);
 
-        for (ent_pos, ent) in entities.into_iter().enumerate() {
+         
+
+        for (ent_pos, (phys_comp, render_model_comp)) in entities.by_ref().enumerate()  {
+            let unit_origin = phys_comp.origin.clone();
+            let unit_angles = phys_comp.angles.clone();
+            let unit_model_id = render_model_comp.model_id;
+
             let ent_uniforms = EntityUniforms {
-                transform: self.calculate_mvp_transform(camera, ent),
-                model: self.calculate_model_transform(camera, ent),
+                transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
+                model: self.calculate_model_transform(camera, unit_origin,unit_angles,unit_model_id),
             };
 
             if ent_pos >= self.entity_uniform_blocks.borrow().len() {
@@ -458,13 +459,7 @@ impl WorldRenderer {
         state.entity_uniform_buffer().flush(state.queue());
     }
 
-    
-
-    pub fn render_pass_using_ecs<'a, E, P>(){
-
-
-        
-    }
+     
 
 
     //w is world 
@@ -472,35 +467,24 @@ impl WorldRenderer {
 
     //consider less generics here! kind of insane haha 
 
-    pub fn render_pass<'a,    >(
+    pub fn render_pass<'a  >(
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
-        time: Duration,
-   
-     //   entitiesIteratorLegacy: E,
-     //   particles: P,
-        lightstyle_values: &[f32],   //should be an ecs resource ? 
-        viewmodel_id: usize,
+        time: Duration, 
+     
+  
+        lightstyle_values: &[f32],  
+        viewmodel_id: usize,  //the viewmodel of the player character 
         cvars: &CvarRegistry,
-        ecs_world:  &mut BevyWorld, //not ideal -- is there  a better way to pass less in here ?
-    ) where
+        
+        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
        
+    )  {  
         
-       // E: Iterator<Item = &'a ClientUnit> + Clone,
-       // P: Iterator<Item = &'a Particle>,
-    {   
-        //why must ecs world be mut to query !? 
-        let mut query =  ecs_world.query::<  &PhysicsComponent  >();
-        let phys_comp_iter = query.iter( ecs_world ) ;
-        
-        
-       //let lightstyle_values = ecs_world.get_resource(); 
-
-    
-        
+ 
 
         use PushConstantUpdate::*;
         info!("Updating uniform buffers");
@@ -508,7 +492,7 @@ impl WorldRenderer {
             state,
             camera,
             time,
-            phys_comp_iter ,//entitiesIteratorLegacy.clone(),
+            unit_iter , 
             lightstyle_values,
             cvars,
         );
@@ -541,44 +525,52 @@ impl WorldRenderer {
 
         // draw entities
         info!("Drawing entities");
-        for (ent_pos, ent) in entitiesIteratorLegacy.enumerate() {
+        for (ent_pos, (phys_comp, render_model_comp)) in (unit_iter).enumerate() { 
+
+            let unit_origin = phys_comp.origin.clone();
+            let unit_angles = phys_comp.angles.clone();
+            let unit_model_id = render_model_comp.model_id;
+            let unit_frame_id = render_model_comp.frame_id;
+            let unit_skin_id = render_model_comp.skin_id;
+
+
             pass.set_bind_group(
                 BindGroupLayoutId::PerEntity as u32,
                 &state.world_bind_groups()[BindGroupLayoutId::PerEntity as usize],
                 &[self.entity_uniform_blocks.borrow()[ent_pos].offset()],
             );
 
-            match self.renderer_for_entity(&ent) {
+            match self.renderer_for_entity(unit_model_id) {
                 EntityRenderer::Brush(ref bmodel) => {
                     pass.set_pipeline(state.brush_pipeline().pipeline());
                     BrushPipeline::set_push_constants(
                         pass,
                         Update(bump.alloc(brush::VertexPushConstants {
-                            transform: self.calculate_mvp_transform(camera, ent),
+                            transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
                            // model_view: self.calculate_mv_transform(camera, ent),
                         })),
                         Clear,
                         Clear,
                     );
-                    bmodel.record_draw(state, pass, &bump, time, camera, ent.frame_id);
+                    bmodel.record_draw(state, pass, &bump, time, camera, unit_frame_id);
                 }
                 EntityRenderer::Alias(ref alias) => {
                     pass.set_pipeline(state.alias_pipeline().pipeline());
                     AliasPipeline::set_push_constants(
                         pass,
                         Update(bump.alloc(alias::VertexPushConstants {
-                            transform: self.calculate_mvp_transform(camera, ent),
-                            model_view: self.calculate_mv_transform(camera, ent),
+                            transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
+                            model_view: self.calculate_mv_transform(camera, unit_origin,unit_angles,unit_model_id),
                         })),
                         Clear,
                         Clear,
                     );
-                    alias.record_draw(state, pass, time, ent.frame_id(), ent.skin_id());
+                    alias.record_draw(state, pass, time, unit_frame_id, unit_skin_id);
                 }
                 EntityRenderer::Sprite(ref sprite) => {
                     pass.set_pipeline(state.sprite_pipeline().pipeline());
                     SpritePipeline::set_push_constants(pass, Clear, Clear, Clear);
-                    sprite.record_draw(state, pass, ent.frame_id(), time);
+                    sprite.record_draw(state, pass, unit_frame_id, time);
                 }
                 _ => unimplemented!("non-brush renderers not implemented!"),   //trying to render something weird for an entity 
                 // _ => unimplemented!(),
@@ -617,33 +609,62 @@ impl WorldRenderer {
             _ => warn!("non-alias viewmodel"),  //was unreachable 
         }
 
-        log::debug!("Drawing particles");
-        state
-            .particle_pipeline()
-            .record_draw(pass, &bump, camera, particles);
+   
+         
+
     }
 
-    fn renderer_for_entity(&self, ent: &ClientUnit) -> &EntityRenderer {
+    pub fn render_particles<'a,  P  >(
+        &'a self,
+        state: &'a GraphicsState,
+        pass: &mut wgpu::RenderPass<'a>,
+        bump: &'a Bump,
+        camera: &Camera,
+        
+        particles: P ,
+        
+       
+    )  where
+        
+         P: Iterator<Item = &'a Particle>,
+    { 
+
+             
+       // Add in particle draw again once they are in ECS system !
+
+       log::debug!("Drawing particles");
+       state
+           .particle_pipeline()
+           .record_draw(pass, &bump, camera, particles);
+
+    }
+
+    /*fn renderer_for_entity(&self, ent: &ClientUnit) -> &EntityRenderer {
         // subtract 1 from index because world entity isn't counted
         &self.entity_renderers[ent.model_id() - 1]
+    }*/
+
+    fn renderer_for_entity(&self, model_id: usize) -> &EntityRenderer {
+        // subtract 1 from index because world entity isn't counted
+        &self.entity_renderers[model_id - 1]
     }
 
-    fn calculate_mvp_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let model_transform = self.calculate_model_transform(camera, entity);
+    fn calculate_mvp_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        let model_transform = self.calculate_model_transform(camera, origin,angles,model_id);
 
         camera.view_projection() * model_transform
     }
 
-    fn calculate_mv_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let model_transform = self.calculate_model_transform(camera, entity);
+    fn calculate_mv_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        let model_transform = self.calculate_model_transform(camera, origin,angles,model_id);
 
         camera.view() * model_transform
     }
 
-    fn calculate_model_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let origin = entity.get_origin();
-        let angles = entity.get_angles();
-        let rotation = match self.renderer_for_entity(entity) {
+    fn calculate_model_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        //let origin = entity.get_origin();
+        //let angles = entity.get_angles();
+        let rotation = match self.renderer_for_entity(model_id) {
             EntityRenderer::Sprite(ref sprite) => match sprite.kind() {
                 // used for decals
                 SpriteKind::Oriented => Matrix4::from(Euler::new(angles.z, -angles.x, angles.y)),
