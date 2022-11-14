@@ -351,13 +351,13 @@ impl WorldRenderer {
 
                         //this is for worldspawn that never moves -- built once 
                         let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
-                      //  let leaves = BrushRendererBuilder::get_bsp_leaves(bmodel, true);
+                        let leaves = BrushRendererBuilder::get_facelist_range_leaves(bmodel, true);
                         let face_range = BrushRendererBuilder::get_face_range(bmodel);
 
                         println!("Building world renderer {}", model.name());
                         worldmodel_renderer = Some(
                             BrushRendererBuilder::new()
-                                .build(state, &bsp_data,face_range)
+                                .build(state, bsp_data,face_range, leaves)
                                 .unwrap(),
                         );
                     }
@@ -371,13 +371,14 @@ impl WorldRenderer {
 
                     ModelKind::Brush(ref bmodel) => {
                         let bsp_data = BrushRendererBuilder::get_bsp_data(bmodel);
-                       // let leaves = BrushRendererBuilder::get_bsp_leaves(bmodel, false);
+                      
+                       let leaves = BrushRendererBuilder::get_facelist_range_leaves(bmodel, false);
                         let face_range = BrushRendererBuilder::get_face_range(bmodel);
 
                         //this is for worldspawn that will never change as well i think 
                         entity_renderers.push(EntityRenderer::Brush(
                             BrushRendererBuilder::new( )
-                                .build(state, &bsp_data, face_range)
+                                .build(state, bsp_data, face_range, leaves)
                                 .unwrap(),
                         ));
                     }
@@ -403,22 +404,21 @@ impl WorldRenderer {
         }
     }
 
-    pub fn update_uniform_buffers (
+
+     
+
+
+    pub fn update_uniform_buffers_world (
         &self,
         state: &GraphicsState,
         camera: &Camera,
         time: Duration,
 
-        entities: &mut QueryIter< ( &PhysicsComponent, &RenderModelComponent ), ()>,
-
-
+       
         lightstyle_values: &[f32],
         cvars: &CvarRegistry,
-    ) //where
-        //I:  Iterator<Item = &'a ClientUnit>,
-    {
+    ){
 
- 
 
         trace!("Updating frame uniform buffer");
         state
@@ -443,7 +443,7 @@ impl WorldRenderer {
                 })
             });
 
-        trace!("Updating entity uniform buffer");
+      
         let world_uniforms = EntityUniforms {
             transform: camera.view_projection(),
             model: Matrix4::identity(),
@@ -452,7 +452,30 @@ impl WorldRenderer {
             .entity_uniform_buffer_mut()
             .write_block(&self.world_uniform_block, world_uniforms);
 
-         
+        
+        
+
+    }
+
+    pub fn update_uniform_buffers_entity (
+        &self,
+        state: &GraphicsState,
+        camera: &Camera,
+        time: Duration,
+
+        entities: &mut QueryIter< ( &PhysicsComponent, &RenderModelComponent ), ()>,
+
+
+       
+        cvars: &CvarRegistry,
+    ) //where
+        //I:  Iterator<Item = &'a ClientUnit>,
+    {
+
+ 
+
+        
+            trace!("Updating entity uniform buffer");
 
         for (ent_pos, (phys_comp, render_model_comp)) in entities.by_ref().enumerate()  {
             let unit_origin = phys_comp.origin.clone();
@@ -480,9 +503,10 @@ impl WorldRenderer {
 
      
 
- 
 
-    pub fn render_pass<'a  >(
+
+    pub fn render_worldspawn<'a  >(
+
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
@@ -495,25 +519,23 @@ impl WorldRenderer {
         viewmodel_id: usize,  //the viewmodel of the player character 
         cvars: &CvarRegistry,
         
-        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
+         
+        worldspawn_render_data: &Option<WorldspawnRenderData>,
 
-        worldspawn_render_data: Option<WorldspawnRenderData>,
-       
-    )  {  
-
-        //pass in bsp data and leaves from a resource 
- 
-
+    ){
         use PushConstantUpdate::*;
-        info!("Updating uniform buffers");
-        self.update_uniform_buffers(
+
+        //update_uniform_buffers here ?? 
+
+        self.update_uniform_buffers_world(
             state,
             camera,
             time,
-            unit_iter , 
-            lightstyle_values,
+            lightstyle_values , 
             cvars,
         );
+
+
 
         pass.set_bind_group(
             BindGroupLayoutId::PerFrame as u32,
@@ -544,7 +566,7 @@ impl WorldRenderer {
             Some(render_data) => {
 
                 self.worldmodel_renderer
-                .update_face_draw_flags(&render_data.bsp_data,   camera);
+                .update_face_draw_flags(   camera);
                  self.worldmodel_renderer
                 .record_draw(state, pass, &bump, time, 0);
     
@@ -552,6 +574,43 @@ impl WorldRenderer {
             }
             None => { debug!("No worldspawn render data to render ")}
         }
+
+
+    }
+ 
+
+    pub fn render_bodies<'a  >(
+        &'a self,
+        state: &'a GraphicsState,
+        pass: &mut wgpu::RenderPass<'a>,
+        bump: &'a Bump,
+        camera: &Camera,
+        time: Duration, 
+     
+  
+        lightstyle_values: &[f32],  
+        viewmodel_id: usize,  //the viewmodel of the player character 
+        cvars: &CvarRegistry,
+        
+        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
+ 
+    )  {  
+
+        //pass in bsp data and leaves from a resource 
+ 
+
+        use PushConstantUpdate::*;
+        info!("Updating uniform buffers");  //for entities 
+        self.update_uniform_buffers_entity(
+            state,
+            camera,
+            time,
+            unit_iter , 
+           // lightstyle_values,
+            cvars,
+        );
+
+       
        
             
         // draw entities

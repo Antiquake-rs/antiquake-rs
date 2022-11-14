@@ -89,11 +89,11 @@ impl LoadedAssetsCache {
          }
     }
 
-    pub fn get_sound(&self,name:&str) -> Option<AudioSource> {
+    pub fn get_sound(&self,name:&str) -> Option<&AudioSource> {
 
         let sound_id = self.sound_names.get(&name.to_string())?;
 
-        return Some(self.sounds[*sound_id]);
+        return Some(&self.sounds[*sound_id]);
     }
 }
 
@@ -390,11 +390,19 @@ impl ClientState {
 
         self.ecs_world.insert_resource(BevyEntityLookupRegistry::new());
 
-        self.build_bsp_collision_hulls(  );
+       
 
         //https://docs.rs/bevy/0.8.0/bevy/ecs/system/struct.SystemState.html
         
         
+
+    }
+
+
+
+    //could be improved - ? 
+    pub fn on_loaded_models(&mut self) {
+        self.build_bsp_collision_hulls(  );
 
     }
 
@@ -1811,7 +1819,7 @@ impl ClientState {
 
  
 
-    pub fn play_sound(&self,sound_id:usize,volume:u8,channel:i8,attenuation:f32, unit_id:usize, position:Vector3<f32>) {
+    pub fn play_sound(&mut self,sound_id:usize,volume:u8,channel:i8,attenuation:f32, unit_id:usize, position:Vector3<f32>) {
          // TODO: apply volume, attenuation, spatialization
          self.mixer.start_sound(
             self.loaded_assets_cache.sounds[sound_id as usize].clone(),

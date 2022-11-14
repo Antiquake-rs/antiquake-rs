@@ -346,13 +346,32 @@ where
     }
 }*/
 
+
+pub struct FacelistRangeLeaf {
+    facelist_ids: Range<usize>,
+}
+
+impl<B> std::convert::From<B> for FacelistRangeLeaf
+where
+    B: std::borrow::Borrow<BspLeaf>,
+{
+    fn from(bsp_leaf: B) -> Self {
+        let bsp_leaf = bsp_leaf.borrow();
+        FacelistRangeLeaf {
+            facelist_ids: bsp_leaf.facelist_id..bsp_leaf.facelist_id + bsp_leaf.facelist_count,
+        }
+    }
+}
+
+
+
 pub struct BrushRendererBuilder {
    /*bsp_data: Rc<BspData>,
     face_range: Range<usize>,*/
 
     //leaves: Option<Vec<BrushLeaf>>,
 
-    
+    //facelist_range_leaves: Option<Vec<FacelistRangeLeaf>>,
 
     per_texture_bind_groups: RefCell<Vec<wgpu::BindGroup>>,
     per_face_bind_groups: Vec<wgpu::BindGroup>,
@@ -368,7 +387,7 @@ pub struct BrushRendererBuilder {
 impl BrushRendererBuilder {
     pub fn new( ) -> BrushRendererBuilder {
         BrushRendererBuilder {  
-
+           // facelist_range_leaves: None,
             per_texture_bind_groups: RefCell::new(Vec::new()),
             per_face_bind_groups: Vec::new(),
             vertices: Vec::new(),
@@ -389,23 +408,20 @@ impl BrushRendererBuilder {
 
     }
 
-    /*pub fn get_bsp_leaves ( bsp_model: &BspModel, worldmodel: bool ) ->   Option<Vec<BrushLeaf>>  {
+
+    pub fn get_facelist_range_leaves ( bsp_model: &BspModel , is_world_root: bool ) ->  Vec<FacelistRangeLeaf> {
+
+        if !is_world_root { 
+            return Vec::new()
+        }
 
 
-        let leaves = if worldmodel {
-            Some(
-                bsp_model
-                    .iter_leaves()
-                    .map(|leaf| BrushLeaf::from(leaf))
-                    .collect(),
-            )
-        } else {
-            None
-        };
+        //there is some very odd stuff going on in iter-leaves
+        return  bsp_model.iter_leaves().map(|leaf| FacelistRangeLeaf::from(leaf)).collect()
 
-        return   leaves 
+    }
 
-    }*/
+   
 
     pub fn get_face_range ( bsp_model: &BspModel  ) ->  Range<usize> {
 
@@ -700,7 +716,7 @@ impl BrushRendererBuilder {
 
     //can the face range requirement be removed somehow ? it comes from bspModel 
     
-    pub fn build(mut self, state: &GraphicsState , bsp_data: &Rc<BspData>, face_range: Range<usize> ) -> Result<BrushRenderer, Error> {
+    pub fn build(mut self, state: &GraphicsState , bsp_data: Rc<BspData>, face_range: Range<usize> , facelist_range_leaves:Vec<FacelistRangeLeaf>) -> Result<BrushRenderer, Error> {
         // create the diffuse and fullbright textures
         for tex in bsp_data.textures().iter() {
             self.textures.push(self.create_brush_texture(state, tex));
@@ -713,7 +729,7 @@ impl BrushRendererBuilder {
         // face_id is the new id of the face in the renderer
         for bsp_face_id in face_range.start..face_range.end {
             let face_id = self.faces.len();
-            let face = self.create_face(bsp_data, state, bsp_face_id);
+            let face = self.create_face(&bsp_data, state, bsp_face_id);
             self.faces.push(face);
 
             let face_tex_id = self.faces[face_id].texture_id;
@@ -739,10 +755,12 @@ impl BrushRendererBuilder {
 
         
 
+        
+
         Ok(BrushRenderer {
-         //   bsp_data: self.bsp_data,
+            bsp_data ,
             vertex_buffer,
-         //   leaves,
+            facelist_range_leaves, 
             per_texture_bind_groups: self.per_texture_bind_groups.into_inner(),
             per_face_bind_groups: self.per_face_bind_groups,
             texture_chains: self.texture_chains,
@@ -763,8 +781,9 @@ impl BrushRendererBuilder {
 
 pub struct BrushRenderer {
 
+    bsp_data: Rc<BspData>,
     // leaves: Option<Vec<BrushLeaf>>,  // dont store the facelist ranges here-- store in ecs 
-   
+    facelist_range_leaves: Vec<FacelistRangeLeaf>,
 
     vertex_buffer: wgpu::Buffer,
     per_texture_bind_groups: Vec<wgpu::BindGroup>,
@@ -790,7 +809,7 @@ impl BrushRenderer {
 
     pub fn update_face_draw_flags<'a>(
         & self,
-        bsp_data: &'a BspData,       
+       // bsp_data: &'a BspData,       
         camera: &Camera,
       ){ 
 
@@ -798,27 +817,32 @@ impl BrushRenderer {
 
           // if leaf id = 0 then should draw all faces ..?  make sure this works for brush entities... 
 
-               let leaves = bsp_data.leaves();
+               let leaves = self.bsp_data.leaves();
 
-                let leafId = bsp_data.find_leaf( camera.origin());
+                let leafId = self.bsp_data.find_leaf( camera.origin());
 
-                 let pvs = bsp_data.get_pvs(leafId, leaves.len());
+                 let pvs = self.bsp_data.get_pvs(leafId, leaves.len());
 
                  let pvs_len = pvs.len();
 
 
                 // only draw faces in pvs
                 for leaf_id in pvs { 
-
-                    let facelist_id_range = leaves[leaf_id].get_facelist_range();
+ 
                     
-                    for facelist_id in facelist_id_range.clone() {                    
+                    for facelist_id in self.facelist_range_leaves[leaf_id].facelist_ids.clone() {     
+                        
+                        println!("facelist id {}", facelist_id);
+                        println!("face id {}", self.bsp_data.facelist()[facelist_id]);
+                        println!("faces {}",  self.faces.len() );
     
-                        let face = &self.faces[bsp_data.facelist()[facelist_id]];
+                        let face = &self.faces[self.bsp_data.facelist()[facelist_id]];
     
                         // TODO: frustum culling
                         face.draw_flag.set(true);
-                    }                
+                    }             
+                    
+                   
 
                 }
 

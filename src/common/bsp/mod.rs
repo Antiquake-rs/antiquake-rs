@@ -664,13 +664,7 @@ pub struct BspLeaf {
 
 impl BspLeaf {
 
-    //could cache this to increase speed but its already so fast ..
-    pub fn get_facelist_range(&self) -> Range<usize> {
-
-        return self.facelist_id..self.facelist_id + self.facelist_count
-
-    }
-
+   
 }
 
 #[derive(Debug)]
@@ -840,6 +834,7 @@ impl BspData {
             }
         }
     }
+    
 
     //how does this work ? 
     //why is there a leaf id and a leaf count ? 

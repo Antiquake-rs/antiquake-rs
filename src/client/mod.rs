@@ -582,6 +582,8 @@ impl Connection {
                         sound_precache,
                     )?;
 
+                    self.state.on_loaded_models();
+
                     let bonus_cshift =
                         self.state.color_shifts[ColorShiftCode::Bonus as usize].clone();
                     cmds.insert_or_replace(

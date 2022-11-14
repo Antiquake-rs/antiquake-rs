@@ -145,7 +145,7 @@ impl WorldspawnRenderData {
 
     pub fn new( models: &[Model] , worldmodel_id: usize ) -> WorldspawnRenderData{
 
-        let worldspawn_model = models[worldmodel_id];
+        let worldspawn_model = &models[worldmodel_id];
 
         match *worldspawn_model.kind() {
             ModelKind::Brush(ref bmodel) => {
@@ -812,10 +812,7 @@ impl ClientRenderer {
                             gfx_state.initial_pass_target().render_pass_builder();
 
                         let mut init_pass =
-                            encoder.begin_render_pass(&init_pass_builder.descriptor());
-
-
-                    
+                            encoder.begin_render_pass(&init_pass_builder.descriptor()); 
                       
                         
                         let client_viewmodel_id = cl_state.viewmodel_id();
@@ -823,21 +820,37 @@ impl ClientRenderer {
                         let lightstyle_values = cl_state.lightstyle_values().unwrap();
                         let lightstyle_value_slices  = lightstyle_values.as_slice();
 
-                        //why do bevy query need world as mutable ?
-                        let ecs_world =  cl_state.get_world_mut();
+                     
 
-                        //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
-                        let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
-                        let mut unit_iter = phys_render_query.iter( ecs_world ) ;
-
-
-                        let worldspawn_render_data = cl_state.worldspawn_render_data;
+                        let worldspawn_render_data = &cl_state.worldspawn_render_data;
                         // get the world data from the ECS , it should not be baked into 'world' 
 
 
                         //render pass should be done by a renderer class not a world class 
                         
-                        world_renderer.render_pass(
+                        world_renderer.render_worldspawn(
+                            gfx_state,
+                            &mut init_pass,
+                            &self.bump,
+                            &camera,
+                            state_time,    
+                            lightstyle_value_slices,
+                            client_viewmodel_id,   
+                            cvars, 
+                          
+                            worldspawn_render_data
+                        );
+
+
+                           //why do bevy query need world as mutable ?
+                           let ecs_world =  cl_state.get_world_mut();
+
+                           //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
+                           let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
+                           let mut unit_iter = phys_render_query.iter( ecs_world ) ;
+   
+
+                        world_renderer.render_bodies(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
@@ -847,7 +860,7 @@ impl ClientRenderer {
                             client_viewmodel_id,   
                             cvars, 
                             &mut unit_iter,  
-                            worldspawn_render_data
+                            
                         );
 
                         //still render particles the old way - not ECS - for now 
