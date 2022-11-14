@@ -31,7 +31,8 @@ gfx pipelines yay!!!
 #### Next Steps 
  
  -plan how to load BSP  collision boxes into ECS as a resource 
- 
+ - maybe we render the brushes from ECS  -- ? ? so its unified 
+
  -  build in gravity and collision for the player character 
  - see server/world/phys for some early physics stuff 
  - going to need to somehow put brushes into components so they can be used/queried for collisions 
