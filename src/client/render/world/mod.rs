@@ -35,7 +35,7 @@ use crate::{
 
 use bevy_ecs::{query::{QueryState, QueryIter, WorldQuery}, prelude::Bundle, world::World as BevyWorld} ;
 use bumpalo::Bump;
-use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4};
+use cgmath::{Euler, InnerSpace, Matrix4, SquareMatrix as _, Vector3, Vector4, Deg};
 use chrono::Duration;
 
 use super::{RenderQuery,RenderQueryItem};
@@ -439,9 +439,11 @@ impl WorldRenderer {
             .write_block(&self.world_uniform_block, world_uniforms);
 
         for (ent_pos, ent) in entities.into_iter().enumerate() {
+
+
             let ent_uniforms = EntityUniforms {
-                transform: self.calculate_mvp_transform(camera, ent),
-                model: self.calculate_model_transform(camera, ent),
+                transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
+                model: self.calculate_model_transform(camera, unit_origin,unit_angles,unit_model_id),
             };
 
             if ent_pos >= self.entity_uniform_blocks.borrow().len() {
@@ -486,7 +488,7 @@ impl WorldRenderer {
         viewmodel_id: usize,
         cvars: &CvarRegistry,
         ecs_world:  &mut BevyWorld, //not ideal -- is there  a better way to pass less in here ?
-    ) where
+    ) //where
        
         
        // E: Iterator<Item = &'a ClientUnit> + Clone,
@@ -548,13 +550,13 @@ impl WorldRenderer {
                 &[self.entity_uniform_blocks.borrow()[ent_pos].offset()],
             );
 
-            match self.renderer_for_entity(&ent) {
+            match self.renderer_for_entity(unit_model_id) {
                 EntityRenderer::Brush(ref bmodel) => {
                     pass.set_pipeline(state.brush_pipeline().pipeline());
                     BrushPipeline::set_push_constants(
                         pass,
                         Update(bump.alloc(brush::VertexPushConstants {
-                            transform: self.calculate_mvp_transform(camera, ent),
+                            transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
                            // model_view: self.calculate_mv_transform(camera, ent),
                         })),
                         Clear,
@@ -567,8 +569,8 @@ impl WorldRenderer {
                     AliasPipeline::set_push_constants(
                         pass,
                         Update(bump.alloc(alias::VertexPushConstants {
-                            transform: self.calculate_mvp_transform(camera, ent),
-                            model_view: self.calculate_mv_transform(camera, ent),
+                            transform: self.calculate_mvp_transform(camera, unit_origin,unit_angles,unit_model_id),
+                            model_view: self.calculate_mv_transform(camera, unit_origin,unit_angles,unit_model_id),
                         })),
                         Clear,
                         Clear,
@@ -623,27 +625,32 @@ impl WorldRenderer {
             .record_draw(pass, &bump, camera, particles);
     }
 
-    fn renderer_for_entity(&self, ent: &ClientUnit) -> &EntityRenderer {
+    /*fn renderer_for_entity(&self, ent: &ClientUnit) -> &EntityRenderer {
         // subtract 1 from index because world entity isn't counted
         &self.entity_renderers[ent.model_id() - 1]
+    }*/
+
+    fn renderer_for_entity(&self, model_id: usize) -> &EntityRenderer {
+        // subtract 1 from index because world entity isn't counted
+        &self.entity_renderers[model_id - 1]
     }
 
-    fn calculate_mvp_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let model_transform = self.calculate_model_transform(camera, entity);
+    fn calculate_mvp_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        let model_transform = self.calculate_model_transform(camera, origin,angles,model_id);
 
         camera.view_projection() * model_transform
     }
 
-    fn calculate_mv_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let model_transform = self.calculate_model_transform(camera, entity);
+    fn calculate_mv_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        let model_transform = self.calculate_model_transform(camera, origin,angles,model_id);
 
         camera.view() * model_transform
     }
 
-    fn calculate_model_transform(&self, camera: &Camera, entity: &ClientUnit) -> Matrix4<f32> {
-        let origin = entity.get_origin();
-        let angles = entity.get_angles();
-        let rotation = match self.renderer_for_entity(entity) {
+    fn calculate_model_transform(&self, camera: &Camera, origin:Vector3<f32>, angles:Vector3<Deg<f32>>, model_id: usize) -> Matrix4<f32> {
+        //let origin = entity.get_origin();
+        //let angles = entity.get_angles();
+        let rotation = match self.renderer_for_entity(model_id) {
             EntityRenderer::Sprite(ref sprite) => match sprite.kind() {
                 // used for decals
                 SpriteKind::Oriented => Matrix4::from(Euler::new(angles.z, -angles.x, angles.y)),
