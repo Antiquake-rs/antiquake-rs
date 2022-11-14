@@ -787,7 +787,7 @@ impl ClientRenderer {
                         //why do bevy query need world as mutable ?
                         let   ecs_world =  cl_state.get_world_mut();
 
-                        //should really only render VISIBLE entities -- might need to fix that later 
+                        //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
                         let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
                         let mut unit_iter = phys_render_query.iter( ecs_world ) ;
                        
@@ -799,16 +799,14 @@ impl ClientRenderer {
                             &mut init_pass,
                             &self.bump,
                             &camera,
-                            state_time,
-                            
-                          //  cl_state.iter_visible_entities(),  //get rid of this since it isnt ECS 
-                          //  cl_state.iter_particles(),
+                            state_time, 
+                          
                           lightstyle_value_slices,
                             client_viewmodel_id,   
                             cvars,
                             &mut unit_iter,
                             &mut particle_iter, 
-                          //  cl_state.get_world_mut()  ,
+                          
                         );
                     }
 
