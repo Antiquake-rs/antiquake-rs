@@ -110,7 +110,7 @@ use crate::{
     },
 };
 
-use super::{ConnectionState, state::ClientState};
+use super::{ConnectionState, state::ClientState, unit::particle::Particle};
 use bumpalo::Bump;
 use cgmath::{Deg, InnerSpace, Vector3, Zero};
 use chrono::{DateTime, Duration, Utc};
@@ -777,7 +777,7 @@ impl ClientRenderer {
 
 
                     
- 
+                       // let iter_particles  =  cl_state.iter_particles() ;
                         
                         let client_viewmodel_id = cl_state.viewmodel_id();
                         let state_time =  cl_state.time();
@@ -791,22 +791,30 @@ impl ClientRenderer {
                         let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
                         let mut unit_iter = phys_render_query.iter( ecs_world ) ;
                        
-                        let mut particle_query =  ecs_world.query::< ( &PhysicsComponent, &ParticleComponent  ) >();
-                        let mut particle_iter = particle_query.iter( ecs_world ) ;
+                       // let mut particle_query =  ecs_world.query::< ( &PhysicsComponent, &ParticleComponent  ) >();
+                        //let mut particle_iter = particle_query.iter( ecs_world ) ;
+
+                        
+
 
                         world.render_pass(
                             gfx_state,
                             &mut init_pass,
                             &self.bump,
                             &camera,
-                            state_time, 
-                          
+                            state_time,    
                           lightstyle_value_slices,
                             client_viewmodel_id,   
-                            cvars,
-                            &mut unit_iter,
-                            &mut particle_iter, 
-                          
+                            cvars, 
+                            &mut unit_iter,  
+                        );
+
+                        world.render_particles(
+                            gfx_state,
+                            &mut init_pass,
+                            &self.bump,
+                            &camera,  
+                            cl_state.iter_particles()  
                         );
                     }
 

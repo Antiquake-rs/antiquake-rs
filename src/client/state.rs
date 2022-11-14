@@ -107,8 +107,9 @@ pub struct ClientState  {
     pub lights: Lights,
     // lightning bolts and grappling hook cable
     pub beams: [Option<Beam>; MAX_BEAMS],
-    // particle effects
-   // pub particles: Particles,
+
+    // particle effects  --should be part of the ECS but i dont think every particle should be an entity ?
+    pub particles: Particles,
 
     // visible entities, rebuilt per-frame
     pub visible_entity_ids: Vec<usize>,
@@ -134,12 +135,20 @@ pub struct ClientState  {
     pub color_shifts: [Rc<RefCell<ColorShift>>; 4],
     pub view: View,
 
+
+
+    // These should def not exist in here !! 
     pub msg_velocity: [Vector3<f32>; 2],
     pub velocity: Vector3<f32>,
 
     // paused: bool,
     pub on_ground: bool,
     pub in_water: bool,
+    // --------
+
+
+
+
     pub intermission: Option<IntermissionKind>,
     pub start_time: Duration,
     pub completion_time: Option<Duration>,
@@ -1271,7 +1280,7 @@ impl ClientState {
     
         When particles spawn, they need to spawn as an entity 
 
-        Need to have particle update systems  (ECS) 
+        particles should use ECS.. ? 
     
     */
 
@@ -1767,9 +1776,9 @@ impl ClientState {
     }
  
 
-   /* pub fn iter_particles(&self) -> impl Iterator<Item = &Particle> {
+    pub fn iter_particles(&mut self) -> impl Iterator<Item = &Particle> {
         self.particles.iter()
-    } */
+    }  
 
     pub fn iter_lights(&self) -> impl Iterator<Item = &Light> {
         self.lights.iter()

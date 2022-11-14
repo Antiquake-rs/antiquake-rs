@@ -13,10 +13,9 @@ use crate::{
             Palette, TextureData,
         },
     },
-    common::{math::Angles, util::any_slice_as_bytes, gamestate::component::{physics::PhysicsComponent, particle::ParticleComponent}},
+    common::{math::Angles, util::any_slice_as_bytes},
 };
 
-use bevy_ecs::query::QueryIter;
 use bumpalo::Bump;
 use cgmath::Matrix4;
 
@@ -168,10 +167,9 @@ impl ParticlePipeline {
         pass: &mut wgpu::RenderPass<'a>,
         bump: &'a Bump,
         camera: &Camera,
-       // particles: P,
-        particle_iter: &mut QueryIter<  ( &PhysicsComponent, &ParticleComponent ), () > ,
-    ) //where
-      //  P: Iterator<Item = &'b Particle>,
+        particles: P,
+    ) where
+        P: Iterator<Item = &'b Particle>,
     {
         use PushConstantUpdate::*;
 
@@ -188,8 +186,8 @@ impl ParticlePipeline {
         }
         .mat4_wgpu();
 
-        for  (u_pos, ( phys_comp, particle_comp  )) in particle_iter.enumerate() {
-            let q_origin = phys_comp.origin.clone();
+        for particle in particles {
+            let q_origin = particle.origin();
             let translation =
                 Matrix4::from_translation([-q_origin.y, q_origin.z, -q_origin.x].into());
             Self::set_push_constants(
@@ -199,7 +197,7 @@ impl ParticlePipeline {
                 })),
                 Retain,
                 Update(bump.alloc(FragmentPushConstants {
-                    color: particle_comp.color  as u32,
+                    color: particle.color() as u32,
                 })),
             );
 

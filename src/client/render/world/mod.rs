@@ -467,7 +467,7 @@ impl WorldRenderer {
 
     //consider less generics here! kind of insane haha 
 
-    pub fn render_pass<'a,    >(
+    pub fn render_pass<'a  >(
         &'a self,
         state: &'a GraphicsState,
         pass: &mut wgpu::RenderPass<'a>,
@@ -475,21 +475,15 @@ impl WorldRenderer {
         camera: &Camera,
         time: Duration, 
      
-     //   particles: P,
+  
         lightstyle_values: &[f32],  
         viewmodel_id: usize,  //the viewmodel of the player character 
         cvars: &CvarRegistry,
-
-        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
-        particle_iter: &mut QueryIter<  ( &PhysicsComponent, &ParticleComponent ), () > ,
-    ) //where
         
-       // P: Iterator<Item = &'a Particle>,
-    {   
-        //why must ecs world be mut to query !? 
-
-        //find all entities that have a physicscomponent AND rendermodel component
+        unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
        
+    )  {  
+        
  
 
         use PushConstantUpdate::*;
@@ -615,14 +609,33 @@ impl WorldRenderer {
             _ => warn!("non-alias viewmodel"),  //was unreachable 
         }
 
+   
+         
+
+    }
+
+    pub fn render_particles<'a,  P  >(
+        &'a self,
+        state: &'a GraphicsState,
+        pass: &mut wgpu::RenderPass<'a>,
+        bump: &'a Bump,
+        camera: &Camera,
         
+        particles: P ,
+        
+       
+    )  where
+        
+         P: Iterator<Item = &'a Particle>,
+    { 
+
+             
        // Add in particle draw again once they are in ECS system !
 
-        log::debug!("Drawing particles");
-        state
-            .particle_pipeline()
-            .record_draw(pass, &bump, camera, particle_iter);
-         
+       log::debug!("Drawing particles");
+       state
+           .particle_pipeline()
+           .record_draw(pass, &bump, camera, particles);
 
     }
 
