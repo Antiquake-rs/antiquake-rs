@@ -147,6 +147,13 @@ pub fn apply_gamestate_delta_collisions (
                                     CollisionHullLayer::CHARACTER_LAYER );
 
 
+
+                                    /*
+                                    
+                                            Maybe  trace w the X leg and trace w the Y leg separately and if either one hits, cancel out that portion of the vector 
+                                    */
+
+
                                 println!( " trace is {:?}" , collision_trace );
 
 
