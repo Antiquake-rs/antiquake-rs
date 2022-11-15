@@ -63,7 +63,7 @@ use crate::{
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{PhysBodyType, calc_movement_vector, PhysMovementType}}
+            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent}
     },
     server::{GameServer}
 };
@@ -125,6 +125,10 @@ pub enum ClientError {
     NoSuchEntity(usize),
     #[error("Null entity access")]
     NullEntity,
+    #[error("Null resource access")]
+    NullResource,
+    #[error("Null component access")]
+    NullComponent,
     #[error("Entity already exists: {0}")]
     EntityExists(usize),
     #[error("Invalid view entity: {0}")]
@@ -1236,6 +1240,19 @@ impl Client {
                     } => {      
                         let controlled_unit_id = state.view_unit_id(); 
 
+                        let controlled_unit_phys_state = state.get_component_of_entity::<PhysicsComponent>(controlled_unit_id)
+                        .ok_or(ClientError::NullComponent)?;
+
+
+                        let origin_loc = controlled_unit_phys_state.origin;
+
+                        
+                        let unit_phys_move_type = PhysMovementType::Walk; // for now 
+
+                        let movement_type_value = unit_phys_move_type as usize;
+
+                        let movement_speed = 10.0; // for now
+                        
                         let look_angle = angles.clone();
 
                        
@@ -1243,20 +1260,21 @@ impl Client {
                        
 
                         let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();
+
                         let movement_vector =  calc_movement_vector( 
-                            inputs_cmd_vector,
+                             inputs_cmd_vector,
                              look_angle ,
-                             PhysBodyType::Walk
+                             unit_phys_move_type
                              );
                         
                         
                         match movement_vector {
                             Some(mov_vec) => {
                                 state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { 
-                                      origin_loc: (),
+                                      origin_loc,
                                       vector: mov_vec,
-                                      speed: 10.0, 
-                                      phys_move_type: PhysMovementType::Walk as usize // always walk type for now 
+                                      speed: movement_speed, 
+                                      phys_move_type: movement_type_value // always walk type for now 
                                      } ) ;
                             },
                             _ => {}
