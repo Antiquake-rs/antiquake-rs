@@ -400,10 +400,9 @@ impl ClientState {
 
 
 
-    //could be improved - ? 
+    //This is called upon from_server_info -- after the server gives us the map files and after we load models and the map
     pub fn on_loaded_models(&mut self) {
         self.build_bsp_collision_hulls(  );
-
     }
 
 
@@ -678,9 +677,7 @@ impl ClientState {
     fn build_bsp_collision_hulls(&mut self){
  
 
-       self.worldspawn_render_data = Some( WorldspawnRenderData::new(self.models(), 1) );
-
-       
+       self.worldspawn_render_data = Some( WorldspawnRenderData::new(self.models(), 1) );       
 
        match &self.worldspawn_render_data  {
 
@@ -691,9 +688,7 @@ impl ClientState {
                 let hulls = bsp_data.hulls();
 
                 // for each hull, spawn in a new BrushCollisionHull into the ECS  
-                self.ecs_world.insert_resource(BspCollisionResource::new(
-                    hulls
-                ));
+                self.ecs_world.insert_resource(BspCollisionResource::new(hulls));
 
 
             },
