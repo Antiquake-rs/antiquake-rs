@@ -366,19 +366,19 @@ impl ClientState {
 
     
     fn init_ecs(&mut self){
-        let primary_stage:&str = "primary";
+        let phys_stage:&str = "phys";
         let render_stage:&str = "render";
 
         //add plugins , add resources 
 
 
 
-        self.ecs_tick_schedule.add_stage(primary_stage, SystemStage::parallel() );
-        self.ecs_tick_schedule.add_system_to_stage(primary_stage, ecs_systems::physics::update_physics_movement);
+        self.ecs_tick_schedule.add_stage(phys_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(phys_stage, ecs_systems::physics::apply_gamestate_delta_collisions);
+        self.ecs_tick_schedule.add_system_to_stage(phys_stage, ecs_systems::physics::update_physics_movement);
         
         //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
-        //self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::update_physics_movement);
-
+       
         //doing render in ecs would suck.. how would we do the menu then ?
       //  self.ecs_frame_schedule.add_stage(render_stage, SystemStage::single_threaded() );
      //   self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::render_pass);

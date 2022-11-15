@@ -1240,45 +1240,59 @@ impl Client {
                     } => {      
                         let controlled_unit_id = state.view_unit_id(); 
 
-                        let controlled_unit_phys_state = state.get_component_of_entity::<PhysicsComponent>(controlled_unit_id)
-                        .ok_or(ClientError::NullComponent)?;
+                        match state.get_component_of_entity::<PhysicsComponent>(controlled_unit_id) {
+                            //maybe refactor this as it is a rats nest 
+                            Some(phys_comp) => {
 
 
-                        let origin_loc = controlled_unit_phys_state.origin;
+
+                                let origin_loc = phys_comp.origin;
 
                         
-                        let unit_phys_move_type = PhysMovementType::Walk; // for now 
+                                let unit_phys_move_type = PhysMovementType::Walk; // for now 
+        
+                                let movement_type_value = unit_phys_move_type as usize;
+        
+                                let movement_speed = 10.0; // for now
+                                
+                                let look_angle = angles.clone();
+        
+                               
+                                state.push_to_gamestate_deltas(  DeltaCommand::ReportLookVector{  angle:look_angle   }  );
+                               
+        
+                                let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();
+        
+                                let movement_vector =  calc_movement_vector( 
+                                     inputs_cmd_vector,
+                                     look_angle ,
+                                     unit_phys_move_type
+                                     );
+                                
+                                
+                                match movement_vector {
+                                    Some(mov_vec) => {
+                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { 
+                                              origin_loc,
+                                              vector: mov_vec,
+                                              speed: movement_speed, 
+                                              phys_move_type: movement_type_value // always walk type for now 
+                                             } ) ;
+                                    },
+                                    _ => {}
+                                }
 
-                        let movement_type_value = unit_phys_move_type as usize;
 
-                        let movement_speed = 10.0; // for now
-                        
-                        let look_angle = angles.clone();
 
-                       
-                        state.push_to_gamestate_deltas(  DeltaCommand::ReportLookVector{  angle:look_angle   }  );
-                       
 
-                        let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();
-
-                        let movement_vector =  calc_movement_vector( 
-                             inputs_cmd_vector,
-                             look_angle ,
-                             unit_phys_move_type
-                             );
-                        
-                        
-                        match movement_vector {
-                            Some(mov_vec) => {
-                                state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { 
-                                      origin_loc,
-                                      vector: mov_vec,
-                                      speed: movement_speed, 
-                                      phys_move_type: movement_type_value // always walk type for now 
-                                     } ) ;
                             },
-                            _ => {}
+                            None => {} 
+
                         }
+                         
+
+
+                       
                        
                         
                     

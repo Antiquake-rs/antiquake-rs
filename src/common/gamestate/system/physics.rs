@@ -100,42 +100,58 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 
 pub fn apply_gamestate_delta_collisions (
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    bsp_collision: Res<BspCollisionResource>
+    bsp_collision_option: Option<Res<BspCollisionResource>>
     //mut query: Query<(&mut StaticCollisionHull)> 
 ) {
-    
 
-    for state_delta in delta_buffer.iter_mut() {
+    match bsp_collision_option {
 
-        match state_delta.command {
-            
-            DeltaCommand::TranslationMovement { 
-                origin_loc, vector, speed, phys_move_type
-             } =>  {
-
-                //vector is always normalized to 1 
-                //speed is typically 1 
-                let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
-
-                let collision_trace = bsp_collision.trace_collision(
-                    origin_loc, proposed_end_loc, 
-                    CollisionHullLayer::CHARACTER_LAYER );
+        Some(bsp_collision) => {
 
 
-                println!( " trace is {:?}" , collision_trace );
 
-             },
-             
-            _ => {}
+
+
+                for state_delta in delta_buffer.iter_mut() {
+
+                    match state_delta.command {
+                        
+                        DeltaCommand::TranslationMovement { 
+                            origin_loc, vector, speed, phys_move_type
+                        } =>  {
+
+                            //vector is always normalized to 1 
+                            //speed is typically 1 
+                            let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
+
+                            let collision_trace = bsp_collision.trace_collision(
+                                origin_loc, proposed_end_loc, 
+                                CollisionHullLayer::CHARACTER_LAYER );
+
+
+                            println!( " trace is {:?}" , collision_trace );
+
+                        },
+                        
+                        _ => {}
+                    }
+
+                    //delta.
+
+
+                // delta.modify_using_collision_trace( collision_trace );
+
+
+                }
+
+
+
         }
 
-        //delta.
-
-
-       // delta.modify_using_collision_trace( collision_trace );
-
-
+        None => {} 
     }
+    
+
     
 
 
