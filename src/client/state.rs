@@ -366,16 +366,20 @@ impl ClientState {
 
     
     fn init_ecs(&mut self){
-        let phys_stage:&str = "phys";
-        let render_stage:&str = "render";
+        let collision_stage:&str = "collision";
+        let movement_stage:&str = "movement";
+       // let phys_stage:&str = "phys";
+       // let render_stage:&str = "render";
 
         //add plugins , add resources 
 
 
 
-        self.ecs_tick_schedule.add_stage(phys_stage, SystemStage::single_threaded() );
-        self.ecs_tick_schedule.add_system_to_stage(phys_stage, ecs_systems::physics::apply_gamestate_delta_collisions);
-        self.ecs_tick_schedule.add_system_to_stage(phys_stage, ecs_systems::physics::update_physics_movement);
+        self.ecs_tick_schedule.add_stage(collision_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(collision_stage, ecs_systems::physics::apply_gamestate_delta_collisions);
+       
+        self.ecs_tick_schedule.add_stage_after(collision_stage, movement_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(movement_stage, ecs_systems::physics::update_physics_movement);
         
         //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
        

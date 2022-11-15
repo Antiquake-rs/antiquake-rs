@@ -20,6 +20,21 @@ pub enum PhysMovementType {
     NoClip = 3,
     Swim = 4 
 }
+
+//do this a better way ? 
+impl From<usize> for PhysMovementType {
+    fn from(move_type: usize) -> Self {
+        match move_type {
+            0 => PhysMovementType::Walk,
+            1 => PhysMovementType::Hover,
+            2 => PhysMovementType::Fly,
+            3 => PhysMovementType::NoClip,
+            4 => PhysMovementType::Swim,
+
+            _ => PhysMovementType::NoClip
+        }
+    }
+}
  
 
 //consider moving all this to the physics component system !! 
@@ -103,16 +118,16 @@ pub fn apply_gamestate_delta_collisions (
     bsp_collision_option: Option<Res<BspCollisionResource>>
     //mut query: Query<(&mut StaticCollisionHull)> 
 ) {
-
+    println!("apply gs deltas collisions 1");
     match bsp_collision_option {
 
         Some(bsp_collision) => {
-
-
-
+ 
 
 
                 for state_delta in delta_buffer.iter_mut() {
+
+                    println!("apply gs deltas collisions 2");
 
                     match state_delta.command {
                         
@@ -120,16 +135,23 @@ pub fn apply_gamestate_delta_collisions (
                             origin_loc, vector, speed, phys_move_type
                         } =>  {
 
-                            //vector is always normalized to 1 
-                            //speed is typically 1 
-                            let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
-
-                            let collision_trace = bsp_collision.trace_collision(
-                                origin_loc, proposed_end_loc, 
-                                CollisionHullLayer::CHARACTER_LAYER );
+                            if body_has_collision(phys_move_type.into()) {
 
 
-                            println!( " trace is {:?}" , collision_trace );
+                                  //vector is always normalized to 1 
+                                //speed is typically 1 
+                                let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
+
+                                let collision_trace = bsp_collision.trace_collision(
+                                    origin_loc, proposed_end_loc, 
+                                    CollisionHullLayer::CHARACTER_LAYER );
+
+
+                                println!( " trace is {:?}" , collision_trace );
+
+
+                            }
+                          
 
                         },
                         
