@@ -690,10 +690,7 @@ impl ClientState {
 
                 let hulls = bsp_data.hulls();
 
-                // for each hull, spawn in a new BrushCollisionHull into the ECS 
-                
-              
-
+                // for each hull, spawn in a new BrushCollisionHull into the ECS  
                 self.ecs_world.insert_resource(BspCollisionResource::new(
                     hulls
                 ));

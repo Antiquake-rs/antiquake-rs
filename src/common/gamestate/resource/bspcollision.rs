@@ -18,18 +18,7 @@ pub enum CollisionHullLayer {
     CHARACTER_LAYER=1,
     HUGE_LAYER=2 
 }
-
-
-pub struct CachedCollisionHull {
-    
-    planes: Box<[Hyperplane]>,
-    nodes: Box<[BspCollisionNode]>,
-    node_id: usize,
-    node_count: usize,
-    mins: Vector3<f32>,
-    maxs: Vector3<f32>,
-
-}
+ 
 
 
 //#[derive(Resource)]
@@ -51,6 +40,16 @@ impl BspCollisionResource {
             ]
         }
     }
+
+    //use this to validate the gamestate deltas 
+    //in fact they should not just be validated, but corrected -- take out one component for example so the player slides along the wall when trying to go into it diag . 
+    pub fn trace_collision(  ) {
+
+
+
+
+    }
+
 
 
 
