@@ -77,7 +77,7 @@ use std::{
     io::{BufReader},
     fs::{File},
     path::{PathBuf}, collections::HashMap,
-    ops::Range
+    ops::Range, sync::Arc
 };
 
 use crate::{
@@ -136,7 +136,7 @@ const LIGHTMAP_TEXTURE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unor
  
 pub struct WorldspawnRenderData  {
 
-    pub bsp_data: Rc<BspData>,  
+    pub bsp_data: Arc<BspData>,  
     pub face_range: Range<usize>,
    // pub hulls: &'a [BspCollisionHull]  //this does exist in here remember that 
 

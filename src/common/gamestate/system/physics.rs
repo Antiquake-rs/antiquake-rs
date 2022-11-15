@@ -89,6 +89,24 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 
 
 
+    //https://bevy-cheatbook.github.io/programming/world.html
+
+
+
+
+
+pub fn apply_gamestate_delta_collisions (
+    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+    //mut query: Query<(&mut StaticCollisionHull)> 
+) {
+    
+
+
+} 
+
+
+
+
 //this is called now 
 pub fn update_physics_movement(
     // unit id registry 

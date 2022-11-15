@@ -16,9 +16,12 @@
 use std::{fmt, rc::Rc, collections::HashMap};
 use cgmath::{Deg, Vector3, Angle,InnerSpace};
 
+pub mod resource;
 pub mod component;
 pub mod system;
 pub mod entity;
+
+
 
 use self::system::physics::{ EntityPostureType, PhysBodyType};
 

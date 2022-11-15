@@ -25,7 +25,7 @@ use std::{
     mem::size_of,
     num::NonZeroU32,
     ops::Range,
-    rc::Rc,
+    rc::Rc, sync::Arc,
 };
 
 use crate::{
@@ -341,7 +341,7 @@ where
 }
 
 pub struct BrushRendererBuilder {
-    bsp_data: Rc<BspData>,
+    bsp_data: Arc<BspData>,
     face_range: Range<usize>,
 
     leaves: Option<Vec<BrushLeaf>>,
@@ -386,7 +386,7 @@ impl BrushRendererBuilder {
 
 
 
-    pub fn get_bsp_data ( bsp_model: &BspModel  ) ->   Rc<BspData>  {
+    pub fn get_bsp_data ( bsp_model: &BspModel  ) ->   Arc<BspData>  {
 
         return  bsp_model.bsp_data.clone()
 
@@ -749,7 +749,7 @@ impl BrushRendererBuilder {
 }
 
 pub struct BrushRenderer {
-    bsp_data: Rc<BspData>,
+    bsp_data: Arc<BspData>,
 
     leaves: Option<Vec<BrushLeaf>>,
 

@@ -26,7 +26,7 @@ use crate::{
          gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
          system as ecs_systems,
          component::{self as ecs_components, physics::PhysicsComponent},
-         entity::{BevyEntityLookupRegistry}
+         entity::{BevyEntityLookupRegistry}, resource::bspcollision::BspCollisionResource
         },
     },
 };
@@ -676,16 +676,27 @@ impl ClientState {
 
 
     fn build_bsp_collision_hulls(&mut self){
-
-       // let models = self.models(); 
+ 
 
        self.worldspawn_render_data = Some( WorldspawnRenderData::new(self.models(), 1) );
 
        
 
-      /* match worldspawn_bsp_data  {
+       match &self.worldspawn_render_data  {
 
             Some( worldspawn ) => { 
+
+                let bsp_data = &worldspawn.bsp_data;
+
+                let hulls = bsp_data.hulls();
+
+                // for each hull, spawn in a new BrushCollisionHull into the ECS 
+                
+              
+
+                self.ecs_world.insert_resource(BspCollisionResource::new(
+                    hulls
+                ));
 
 
             },
@@ -693,7 +704,7 @@ impl ClientState {
 
             None => panic!("No worldspawn render data to generate collision hulls")
 
-        } */ 
+        } 
 
         //for each model, if its worldspawn add an entity to ECS that has a physics collision hull -- use that for gamestate deltas 
 
