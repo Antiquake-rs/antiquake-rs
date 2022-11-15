@@ -13,7 +13,7 @@
 
 
 */
-use std::{fmt, rc::Rc, collections::HashMap};
+use std::{fmt, rc::Rc, collections::HashMap, slice::IterMut};
 use cgmath::{Deg, Vector3, Angle,InnerSpace};
 
 pub mod resource;
@@ -147,6 +147,13 @@ impl GameStateDeltaBuffer {
         return self.deltas.pop();       
 
     }
+
+    pub fn iter_mut( &mut self ) -> IterMut< GameStateDelta> {
+
+        return self.deltas.iter_mut();       
+
+    }
+
 
     pub fn is_empty(&self) -> bool {
         return self.deltas.is_empty()

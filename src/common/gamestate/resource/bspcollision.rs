@@ -17,13 +17,19 @@ pub enum CollisionHullLayer {
  
 
 
-//#[derive(Resource)]
+//#[derive(Resource)]  //do this to all resources after bevy update 0.9 
 pub struct BspCollisionResource {
     
     cached_hulls: [BspCollisionHull;MAX_HULLS] //array with size 3 
 
 }
 
+/*
+
+    Clone the physics hulls that the bsp map loaded in 
+
+    They get used for physics trace checks in our bevy ECS for gamestate deltas (entity move transforms)
+*/
 impl BspCollisionResource {
 
     pub fn new(hulls: &[BspCollisionHull]) -> BspCollisionResource {

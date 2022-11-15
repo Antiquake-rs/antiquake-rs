@@ -3,7 +3,7 @@ use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
 use crate::common::gamestate::{
     component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
-    entity::{BevyEntityLookupRegistry} 
+    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer} 
 };
  
 
@@ -97,8 +97,33 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
 
 pub fn apply_gamestate_delta_collisions (
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+    bsp_collision: Res<BspCollisionResource>
     //mut query: Query<(&mut StaticCollisionHull)> 
 ) {
+    
+
+    for delta in delta_buffer.iter_mut() {
+
+        //delta.
+
+        let collision_trace = bsp_collision.trace_collision(start, end, CollisionHullLayer::CHARACTER_LAYER );
+
+       // delta.modify_using_collision_trace( collision_trace );
+
+
+    }
+    
+
+
+}
+
+pub fn apply_collision_to_gamestate_delta (
+    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+    bsp_collision: Res<BspCollisionResource>
+    //mut query: Query<(&mut StaticCollisionHull)> 
+) {
+    
+
     
 
 
