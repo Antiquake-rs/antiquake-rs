@@ -13,32 +13,35 @@ pub enum EntityPostureType {
     Prone 
 }
 
-pub enum PhysBodyType {
-    Walk,
-    Hover,
-    Fly,
-    NoClip
+pub enum PhysMovementType {
+    Walk = 0,
+    Hover = 1,
+    Fly = 2,
+    NoClip = 3,
+    Swim = 4 
 }
  
 
 //consider moving all this to the physics component system !! 
 
-pub fn movement_constrained_flat(physBodyType: PhysBodyType) -> bool{
+pub fn movement_constrained_flat(physBodyType: PhysMovementType) -> bool{
 
     match physBodyType {
-        PhysBodyType::Walk => return true,
-        PhysBodyType::Hover => return true,
-        PhysBodyType::Fly => return false,
-        PhysBodyType::NoClip => return false,
+        PhysMovementType::Walk => return true,
+        PhysMovementType::Hover => return true,
+        PhysMovementType::Fly => return false,
+        PhysMovementType::NoClip => return false,
+        PhysMovementType::Swim => return false,
     }
 }
-pub fn body_has_collision(physBodyType: PhysBodyType) -> bool{
+pub fn body_has_collision(physBodyType: PhysMovementType) -> bool{
 
     match physBodyType {
-        PhysBodyType::Walk => return true,
-        PhysBodyType::Hover => return true,
-        PhysBodyType::Fly => return true,
-        PhysBodyType::NoClip => return false,
+        PhysMovementType::Walk => return true,
+        PhysMovementType::Hover => return true,
+        PhysMovementType::Fly => return true,
+        PhysMovementType::NoClip => return false,
+        PhysMovementType::Swim => return true,
     }
 }
 
@@ -48,13 +51,13 @@ pub fn euler_angles_to_cartesian(pitch:Deg<f32>,yaw:Deg<f32>,roll:Deg<f32> ) -> 
     
 }
 
-pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>, physBodyType: PhysBodyType) -> Option<Vector3<f32>>{
+pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>, physMovementType: PhysMovementType) -> Option<Vector3<f32>>{
  
         
     //pitch roll yaw 
     let forward_dir = euler_angles_to_cartesian(facing.x,facing.y,facing.z) ;
 
-    let forward_dir_normalized = match movement_constrained_flat(physBodyType){
+    let forward_dir_normalized = match movement_constrained_flat(physMovementType){
         true => {
             Vector3::new(forward_dir.x as f32,forward_dir.y as f32,0.0).normalize()
         },
@@ -102,11 +105,32 @@ pub fn apply_gamestate_delta_collisions (
 ) {
     
 
-    for delta in delta_buffer.iter_mut() {
+    for state_delta in delta_buffer.iter_mut() {
+
+        match state_delta.command {
+            
+            DeltaCommand::TranslationMovement { 
+                origin_loc, vector, speed, phys_move_type
+             } =>  {
+
+                //vector is always normalized to 1 
+                //speed is typically 1 
+                let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
+
+                let collision_trace = bsp_collision.trace_collision(
+                    origin_loc, proposed_end_loc, 
+                    CollisionHullLayer::CHARACTER_LAYER );
+
+
+                println!( " trace is {:?}" , collision_trace );
+
+             },
+             
+            _ => {}
+        }
 
         //delta.
 
-        let collision_trace = bsp_collision.trace_collision(start, end, CollisionHullLayer::CHARACTER_LAYER );
 
        // delta.modify_using_collision_trace( collision_trace );
 
@@ -186,22 +210,26 @@ pub fn update_physics_movement(
 }
 
 fn apply_gamestate_delta_buffer( 
-    delta:  &GameStateDelta ,
+     delta:  &GameStateDelta ,
      physComp: &mut PhysicsComponent
  ){
 
 
     match &delta.command {
-        DeltaCommand::ReportLocationVector { loc } => {},
-        DeltaCommand::ReportVelocityVector { angle } => {},
-        DeltaCommand::SetLookVector { angle } => {},
-        DeltaCommand::SetMovementVector { vector } => {
-             
+        DeltaCommand::ReportLocation { loc } => {},
+        DeltaCommand::ReportVelocity { angle } => {},
+        DeltaCommand::ReportLookVector { angle } => {},
+        DeltaCommand::TranslationMovement { vector, origin_loc, speed, phys_move_type } => {
+            
+
+            //if the suggest origin_loc is way off the past_origin , maybe we do something  -- ? 
+            // it means whoever created the delta is way out of sync with our state 
+
             let past_origin = physComp.origin.clone();
 
-            let move_speed = 10.0;
+           // let move_speed = 10.0;
             //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
-            let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * move_speed);
+            let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * speed.to_owned());
     
             //walk
             physComp.set_origin(    new_origin  ) ;

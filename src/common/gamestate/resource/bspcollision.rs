@@ -45,13 +45,20 @@ impl BspCollisionResource {
 
     //use this to validate the gamestate deltas 
     //in fact they should not just be validated, but corrected -- take out one component for example so the player slides along the wall when trying to go into it diag . 
-    pub fn trace_collision( &self, start:Vector3<f32>, end: Vector3<f32>, hull_layer: CollisionHullLayer )  -> Result<Trace, BspError> {
+    pub fn trace_collision( &self, start:Vector3<f32>, end: Vector3<f32>, hull_layer: CollisionHullLayer )  -> Trace {
 
         let hull:&BspCollisionHull = &self.cached_hulls[hull_layer as usize];
 
         let trace_result = hull.trace(start, end);
 
-        return trace_result
+        let trace_output = match trace_result {
+            Ok( t) => t,
+            Err(_) => {panic!(" ERROR: Unable to trace collision data ! ")} //why would this ever happen ? 
+        };
+
+
+
+        return trace_output
     } 
  
 

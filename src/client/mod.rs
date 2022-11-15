@@ -63,7 +63,7 @@ use crate::{
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{PhysBodyType, calc_movement_vector}}
+            system::physics::{PhysBodyType, calc_movement_vector, PhysMovementType}}
     },
     server::{GameServer}
 };
@@ -1239,7 +1239,7 @@ impl Client {
                         let look_angle = angles.clone();
 
                        
-                        state.push_to_gamestate_deltas(  DeltaCommand::SetLookVector{  angle:look_angle   }  );
+                        state.push_to_gamestate_deltas(  DeltaCommand::ReportLookVector{  angle:look_angle   }  );
                        
 
                         let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();
@@ -1252,7 +1252,12 @@ impl Client {
                         
                         match movement_vector {
                             Some(mov_vec) => {
-                                state.push_to_gamestate_deltas(  DeltaCommand::SetMovementVector{  vector:mov_vec   }  ) ;
+                                state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { 
+                                      origin_loc: (),
+                                      vector: mov_vec,
+                                      speed: 10.0, 
+                                      phys_move_type: PhysMovementType::Walk as usize // always walk type for now 
+                                     } ) ;
                             },
                             _ => {}
                         }

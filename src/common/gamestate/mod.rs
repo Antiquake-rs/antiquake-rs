@@ -23,7 +23,7 @@ pub mod entity;
 
 
 
-use self::system::physics::{ EntityPostureType, PhysBodyType};
+use self::system::physics::{ EntityPostureType, PhysMovementType};
 
 pub struct GameStateDelta {
 
@@ -70,20 +70,20 @@ impl fmt::Display for GameStateDelta {
 
 bitflags! {
 pub struct DeltaCommandFlags: u16 {
-    const SetLookVector = 1 << 0;
-    const SetMovementVector = 1 << 1;
-    const ReportLocationVector = 1 << 2;
-    const ReportVelocityVector = 1 << 3;
+    const ReportLookVector = 1 << 0;
+    const TranslationMovement = 1 << 1;
+    const ReportLocation = 1 << 2;
+    const ReportVelocity = 1 << 3;
 }
 }
 
 
 fn gamestate_delta_to_flag_type( d:&GameStateDelta ) -> Option<DeltaCommandFlags> {
     match(d.command){
-        DeltaCommand::ReportLocationVector { .. } => Some( DeltaCommandFlags::ReportLocationVector),
-        DeltaCommand::ReportVelocityVector { .. } => Some( DeltaCommandFlags::ReportVelocityVector),
-        DeltaCommand::SetLookVector { .. } => Some(DeltaCommandFlags::SetLookVector),
-        DeltaCommand::SetMovementVector { .. } => Some(DeltaCommandFlags::ReportVelocityVector),
+        DeltaCommand::ReportLocation { .. } => Some(DeltaCommandFlags::ReportLocation),
+        DeltaCommand::ReportVelocity { .. } => Some(DeltaCommandFlags::ReportVelocity),
+        DeltaCommand::ReportLookVector { .. } => Some(DeltaCommandFlags::ReportLookVector),
+        DeltaCommand::TranslationMovement { .. } => Some(DeltaCommandFlags::TranslationMovement),
         DeltaCommand::PerformEntityAction { .. } => None,
     }
 }
@@ -194,14 +194,17 @@ impl GameStateDeltaBuffer {
      At the end of each tick, the server applies all of the 'UserCommandDeltas' in the buffer to its current gamestate and broadcasts all of those deltas to the other clients 
       (typically only 20 according to valve -- can do filtering based on occlusion )   
 
+
+      phys_move_type is PhysMovementType but in usize form 
+
  */
  
 pub enum DeltaCommand {
-    ReportLocationVector { loc: Vector3<f32>   },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
-    ReportVelocityVector { angle: Vector3< f32 >   } , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
+    ReportLocation { loc: Vector3<f32>   },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
+    ReportVelocity { angle: Vector3< f32 >   } , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
 
-    SetLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
-    SetMovementVector { vector: Vector3<f32>   }, //always normalized to magnitude of 1.  Z is ignored unless you can fly ? 
+    ReportLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
+    TranslationMovement { origin_loc: Vector3<f32>, vector: Vector3<f32> , speed: f32, phys_move_type: usize  }, //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
 
     PerformEntityAction { action: DeltaAction , target_id: u32  },
 } 
@@ -214,10 +217,10 @@ impl fmt::Display for DeltaCommand {
         
         
         match self {
-            DeltaCommand::ReportLocationVector { loc } =>write!(f, "ReportLocationVector" ),
-            DeltaCommand::ReportVelocityVector { angle } => write!(f, "ReportVelocityVector" ),
-            DeltaCommand::SetLookVector { angle } => write!(f, "SetLookVector" ),
-            DeltaCommand::SetMovementVector { vector } =>write!(f, "SetMovementVector" ),
+            DeltaCommand::ReportLocation { loc } =>write!(f, "ReportLocationVector" ),
+            DeltaCommand::ReportVelocity { angle } => write!(f, "ReportVelocityVector" ),
+            DeltaCommand::ReportLookVector { angle } => write!(f, "SetLookVector" ),
+            DeltaCommand::TranslationMovement {  ..  } =>write!(f, "SetMovementVector" ),
             DeltaCommand::PerformEntityAction { action, target_id } => write!(f, "PerformEntityAction" ),
         }
     }
@@ -244,7 +247,7 @@ pub enum DeltaAction {
 
     SetZoomState (bool), //zoomed is true 
 
-    SetPhysBodyType( PhysBodyType )  //only admins can do this !
+    SetPhysMovementType( PhysMovementType )  //only admins can do this ! -- for setting to noclip 
 
 }
 
