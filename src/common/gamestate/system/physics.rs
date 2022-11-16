@@ -13,7 +13,7 @@ pub enum EntityPostureType {
     Prone 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum PhysMovementType {
     Walk = 0,
     Hover = 1,
@@ -111,105 +111,175 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
     //https://bevy-cheatbook.github.io/programming/world.html
 
 
+/* 
+    pub fn apply_collision_to_gamestate_delta (
+        mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+        bsp_collision: Res<BspCollisionResource>
+        //mut query: Query<(&mut StaticCollisionHull)> 
+    ) {
+        
+     
+    } */
+ 
 
+
+/*
+
+    If the component is not on the ground, add gravity acceleration 
+
+
+*/
+pub fn apply_gravity_system ( 
+    bsp_collision: Res<BspCollisionResource>,
+    mut query: Query<&mut PhysicsComponent> 
+){  
+
+    let gravity_accel = Vector3::new(0.0,0.0,-0.9);
+    let water_accel = Vector3::new(0.0,0.0,-0.2);
+ 
+
+    let unit_height = 40.0; 
+
+    for mut phys_comp in query.iter_mut(){
+       
+
+       // let CHECK_DIST = 80.0;
+
+        let start_loc = phys_comp.origin  + (gravity_accel.normalize()   * -5.0 ) ;  
+        let proposed_end_loc = phys_comp.origin  + (gravity_accel.normalize() * unit_height);
+
+        let on_ground_trace = bsp_collision.trace_collision(
+            start_loc, proposed_end_loc, 
+            CollisionHullLayer::CHARACTER_LAYER );   
+
+        
+
+            println!( "grav trace is {:?}" , on_ground_trace );
+        match on_ground_trace.contents_type() {
+
+            BspLeafPhysMaterial::Empty => {
+                phys_comp.apply_acceleration_to_velocity(  gravity_accel  );
+            }
+
+            BspLeafPhysMaterial::Water => {
+                phys_comp.apply_acceleration_to_velocity(  water_accel  );
+            }
+
+
+            BspLeafPhysMaterial::Solid => {
+                
+
+                        
+                 
+                    //pop out of world if under it 
+                    let trace_end_point = on_ground_trace.end_point();
+                    let solid_start = on_ground_trace.start_solid(); 
+                    let ground_z = trace_end_point.z;
+
+                    //if units feet are under ground 
+                    if  phys_comp.origin.z  < ground_z +unit_height && !solid_start{            
+                        phys_comp.origin.z = ground_z + unit_height;
+                    }
+
+
+                    if solid_start {
+                        //pop out of solid 
+                        phys_comp.apply_acceleration_to_velocity(  gravity_accel * -1.0  );
+
+                        let trace_start_point = on_ground_trace.start_point();
+
+                        //as far as we know, ground is above the start point so start moving towards there 
+                        if  phys_comp.origin.z  < trace_start_point.z    {            
+                            phys_comp.origin.z = trace_start_point.z  ;
+                        }
+                    }
+
+
+
+
+            }
+
+            _ => {} 
+
+        }
+
+            
+        
+
+    }
+
+    
+
+}
 
 
 pub fn apply_gamestate_delta_collisions (
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    bsp_collision_option: Option<Res<BspCollisionResource>>
-    //mut query: Query<(&mut StaticCollisionHull)> 
+    bsp_collision: Res<BspCollisionResource>
+     
 ) {
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
-    let unmodified_deltas:Vec<GameStateDelta> = delta_buffer.deltas.drain(..).collect();
+    let unmodified_deltas:Vec<GameStateDelta> = delta_buffer.deltas.drain(..).collect(); 
+
+    
+    let unit_height = 40.0; 
+    let vertical_vector = Vector3::new(0.0,0.0,1.0);
+
+    for state_delta in unmodified_deltas  {
+
+        
+        match &state_delta.command {
+            
+            DeltaCommand::TranslationMovement (translation) =>  {
+
+                if body_has_collision( translation.phys_move_type.into()) {
 
 
+                    let CHECK_DIST= 90.0;
 
- 
-    match bsp_collision_option {
+                        //vector is always normalized to 1 
+                    //speed is typically 1 
+                    let start_loc = translation.origin_loc  + (translation.vector.normalize() * 15.0) + vertical_vector*unit_height; //helps get unstuck 
+                    let proposed_end_loc = translation.origin_loc + (translation.vector.normalize() * CHECK_DIST)  + vertical_vector*unit_height ;  
 
-        Some(bsp_collision) => {
- 
+                    let forwards_trace = bsp_collision.trace_collision(
+                        start_loc, proposed_end_loc, 
+                        CollisionHullLayer::CHARACTER_LAYER );
 
+                    /*  let backwards_trace = bsp_collision.trace_collision(
+                        proposed_end_loc,   start_loc,
+                        CollisionHullLayer::CHARACTER_LAYER );*/
+                            
 
-                for state_delta in unmodified_deltas  {
+                        println!( " trace is {:?}" , forwards_trace );
 
-                    
-                    match &state_delta.command {
                         
-                        DeltaCommand::TranslationMovement (translation) =>  {
 
-                            if body_has_collision( translation.phys_move_type.into()) {
-
-
-                                let CHECK_DIST= 160.0;
-
-                                  //vector is always normalized to 1 
-                                //speed is typically 1 
-                                let start_loc = translation.origin_loc.clone() + (translation.vector.normalize() * 25.0); //helps get unstuck 
-                                let proposed_end_loc = translation.origin_loc.clone() + (translation.vector.normalize() * CHECK_DIST);
-
-                                let forwards_trace = bsp_collision.trace_collision(
-                                    start_loc, proposed_end_loc, 
-                                    CollisionHullLayer::CHARACTER_LAYER );
-
-                                let backwards_trace = bsp_collision.trace_collision(
-                                    proposed_end_loc,   start_loc,
-                                    CollisionHullLayer::CHARACTER_LAYER );
-                                     
-
-                                    println!( " trace is {:?}" , forwards_trace );
-
-                                    //fix me ! 
-
-                                    if  forwards_trace.contents_type() == BspLeafPhysMaterial::Solid                                        
-                                      {
-                                        modified_deltas.push(  state_delta.modify_via_collision_trace(forwards_trace) ) ; 
-                                    }else{
-                                        modified_deltas.push( state_delta );
-                                    } 
-
-
-                                  
-                              
-                                    /*
-                                    
-                                            Maybe  trace w the X leg and trace w the Y leg separately and if either one hits, cancel out that portion of the vector 
-
-                                            Maybe get collision normal ! 
-                                    
-                                    */
-
-
-                              
-
-
-                            }
-                          
-
-                        },
-                        
-                        _ => {
-                            modified_deltas.push( state_delta ); 
-                        }
-                    }
-
-                    //delta.
-
-
-                // delta.modify_using_collision_trace( collision_trace );
+                        if  forwards_trace.contents_type() == BspLeafPhysMaterial::Solid                                        
+                            {
+                            modified_deltas.push(  state_delta.modify_via_collision_trace(forwards_trace) ) ; 
+                        }else{
+                            modified_deltas.push( state_delta );
+                        } 
 
 
                 }
+                
 
-
-
+            },
+            
+            _ => {
+                modified_deltas.push( state_delta ); 
+            }
         }
 
-        None => {} 
+        
+
     }
-    
+
+  
 
     delta_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
     
@@ -217,22 +287,10 @@ pub fn apply_gamestate_delta_collisions (
 
 }
 
-pub fn apply_collision_to_gamestate_delta (
-    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    bsp_collision: Res<BspCollisionResource>
-    //mut query: Query<(&mut StaticCollisionHull)> 
-) {
-    
-
-    
-
-
-} 
 
 
 
-
-//this is called now 
+//applies gamestate delta buffers 
 pub fn update_physics_movement(
     // unit id registry 
     entity_lookup: Res<BevyEntityLookupRegistry>,
@@ -295,6 +353,13 @@ fn apply_gamestate_delta_buffer(
         DeltaCommand::ReportLocation { loc } => {},
         DeltaCommand::ReportVelocity { angle } => {},
         DeltaCommand::ReportLookVector { angle } => {},
+        DeltaCommand::ApplyForce (force) => {
+
+            let acceleration = force.get_scaled_force() ;
+
+            physComp.apply_acceleration_to_velocity(  acceleration  ) ;
+
+        },
         DeltaCommand::TranslationMovement  (translation) => {
             
 
@@ -305,10 +370,10 @@ fn apply_gamestate_delta_buffer(
 
            // let move_speed = 10.0;
             //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
-            let new_origin:Vector3<f32> = past_origin.clone() + (translation.vector.normalize() * translation.speed.to_owned());
+            let new_origin:Vector3<f32> = past_origin  + (translation.vector.normalize() * translation.speed.to_owned());
     
             //walk
-            physComp.set_origin(    new_origin  ) ;
+            physComp.set_origin(  new_origin  ) ;
 
         },
         DeltaCommand::PerformEntityAction { action, target_id } => {},
@@ -316,3 +381,55 @@ fn apply_gamestate_delta_buffer(
 
     
  }
+
+
+ /*
+ 
+        If V trace hits ground, kill vertical velocity. 
+
+        If H trace hits wall, kill horizontal velocity 
+ */
+ pub fn apply_phys_velocities_system( 
+    bsp_collision: Res<BspCollisionResource>,
+    mut query: Query<&mut PhysicsComponent> 
+){
+
+
+    let unit_height = 40.0; 
+
+    
+    for mut phys_comp in query.iter_mut(){
+        
+
+        //ignore insignificant velocities to speed up this system 
+        if phys_comp.velocity.magnitude() < 0.0000001 { continue; }
+
+ 
+
+        let start_loc = phys_comp.origin  + (phys_comp.velocity.normalize() * 1.0); //helps get unstuck 
+        let proposed_end_loc = phys_comp.origin  + (phys_comp.velocity.normalize() * unit_height);
+
+        let forwards_trace = bsp_collision.trace_collision(
+            start_loc, proposed_end_loc, 
+            CollisionHullLayer::CHARACTER_LAYER );
+
+            
+        
+        if forwards_trace.contents_type() == BspLeafPhysMaterial::Solid {
+
+            //zero out velocity if we hit something 
+            phys_comp.set_velocity(Vector3::new(0.0,0.0,0.0));
+
+        } 
+
+ 
+        phys_comp.origin = phys_comp.origin + phys_comp.velocity; 
+                    
+        
+
+    }
+
+
+
+
+}

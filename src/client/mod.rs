@@ -1248,10 +1248,7 @@ impl Client {
 
                                 let origin_loc = phys_comp.origin;
 
-                        
-                                let unit_phys_move_type = PhysMovementType::Walk; // for now 
-        
-                                let movement_type_value = unit_phys_move_type as usize;
+                                let unit_phys_move_type = phys_comp.movement_type.clone();  
         
                                 let movement_speed = 10.0; // for now
                                 
@@ -1276,7 +1273,7 @@ impl Client {
                                               origin_loc,
                                               vector: mov_vec,
                                               speed: movement_speed, 
-                                              phys_move_type: movement_type_value // always walk type for now 
+                                              phys_move_type: unit_phys_move_type as usize // always walk type for now 
                                              } )) ;
                                     },
                                     _ => {}

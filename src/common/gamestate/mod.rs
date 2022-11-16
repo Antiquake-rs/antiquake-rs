@@ -128,6 +128,7 @@ impl fmt::Display for GameStateDelta {
 }
 
 
+//these flags limit the commands to 1 per unit per tick 
 bitflags! {
 pub struct DeltaCommandFlags: u16 {
     const ReportLookVector = 1 << 0;
@@ -138,12 +139,13 @@ pub struct DeltaCommandFlags: u16 {
 }
 
 
-fn gamestate_delta_to_flag_type( d:&GameStateDelta ) -> Option<DeltaCommandFlags> {
-    match(d.command){
+fn gamestate_delta_to_flag_type( delta:&GameStateDelta ) -> Option<DeltaCommandFlags> {
+    match(delta.command){
         DeltaCommand::ReportLocation { .. } => Some(DeltaCommandFlags::ReportLocation),
         DeltaCommand::ReportVelocity { .. } => Some(DeltaCommandFlags::ReportVelocity),
         DeltaCommand::ReportLookVector { .. } => Some(DeltaCommandFlags::ReportLookVector),
         DeltaCommand::TranslationMovement { .. } => Some(DeltaCommandFlags::TranslationMovement),
+        DeltaCommand::ApplyForce { .. } => None,
         DeltaCommand::PerformEntityAction { .. } => None,
     }
 }
@@ -245,14 +247,30 @@ impl GameStateDeltaBuffer {
 }
 
 
+
+#[derive(Clone)]
+pub struct AppliedForce {  // f = ma ! 
+    pub origin_loc: Vector3<f32>,
+    pub acceleration: Vector3<f32> , //not normalized 
+    pub phys_move_type: usize ,
+    pub unit_mass: f32 
+}
+
+impl AppliedForce {
+
+    pub fn get_scaled_force(&self) -> Vector3<f32> {
+        let horiz_force_scalar =  self.unit_mass / 100.0 ;
+        return Vector3::new( self.acceleration.x * horiz_force_scalar, self.acceleration.y * horiz_force_scalar, self.acceleration.z   )
+    }
+
+}
+
 #[derive(Clone)]
 pub struct MovementTranslation {
     pub origin_loc: Vector3<f32>,
     pub vector: Vector3<f32> ,
     pub speed: f32,
-    pub phys_move_type: usize  
-
-
+    pub phys_move_type: usize 
 }
 /*
     Each 'tick', a client is building an array of entity commands (every 33 ms).  At the end of that tick, 
@@ -275,6 +293,7 @@ pub enum DeltaCommand {
 
     ReportLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
     TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
+    ApplyForce ( AppliedForce ), //used to modify velocity -- typically for gravity and explosions and stuff.  Hitting a wall makes XY velocity go to zero, hitting ground makes Z velocity 0
 
     PerformEntityAction { action: DeltaAction , target_id: u32  },
 } 
@@ -297,6 +316,7 @@ impl fmt::Display for DeltaCommand {
             DeltaCommand::ReportLookVector { angle } => write!(f, "SetLookVector" ),
             DeltaCommand::TranslationMovement {  ..  } =>write!(f, "SetMovementVector" ),
             DeltaCommand::PerformEntityAction { action, target_id } => write!(f, "PerformEntityAction" ),
+            DeltaCommand::ApplyForce( .. ) => write!(f, "ApplyForce" ),
         }
     }
 }

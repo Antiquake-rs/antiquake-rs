@@ -276,13 +276,7 @@ impl ClientState {
 
         };
 
-
-
-
-
-        c_state.init_ecs();
-
-
+ 
 
         return c_state;
     }
@@ -355,6 +349,18 @@ impl ClientState {
         return &mut self.ecs_world; 
     }
 
+      //This is called upon from_server_info -- after the server gives us the map files and after we load models and the map
+      pub fn on_loaded_models(&mut self) {
+        self.build_bsp_collision_hulls(  );
+
+
+
+        self.init_ecs();
+
+
+    }
+
+
 
     /*
     
@@ -366,8 +372,10 @@ impl ClientState {
 
     
     fn init_ecs(&mut self){
+        let gravity_stage:&str = "gravity";
         let collision_stage:&str = "collision";
         let movement_stage:&str = "movement";
+        let velocity_stage:&str = "velocity";
        // let phys_stage:&str = "phys";
        // let render_stage:&str = "render";
 
@@ -375,12 +383,21 @@ impl ClientState {
 
 
 
-        self.ecs_tick_schedule.add_stage(collision_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_stage(gravity_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(gravity_stage, ecs_systems::physics::apply_gravity_system);       
+
+        self.ecs_tick_schedule.add_stage_after(gravity_stage, collision_stage, SystemStage::single_threaded() );
         self.ecs_tick_schedule.add_system_to_stage(collision_stage, ecs_systems::physics::apply_gamestate_delta_collisions);
        
         self.ecs_tick_schedule.add_stage_after(collision_stage, movement_stage, SystemStage::single_threaded() );
         self.ecs_tick_schedule.add_system_to_stage(movement_stage, ecs_systems::physics::update_physics_movement);
         
+        self.ecs_tick_schedule.add_stage_after(movement_stage, velocity_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(velocity_stage, ecs_systems::physics::apply_phys_velocities_system);
+        
+
+        
+
         //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
        
         //doing render in ecs would suck.. how would we do the menu then ?
@@ -404,11 +421,7 @@ impl ClientState {
 
 
 
-    //This is called upon from_server_info -- after the server gives us the map files and after we load models and the map
-    pub fn on_loaded_models(&mut self) {
-        self.build_bsp_collision_hulls(  );
-    }
-
+  
 
     pub fn advance_time(&mut self, frame_time:Duration, cvars: &CvarRegistry, is_connected:bool) -> Result<Duration,ClientError>{
         self.time = self.time + frame_time;
