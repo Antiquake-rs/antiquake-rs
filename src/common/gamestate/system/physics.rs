@@ -6,13 +6,14 @@ use crate::common::gamestate::{
     entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer} 
 };
  
-
+#[derive(Clone)]
 pub enum EntityPostureType {
     Stand,
     Crouch,
     Prone 
 }
 
+#[derive(Clone)]
 pub enum PhysMovementType {
     Walk = 0,
     Hover = 1,
@@ -118,6 +119,14 @@ pub fn apply_gamestate_delta_collisions (
     bsp_collision_option: Option<Res<BspCollisionResource>>
     //mut query: Query<(&mut StaticCollisionHull)> 
 ) {
+
+    let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
+
+    let unmodified_deltas:Vec<GameStateDelta> = delta_buffer.deltas.drain(..).collect();
+
+
+
+
     println!("apply gs deltas collisions 1");
     match bsp_collision_option {
 
@@ -125,36 +134,38 @@ pub fn apply_gamestate_delta_collisions (
  
 
 
-                for state_delta in delta_buffer.iter_mut() {
+                for state_delta in unmodified_deltas  {
 
                     println!("apply gs deltas collisions 2");
 
-                    match state_delta.command {
+                    match &state_delta.command {
                         
-                        DeltaCommand::TranslationMovement { 
-                            origin_loc, vector, speed, phys_move_type
-                        } =>  {
+                        DeltaCommand::TranslationMovement (translation) =>  {
 
-                            if body_has_collision(phys_move_type.into()) {
+                            if body_has_collision( translation.phys_move_type.into()) {
 
 
                                   //vector is always normalized to 1 
                                 //speed is typically 1 
-                                let proposed_end_loc = origin_loc.clone() + (vector.normalize() * speed);
+                                let proposed_end_loc = translation.origin_loc.clone() + (translation.vector.normalize() * translation.speed);
 
                                 let collision_trace = bsp_collision.trace_collision(
-                                    origin_loc, proposed_end_loc, 
+                                    translation.origin_loc, proposed_end_loc, 
                                     CollisionHullLayer::CHARACTER_LAYER );
+ 
+                                    modified_deltas.push(  state_delta.modify_via_collision_trace(collision_trace) ) ; 
 
-
-
+                              
                                     /*
                                     
                                             Maybe  trace w the X leg and trace w the Y leg separately and if either one hits, cancel out that portion of the vector 
+
+                                            Maybe get collision normal ! 
+                                    
                                     */
 
 
-                                println!( " trace is {:?}" , collision_trace );
+                               // println!( " trace is {:?}" , collision_trace );
 
 
                             }
@@ -162,7 +173,9 @@ pub fn apply_gamestate_delta_collisions (
 
                         },
                         
-                        _ => {}
+                        _ => {
+                            modified_deltas.push( state_delta ); 
+                        }
                     }
 
                     //delta.
@@ -181,6 +194,7 @@ pub fn apply_gamestate_delta_collisions (
     }
     
 
+    delta_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
     
 
 
@@ -264,7 +278,7 @@ fn apply_gamestate_delta_buffer(
         DeltaCommand::ReportLocation { loc } => {},
         DeltaCommand::ReportVelocity { angle } => {},
         DeltaCommand::ReportLookVector { angle } => {},
-        DeltaCommand::TranslationMovement { vector, origin_loc, speed, phys_move_type } => {
+        DeltaCommand::TranslationMovement  (translation) => {
             
 
             //if the suggest origin_loc is way off the past_origin , maybe we do something  -- ? 
@@ -274,7 +288,7 @@ fn apply_gamestate_delta_buffer(
 
            // let move_speed = 10.0;
             //println!("moving {} {} {}", vector.normalize().x, vector.normalize().y, vector.normalize().z);
-            let new_origin:Vector3<f32> = past_origin.clone() + (vector.normalize() * speed.to_owned());
+            let new_origin:Vector3<f32> = past_origin.clone() + (translation.vector.normalize() * translation.speed.to_owned());
     
             //walk
             physComp.set_origin(    new_origin  ) ;

@@ -546,6 +546,9 @@ impl BspCollisionHull {
                     }
                     BspCollisionNodeChild::Contents(near_c) => {
                         debug!("Found near leaf with contents {:?}", near_c);
+
+
+//                        plane.normal()
                         Trace::new(
                             TraceStart::new(start, 0.0),
                             TraceEnd::boundary(

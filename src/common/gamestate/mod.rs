@@ -23,8 +23,11 @@ pub mod entity;
 
 
 
+use crate::server::world::Trace;
+
 use self::system::physics::{ EntityPostureType, PhysMovementType};
 
+#[derive(Clone)]
 pub struct GameStateDelta {
 
     pub command: DeltaCommand,
@@ -47,7 +50,65 @@ impl GameStateDelta{
                 source_tick_count  
 
         }
-    }  
+    }
+
+
+    pub fn modify_via_collision_trace(self , trace:Trace ) -> GameStateDelta{
+        //self.command.modify_via_collision_trace( trace );
+
+        let command_type = &self.command; 
+
+        match command_type {
+
+            DeltaCommand::TranslationMovement (translation)=>  {
+ 
+                    
+                      
+                    let trace_end = trace.end();
+
+                    match trace_end.kind() {
+
+                        
+                        crate::server::world::TraceEndKind::Terminal =>  { 
+                            
+                            let mut result_delta = self.clone();
+                            let mut result_translation = translation.clone();
+
+                            result_translation.speed = -1.0 * result_translation.speed.abs();
+
+                            result_delta.command = DeltaCommand::TranslationMovement( result_translation );                            
+                            return result_delta;
+
+                          } 
+                        crate::server::world::TraceEndKind::Boundary(bound) => {
+
+                            //state_delta.command.
+
+                            let boundary_plane_normal = bound.plane.normal().clone();
+
+                            print!("boundary plane normal {:?}", boundary_plane_normal);
+ 
+
+                            let mut result_delta = self.clone();
+                            let mut result_translation = translation.clone();
+                            result_translation.speed = 0.0;
+                            result_delta.command = DeltaCommand::TranslationMovement( result_translation );  
+                            return result_delta;
+
+
+                        }
+                    }
+
+
+
+                 },
+
+            _ => {
+                        return self 
+                } //do nothing 
+        }
+    }
+
 }
 
 
@@ -185,6 +246,15 @@ impl GameStateDeltaBuffer {
 }
 
 
+#[derive(Clone)]
+pub struct MovementTranslation {
+    pub origin_loc: Vector3<f32>,
+    pub vector: Vector3<f32> ,
+    pub speed: f32,
+    pub phys_move_type: usize  
+
+
+}
 /*
     Each 'tick', a client is building an array of entity commands (every 33 ms).  At the end of that tick, 
     the client predictively applies that array of UserCommands to their local physical gamestate
@@ -199,17 +269,23 @@ impl GameStateDeltaBuffer {
 
  */
  
+#[derive(Clone)]
 pub enum DeltaCommand {
     ReportLocation { loc: Vector3<f32>   },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
     ReportVelocity { angle: Vector3< f32 >   } , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
 
     ReportLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
-    TranslationMovement { origin_loc: Vector3<f32>, vector: Vector3<f32> , speed: f32, phys_move_type: usize  }, //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
+    TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
 
     PerformEntityAction { action: DeltaAction , target_id: u32  },
 } 
 
+impl DeltaCommand {
 
+     
+
+
+}
 
 impl fmt::Display for DeltaCommand {
     // This trait requires `fmt` with this exact signature.
@@ -227,7 +303,7 @@ impl fmt::Display for DeltaCommand {
 }
 
 
-
+#[derive(Clone)]
 pub enum DeltaAction {
 
     BeginJump,

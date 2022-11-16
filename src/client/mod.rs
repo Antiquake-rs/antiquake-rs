@@ -63,7 +63,7 @@ use crate::{
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent}
+            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation}
     },
     server::{GameServer}
 };
@@ -1272,12 +1272,12 @@ impl Client {
                                 
                                 match movement_vector {
                                     Some(mov_vec) => {
-                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { 
+                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement (MovementTranslation { 
                                               origin_loc,
                                               vector: mov_vec,
                                               speed: movement_speed, 
                                               phys_move_type: movement_type_value // always walk type for now 
-                                             } ) ;
+                                             } )) ;
                                     },
                                     _ => {}
                                 }
