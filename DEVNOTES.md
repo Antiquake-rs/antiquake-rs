@@ -30,28 +30,23 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- -plan how to load BSP  collision boxes into ECS as a resource 
+ -add gravity 
+ -add jumping 
+
+- fix the main menu  -- also give it a custom bg texture ! 
+
+- come up with a game loop, a game theme and story and design 
 
 
 
- -- collision works but something is backwards !! 
 
-  
- 
 
- -  build in gravity and collision for the player character 
- - see server/world/phys for some early physics stuff 
- - going to need to somehow put brushes into components so they can be used/queried for collisions 
-- maybe convert worldrenderer to ECS so the brushes shapes are in the ecs ?
+
+ - i think clients need their own local GameStateDelta buffer and a server-based GameStateDelta ( but clients shouldnt apply the same delta twice -- maybe each has an ID )
+
 
  -  keep refactoring stuff out of ClientState 
   
- 
- 
--add collision   (in the gamedeltas system -- need to borrow the RenderModels to know abt collision size maybe ?  )
- 
- 
- 
 
 - upgrade src/client/mod so that the client has a 'PhysicalGameState' which is a virtual machine that advances by 33ms ticks.   This virtual machine is a replica to that which is on the server.  (see fn frame() )
 
@@ -67,7 +62,7 @@ gfx pipelines yay!!!
 - Make the spawnbaseline command happen automagically from the level state 
 - make the set view command give the client their actual client id number not always 1 
 
-     
+
  
 
 https://www.gamers.org/dEngine/quake/QDP/qnp.html#connection_req
@@ -77,22 +72,13 @@ https://fabiensanglard.net/quakeSource/quakeSourceNetWork.php
  
 
 -fix client state.rs >  fn update_listener , fn calc_final_view
-
-- need this to fire :  ServerCmd::FastUpdate(ent_update) => { 
-
-    src/client/mod 430 
-
-
+ 
  Connection {
             state: ref cl_state,
  
 
 
-IMPLEMENT THESE SLIMES : 
-https://quakewiki.org/wiki/player.qc
-https://quakewiki.org/wiki/client.qc
-
-
+IMPLEMENT MORE SLIMES  
 
 
 ## WORLD 
@@ -133,8 +119,6 @@ https://sunjay.dev/learn-game-dev/game-loop.html
 
 
 - turn spawn_entity_from_map -> execute program   back on (for progs.dat)
--complete the progs.dat engine ?  or build something else ??  (depends on trenchbroom output)
-
 
 
 -Try to import a map from trenchbroom and see if we can load it  
