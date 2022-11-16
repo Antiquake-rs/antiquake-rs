@@ -151,8 +151,7 @@ pub struct ClientState  {
     // the last two timestamps sent by the server (for lerping)
     pub msg_times: [Duration; 2],
     pub time: Duration,
-    pub lerp_factor: f32,
-
+    
     
 
     pub items: ItemFlags,
@@ -187,6 +186,11 @@ pub struct ClientState  {
     pub ecs_world: BevyWorld,
     pub ecs_tick_schedule: Schedule, //runs every tick  -- physics 
     pub ecs_frame_schedule: Schedule,
+
+
+
+    pub lerp_factor: f32,
+
 
 
     pub worldspawn_render_data: Option<WorldspawnRenderData>,  
@@ -372,6 +376,7 @@ impl ClientState {
 
     
     fn init_ecs(&mut self){
+        let prep_phys_stage:&str = "prep_phys";
         let gravity_stage:&str = "gravity";
         let collision_stage:&str = "collision";
         let movement_stage:&str = "movement";
@@ -382,8 +387,10 @@ impl ClientState {
         //add plugins , add resources 
 
 
+        self.ecs_tick_schedule.add_stage(prep_phys_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(prep_phys_stage, ecs_systems::physics::prep_phys_system); 
 
-        self.ecs_tick_schedule.add_stage(gravity_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_stage_after(prep_phys_stage,gravity_stage, SystemStage::single_threaded() );
         self.ecs_tick_schedule.add_system_to_stage(gravity_stage, ecs_systems::physics::apply_gravity_system);       
 
         self.ecs_tick_schedule.add_stage_after(gravity_stage, collision_stage, SystemStage::single_threaded() );
@@ -438,12 +445,16 @@ impl ClientState {
 
         let cl_nolerp = Client::cvar_value(cvars,"cl_nolerp")?;
         let sv_gravity = Client::cvar_value(cvars,"sv_gravity")?;
+
+
+        self.lerp_factor = self.tick_counter.get_progress_pct();
+        if self.lerp_factor > 1.0 { self.lerp_factor = 1.0 }
           
 
 
             //MOVE ALL THESE INTO ECS 
 
-        self.update_interp_ratio(cl_nolerp);
+        //self.update_interp_ratio(cl_nolerp);
 
         //this need to happen in the special ticks since we are running a predictive sim now -- not getting absolute positions from server only DELTAS !
         // interpolate entity data and spawn particle effects, lights
@@ -629,7 +640,7 @@ impl ClientState {
     ///
     /// This calculates the ratio used to interpolate entities between the last
     /// two updates from the server.
-    pub fn update_interp_ratio(&mut self, cl_nolerp: f32) {
+   /* pub fn update_interp_ratio(&mut self, cl_nolerp: f32) {
         if cl_nolerp != 0.0 {
             self.time = self.msg_times[0];
             self.lerp_factor = 1.0;
@@ -683,7 +694,7 @@ impl ClientState {
         }
     }
 
-
+*/ 
  
 
 

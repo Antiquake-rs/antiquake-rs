@@ -584,6 +584,7 @@ impl WorldRenderer {
         cvars: &CvarRegistry,
         
         unit_iter: &mut QueryIter<  ( &PhysicsComponent, &RenderModelComponent ), () > ,
+        lerp_factor: f32,
  
     )  {  
 
@@ -608,7 +609,7 @@ impl WorldRenderer {
         info!("Drawing entities");
         for (ent_pos, (phys_comp, render_model_comp)) in (unit_iter).enumerate() { 
 
-            let unit_origin = phys_comp.origin.clone();
+            let unit_origin = phys_comp.get_origin_lerped(lerp_factor);
             let unit_angles = phys_comp.angles.clone();
             let unit_model_id = render_model_comp.model_id;
             let unit_frame_id = render_model_comp.frame_id;

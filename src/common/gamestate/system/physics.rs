@@ -111,6 +111,15 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
     //https://bevy-cheatbook.github.io/programming/world.html
 
 
+
+
+    pub fn prep_phys_system ( 
+        mut query: Query<&mut PhysicsComponent> 
+    ){  
+        for mut phys_comp in query.iter_mut(){
+            phys_comp.prep();
+        }
+    }
 /* 
     pub fn apply_collision_to_gamestate_delta (
         mut delta_buffer: ResMut<GameStateDeltaBuffer>,
@@ -139,6 +148,10 @@ pub fn apply_gravity_system (
  
  
     for mut phys_comp in query.iter_mut(){
+
+
+
+
        
         let unit_height = phys_comp.unit_height();
 

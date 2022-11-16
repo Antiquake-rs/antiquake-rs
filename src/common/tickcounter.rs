@@ -47,6 +47,11 @@ impl TickCounter {
        
     }
 
+
+    pub fn get_progress_pct(&self)-> f32 {
+        return self.tick_accumulator.num_milliseconds() as f32 / self.tick_period.num_milliseconds() as f32;
+    }
+
  
 
 

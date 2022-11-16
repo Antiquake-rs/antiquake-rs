@@ -822,7 +822,8 @@ impl ClientRenderer {
                         let lightstyle_values = cl_state.lightstyle_values().unwrap();
                         let lightstyle_value_slices  = lightstyle_values.as_slice();
 
-                     
+                        let lerp_factor = cl_state.lerp_factor.clone();
+
 
                         let worldspawn_render_data = &cl_state.worldspawn_render_data;
                         // get the world data from the ECS , it should not be baked into 'world' 
@@ -850,7 +851,7 @@ impl ClientRenderer {
                            //should really only render VISIBLE entities (ones visible to player controlled unit camera)--  fix that later 
                            let mut phys_render_query =  ecs_world.query::< ( &PhysicsComponent, &RenderModelComponent ) >();
                            let mut unit_iter = phys_render_query.iter( ecs_world ) ;
-   
+                          
 
                         world_renderer.render_bodies(
                             gfx_state,
@@ -862,6 +863,7 @@ impl ClientRenderer {
                             client_viewmodel_id,   
                             cvars, 
                             &mut unit_iter,  
+                            lerp_factor
                             
                         );
 
