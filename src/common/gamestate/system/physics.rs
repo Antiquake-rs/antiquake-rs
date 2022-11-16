@@ -19,7 +19,7 @@ pub enum PhysMovementType {
     Hover = 1,
     Fly = 2,
     NoClip = 3,
-    Swim = 4 
+    Swim = 4   //should swimming be a type like this?  probably not actually 
 }
 
 //do this a better way ? 
@@ -137,13 +137,12 @@ pub fn apply_gravity_system (
     let gravity_accel = Vector3::new(0.0,0.0,-0.9);
     let water_accel = Vector3::new(0.0,0.0,-0.2);
  
-
-    let unit_height = 40.0; 
-
+ 
     for mut phys_comp in query.iter_mut(){
        
+        let unit_height = phys_comp.unit_height();
 
-       // let CHECK_DIST = 80.0;
+       
 
         let start_loc = phys_comp.origin  + (gravity_accel.normalize()   * -5.0 ) ;  
         let proposed_end_loc = phys_comp.origin  + (gravity_accel.normalize() * unit_height);
@@ -193,9 +192,7 @@ pub fn apply_gravity_system (
                             phys_comp.origin.z = trace_start_point.z  ;
                         }
                     }
-
-
-
+ 
 
             }
 
@@ -274,16 +271,12 @@ pub fn apply_gamestate_delta_collisions (
                 modified_deltas.push( state_delta ); 
             }
         }
-
-        
-
+ 
     }
-
-  
+ 
 
     delta_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
-    
-
+     
 
 }
 
@@ -395,11 +388,12 @@ fn apply_gamestate_delta_buffer(
 ){
 
 
-    let unit_height = 40.0; 
-
+  
     
     for mut phys_comp in query.iter_mut(){
         
+        let unit_height = phys_comp.unit_height();
+
 
         //ignore insignificant velocities to speed up this system 
         if phys_comp.velocity.magnitude() < 0.0000001 { continue; }
@@ -421,12 +415,9 @@ fn apply_gamestate_delta_buffer(
             phys_comp.set_velocity(Vector3::new(0.0,0.0,0.0));
 
         } 
-
  
         phys_comp.origin = phys_comp.origin + phys_comp.velocity; 
-                    
-        
-
+    
     }
 
 

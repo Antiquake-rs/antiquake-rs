@@ -64,4 +64,8 @@ impl PhysicsComponent {
                 
     }
 
+    pub fn unit_height(&self) -> f32 {
+        return 40.0 
+    }
+
 }

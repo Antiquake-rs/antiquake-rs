@@ -30,8 +30,9 @@ gfx pipelines yay!!!
 
 #### Next Steps 
  
- -add gravity 
+ 
  -add jumping 
+ -add swimming 
 
 - fix the main menu  -- also give it a custom bg texture ! 
 
