@@ -1,10 +1,10 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
-use crate::common::gamestate::{
+use crate::common::{gamestate::{
     component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
     entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer} 
-};
+}, bsp::BspLeafPhysMaterial};
  
 #[derive(Clone)]
 pub enum EntityPostureType {
@@ -126,8 +126,7 @@ pub fn apply_gamestate_delta_collisions (
 
 
 
-
-    println!("apply gs deltas collisions 1");
+ 
     match bsp_collision_option {
 
         Some(bsp_collision) => {
@@ -136,8 +135,7 @@ pub fn apply_gamestate_delta_collisions (
 
                 for state_delta in unmodified_deltas  {
 
-                    println!("apply gs deltas collisions 2");
-
+                    
                     match &state_delta.command {
                         
                         DeltaCommand::TranslationMovement (translation) =>  {
@@ -145,16 +143,35 @@ pub fn apply_gamestate_delta_collisions (
                             if body_has_collision( translation.phys_move_type.into()) {
 
 
+                                let CHECK_DIST= 160.0;
+
                                   //vector is always normalized to 1 
                                 //speed is typically 1 
-                                let proposed_end_loc = translation.origin_loc.clone() + (translation.vector.normalize() * translation.speed);
+                                let start_loc = translation.origin_loc.clone() + (translation.vector.normalize() * 25.0); //helps get unstuck 
+                                let proposed_end_loc = translation.origin_loc.clone() + (translation.vector.normalize() * CHECK_DIST);
 
-                                let collision_trace = bsp_collision.trace_collision(
-                                    translation.origin_loc, proposed_end_loc, 
+                                let forwards_trace = bsp_collision.trace_collision(
+                                    start_loc, proposed_end_loc, 
                                     CollisionHullLayer::CHARACTER_LAYER );
- 
-                                    modified_deltas.push(  state_delta.modify_via_collision_trace(collision_trace) ) ; 
 
+                                let backwards_trace = bsp_collision.trace_collision(
+                                    proposed_end_loc,   start_loc,
+                                    CollisionHullLayer::CHARACTER_LAYER );
+                                     
+
+                                    println!( " trace is {:?}" , forwards_trace );
+
+                                    //fix me ! 
+
+                                    if  forwards_trace.contents_type() == BspLeafPhysMaterial::Solid                                        
+                                      {
+                                        modified_deltas.push(  state_delta.modify_via_collision_trace(forwards_trace) ) ; 
+                                    }else{
+                                        modified_deltas.push( state_delta );
+                                    } 
+
+
+                                  
                               
                                     /*
                                     
@@ -165,7 +182,7 @@ pub fn apply_gamestate_delta_collisions (
                                     */
 
 
-                               // println!( " trace is {:?}" , collision_trace );
+                              
 
 
                             }

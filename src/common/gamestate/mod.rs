@@ -60,9 +60,7 @@ impl GameStateDelta{
 
         match command_type {
 
-            DeltaCommand::TranslationMovement (translation)=>  {
- 
-                    
+            DeltaCommand::TranslationMovement (translation)=>  { 
                       
                     let trace_end = trace.end();
 
@@ -74,7 +72,7 @@ impl GameStateDelta{
                             let mut result_delta = self.clone();
                             let mut result_translation = translation.clone();
 
-                            result_translation.speed = -1.0 * result_translation.speed.abs();
+                            result_translation.speed = 0.0; //-1.0 * result_translation.speed.abs();
 
                             result_delta.command = DeltaCommand::TranslationMovement( result_translation );                            
                             return result_delta;
@@ -86,6 +84,7 @@ impl GameStateDelta{
 
                             let boundary_plane_normal = bound.plane.normal().clone();
 
+                            //need this to fire ! 
                             print!("boundary plane normal {:?}", boundary_plane_normal);
  
 

@@ -330,6 +330,10 @@ impl Trace {
         self.start_solid
     }
 
+    pub fn contents_type(&self) -> BspLeafPhysMaterial {
+        self.contents
+    }
+
     pub fn in_open(&self) -> bool {
         self.contents == BspLeafPhysMaterial::Empty
     }
