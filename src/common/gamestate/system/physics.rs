@@ -1,10 +1,10 @@
-use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::{system::{Query, Res, ResMut}, world::Mut};
 use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
-use crate::common::{gamestate::{
+use crate::{common::{gamestate::{
     component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
-    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer} 
-}, bsp::BspLeafPhysMaterial};
+    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce 
+}, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
 #[derive(Clone)]
 pub enum EntityPostureType {
@@ -131,6 +131,30 @@ pub fn calc_movement_vector( input_cmds: Vector3<i16>, facing: Vector3<Deg<f32>>
     } */
  
 
+ 
+
+fn get_ground_trace(
+    unit_origin: Vector3<f32>, 
+    extra_trace_dist: f32,
+    bsp_collision: &Res<BspCollisionResource>   ) -> Trace {
+ 
+
+        let gravity_accel = Vector3::new(0.0,0.0,-0.9);
+
+       // let unit_height = unit_height ;  
+
+       //flip these ?
+        let start_loc = unit_origin  + (gravity_accel.normalize()   * -5.0 ) + (gravity_accel.normalize() *  -1.0 * extra_trace_dist.abs() ) ;  
+        let proposed_end_loc = unit_origin  + (gravity_accel.normalize()  )    ;
+
+        let on_ground_trace = bsp_collision.trace_collision(
+            start_loc, proposed_end_loc, 
+            CollisionHullLayer::CHARACTER_LAYER );   
+
+        return on_ground_trace
+    
+
+}
 
 /*
 
@@ -151,11 +175,14 @@ pub fn apply_gravity_system (
 
 
 
-
        
-        let unit_height = phys_comp.unit_height();
-
-       
+        let unit_height = phys_comp.unit_height();  
+        let on_ground_trace = get_ground_trace( 
+            phys_comp.origin,  
+            0.0,
+            &bsp_collision  );
+        
+        /*let unit_height = phys_comp.unit_height();  
 
         let start_loc = phys_comp.origin  + (gravity_accel.normalize()   * -5.0 ) ;  
         let proposed_end_loc = phys_comp.origin  + (gravity_accel.normalize() * unit_height);
@@ -163,10 +190,10 @@ pub fn apply_gravity_system (
         let on_ground_trace = bsp_collision.trace_collision(
             start_loc, proposed_end_loc, 
             CollisionHullLayer::CHARACTER_LAYER );   
-
+                */
         
 
-            println!( "grav trace is {:?}" , on_ground_trace );
+       
         match on_ground_trace.contents_type() {
 
             BspLeafPhysMaterial::Empty => {
@@ -263,7 +290,7 @@ pub fn apply_gamestate_delta_collisions (
                         CollisionHullLayer::CHARACTER_LAYER );*/
                             
 
-                        println!( " trace is {:?}" , forwards_trace );
+                    //    println!( " trace is {:?}" , forwards_trace );
 
                         
 
@@ -279,6 +306,69 @@ pub fn apply_gamestate_delta_collisions (
                 
 
             },
+
+            DeltaCommand::PerformEntityAction  {  action } =>  {
+
+                match action {
+
+                    DeltaAction::BeginJump {origin} => {
+
+                        //let unit_height = 40.0;  
+                        let on_ground_trace = get_ground_trace( origin.clone(),  5.0, &bsp_collision ); 
+                        println!("PERF JUMP 1");
+                        println!( "jump  trace is {:?}" , on_ground_trace );
+                            match on_ground_trace.contents_type() {
+
+                                
+                                BspLeafPhysMaterial::Water => {
+                                    modified_deltas.push( GameStateDelta { 
+                                        command: DeltaCommand::ApplyForce(AppliedForce {
+                                             origin_loc: origin.clone(),
+                                             acceleration: Vector3::new(0.0,0.0,4.0) ,  
+                                             phys_move_type: PhysMovementType::Walk as usize ,
+                                             unit_mass: 100.0 
+                                          }), 
+                                        source_unit_id: state_delta.source_unit_id, 
+                                        source_player_id: state_delta.source_player_id, 
+                                        source_tick_count:state_delta.source_tick_count
+                                     } ); 
+                                    
+                                }
+                    
+                    
+                                BspLeafPhysMaterial::Solid => {
+                                    println!("PERF JUMP 2");
+                                    modified_deltas.push( GameStateDelta { 
+                                        command: DeltaCommand::ApplyForce(AppliedForce {
+                                             origin_loc: origin.clone(),
+                                             acceleration: Vector3::new(0.0,0.0,8.0) ,  
+                                             phys_move_type: PhysMovementType::Walk as usize,
+                                             unit_mass: 100.0 
+                                          }), 
+                                        source_unit_id: state_delta.source_unit_id, 
+                                        source_player_id: state_delta.source_player_id, 
+                                        source_tick_count:state_delta.source_tick_count
+                                     } ); 
+                                }
+                            // modified_deltas.push( state_delta ); 
+
+                            _ => { 
+                                //cant jump in other things atm 
+                             }
+                            }
+
+                    } 
+
+                    _ => {
+
+                        modified_deltas.push( state_delta ); 
+    
+                      }
+                }
+             
+            }
+
+
             
             _ => {
                 modified_deltas.push( state_delta ); 
@@ -382,7 +472,28 @@ fn apply_gamestate_delta_buffer(
             physComp.set_origin(  new_origin  ) ;
 
         },
-        DeltaCommand::PerformEntityAction { action, target_id } => {},
+
+        _ => {}
+       /*  DeltaCommand::PerformEntityAction { action  } => {
+
+
+            match action {
+                
+                DeltaAction::BeginJump => {
+
+                    let jump_accel = Vector3::new(0.0,0.0,200.0);
+
+                    //make sure we are on the ground 
+
+                    physComp.apply_acceleration_to_velocity(  jump_accel  ) ;
+
+                }
+                _ => {}
+            }
+
+        },
+            */
+ 
     }
 
     

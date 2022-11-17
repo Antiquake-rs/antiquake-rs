@@ -295,7 +295,7 @@ pub enum DeltaCommand {
     TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
     ApplyForce ( AppliedForce ), //used to modify velocity -- typically for gravity and explosions and stuff.  Hitting a wall makes XY velocity go to zero, hitting ground makes Z velocity 0
 
-    PerformEntityAction { action: DeltaAction , target_id: u32  },
+    PerformEntityAction { action: DeltaAction    },
 } 
 
 impl DeltaCommand {
@@ -315,7 +315,7 @@ impl fmt::Display for DeltaCommand {
             DeltaCommand::ReportVelocity { angle } => write!(f, "ReportVelocityVector" ),
             DeltaCommand::ReportLookVector { angle } => write!(f, "SetLookVector" ),
             DeltaCommand::TranslationMovement {  ..  } =>write!(f, "SetMovementVector" ),
-            DeltaCommand::PerformEntityAction { action, target_id } => write!(f, "PerformEntityAction" ),
+            DeltaCommand::PerformEntityAction { action  } => write!(f, "PerformEntityAction" ),
             DeltaCommand::ApplyForce( .. ) => write!(f, "ApplyForce" ),
         }
     }
@@ -325,8 +325,9 @@ impl fmt::Display for DeltaCommand {
 #[derive(Clone)]
 pub enum DeltaAction {
 
-    BeginJump,
+    BeginJump {origin: Vector3<f32> }, //put this here ?  
 
+    Interact { targetId: u32  }, //trigger 
 
     EquipWeapon { slotId: u32, weaponId: u32 },  //this can affect an entities equipped abilities! But of course in a totally deterministic way.  Usually the slot is always 0 but having 1 would allow dual wield! 
 

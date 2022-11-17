@@ -34,13 +34,21 @@ gfx pipelines yay!!!
  -add jumping 
  -add swimming 
 
+
+change 'report look vector' to 'report entity phys state' and make each thing be an option -- serialize w flags.  
+
+
 - fix the main menu  -- also give it a custom bg texture ! 
 
 - come up with a game loop, a game theme and story and design 
 
 
 
+-add GLTF model loading 
+-allow for loading any map,  make multiplayer work
 
+- we r building death run (make a vertical slice) 
+- make a crowbar-like weapon ppl can spam on glass bc its fun to do that 
 
 
  - i think clients need their own local GameStateDelta buffer and a server-based GameStateDelta ( but clients shouldnt apply the same delta twice -- maybe each has an ID )
@@ -101,13 +109,7 @@ Reference the real quake server code : https://github.com/id-Software/Quake/blob
 - client and server need a proper gamestate tick loop: 
 https://stackoverflow.com/questions/28008549/limit-while-loop-to-run-at-30-fps-using-a-delta-variable-c
 
-(i have done this before! )
-(maybe we do this w bevy tick timers! )
-https://github.com/bevyengine/bevy/blob/main/examples/ecs/fixed_timestep.rs
-https://crates.io/crates/game-loop
-https://sunjay.dev/learn-game-dev/game-loop.html
-
-
+ 
  
  
  - fix client/state.rs  788 

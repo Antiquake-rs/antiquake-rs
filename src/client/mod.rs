@@ -58,12 +58,12 @@ use crate::{
             self,
             server::{ConnectSocket, Request, Response, CONNECT_PROTOCOL_VERSION},
             BlockingMode, ClientCmd, ClientStat, ColorShift, UnitEffects, UnitState, GameType,
-            NetError, PlayerColor, QSocket, ServerCmd, SignOnStage,
+            NetError, PlayerColor, QSocket, ServerCmd, SignOnStage, ButtonFlags,
         },
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation}
+            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation, DeltaAction}
     },
     server::{GameServer}
 };
@@ -1254,7 +1254,8 @@ impl Client {
                                 
                                 let look_angle = angles.clone();
         
-                               
+                                
+                                //change this to 'report entity data' and make the things be options 
                                 state.push_to_gamestate_deltas(  DeltaCommand::ReportLookVector{  angle:look_angle   }  );
                                
         
@@ -1277,6 +1278,16 @@ impl Client {
                                              } )) ;
                                     },
                                     _ => {}
+                                }
+
+
+                                if  button_flags.bits() & ButtonFlags::JUMP.bits() > 0  {
+                                    println!(" JUMPING ");
+                                    state.push_to_gamestate_deltas( 
+                                         DeltaCommand::PerformEntityAction { 
+                                        action: DeltaAction::BeginJump { origin: origin_loc }  
+                                    }  );
+                               
                                 }
 
 
