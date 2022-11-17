@@ -29,11 +29,8 @@ gfx pipelines yay!!!
 
 
 #### Next Steps 
- 
- 
- - only allow for 1 jump   (have to see no ground trace then see ground trace again )
- -add swimming 
-
+-build a map 
+-integrate ECS into teh server ,  fix up server so a 2nd client can connect and they can see each other  
 
 change 'report look vector' to 'report entity phys state' and make each thing be an option -- serialize w flags.  
 

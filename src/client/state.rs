@@ -20,7 +20,7 @@ use crate::{
         model::{Model, ModelFlags, ModelKind, SyncType},
         net::{
             self, BeamEntityKind, ButtonFlags, ColorShift, UnitEffects, ItemFlags, PlayerData,
-            PointEntityKind, TempEntity,
+            PointEntityKind, TempEntity, QSocket,
         },
         vfs::Vfs, tickcounter::TickCounter, console::CvarRegistry,
          gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
@@ -195,12 +195,13 @@ pub struct ClientState  {
 
     pub worldspawn_render_data: Option<WorldspawnRenderData>,  
  
+ 
   //  pub client_gamestate_delta_buffer: GameStateDeltaBuffer,
 }
 
 impl ClientState {
     // TODO: add parameter for number of player slots and reserve them in entity list
-    pub fn new(stream: OutputStreamHandle) -> ClientState {
+    pub fn new(stream: OutputStreamHandle ) -> ClientState {
         
 
         //this is disgusting !!! break it into resources, components , systems 
@@ -274,7 +275,8 @@ impl ClientState {
             ecs_world: BevyWorld::new(),
             ecs_tick_schedule: Schedule::default(),
             ecs_frame_schedule: Schedule::default(),
-             
+            
+           
             
            // client_gamestate_delta_buffer: GameStateDeltaBuffer::new()
 
@@ -290,7 +292,7 @@ impl ClientState {
         stream: OutputStreamHandle,
         max_clients: u8,
         model_precache: Vec<String>,
-        sound_precache: Vec<String>,
+        sound_precache: Vec<String> 
     ) -> Result<ClientState, ClientError> {
 
 
@@ -343,7 +345,7 @@ impl ClientState {
              },
             
             max_players: max_clients as usize,  //put this in an ecs resource -- like server info 
-            ..ClientState::new(stream)
+            ..ClientState::new(stream  ) 
         })
     }
 
@@ -354,15 +356,17 @@ impl ClientState {
     }
 
       //This is called upon from_server_info -- after the server gives us the map files and after we load models and the map
-      pub fn on_loaded_models(&mut self) {
-        self.build_bsp_collision_hulls(  );
+    pub fn on_loaded_models(&mut self    ) {
+      
+      
+        self.build_bsp_collision_hulls(  ); 
+
+        self.init_ecs(); 
+
+        self.view.set_view_height( net::DEFAULT_VIEWHEIGHT );
 
 
 
-        self.init_ecs();
-        
-
-        self.view .set_view_height( net::DEFAULT_VIEWHEIGHT );
     }
 
 
@@ -382,6 +386,9 @@ impl ClientState {
         let collision_stage:&str = "collision";
         let movement_stage:&str = "movement";
         let velocity_stage:&str = "velocity";
+
+
+        let end_phys_stage:&str = "end_phys";
        // let phys_stage:&str = "phys";
        // let render_stage:&str = "render";
 
@@ -402,18 +409,23 @@ impl ClientState {
         
         self.ecs_tick_schedule.add_stage_after(movement_stage, velocity_stage, SystemStage::single_threaded() );
         self.ecs_tick_schedule.add_system_to_stage(velocity_stage, ecs_systems::physics::apply_phys_velocities_system);
-        
 
-        
 
-        //self.ecs_frame_schedule.add_stage(primary_stage, SystemStage::parallel() );
-       
-        //doing render in ecs would suck.. how would we do the menu then ?
-      //  self.ecs_frame_schedule.add_stage(render_stage, SystemStage::single_threaded() );
-     //   self.ecs_frame_schedule.add_system_to_stage(primary_stage, ecs_systems::render::render_pass);
+
+        //send gamestate deltas to server 
+
+        self.ecs_tick_schedule.add_stage_after(velocity_stage, end_phys_stage, SystemStage::single_threaded() );
+        self.ecs_tick_schedule.add_system_to_stage(end_phys_stage, ecs_systems::physics::cleanup_gamestate_deltas);
+        
+        
         
 
         self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
+          
+        //holds deltas that will be sent to the main server 
+        self.ecs_world.insert_resource(GameStateDeltaSendPool::new());
+
+
         self.ecs_world.insert_resource(RenderSceneConstants::new());
       
 

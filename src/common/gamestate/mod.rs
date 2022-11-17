@@ -131,7 +131,7 @@ impl fmt::Display for GameStateDelta {
 //these flags limit the commands to 1 per unit per tick 
 bitflags! {
 pub struct DeltaCommandFlags: u16 {
-    const ReportLookVector = 1 << 0;
+    const ReportEntityPhys = 1 << 0;
     const TranslationMovement = 1 << 1;
     const ReportLocation = 1 << 2;
     const ReportVelocity = 1 << 3;
@@ -141,9 +141,8 @@ pub struct DeltaCommandFlags: u16 {
 
 fn gamestate_delta_to_flag_type( delta:&GameStateDelta ) -> Option<DeltaCommandFlags> {
     match(delta.command){
-        DeltaCommand::ReportLocation { .. } => Some(DeltaCommandFlags::ReportLocation),
-        DeltaCommand::ReportVelocity { .. } => Some(DeltaCommandFlags::ReportVelocity),
-        DeltaCommand::ReportLookVector { .. } => Some(DeltaCommandFlags::ReportLookVector),
+        
+        DeltaCommand::ReportEntityPhys { .. } => Some(DeltaCommandFlags::ReportEntityPhys),
         DeltaCommand::TranslationMovement { .. } => Some(DeltaCommandFlags::TranslationMovement),
         DeltaCommand::ApplyForce { .. } => None,
         DeltaCommand::PerformEntityAction { .. } => None,
@@ -170,6 +169,7 @@ fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<usize,u16> ) 
     }
 
 }
+ 
 
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
@@ -213,6 +213,12 @@ impl GameStateDeltaBuffer {
     pub fn iter_mut( &mut self ) -> IterMut< GameStateDelta> {
 
         return self.deltas.iter_mut();       
+
+    }
+
+    pub fn clear( &mut self )  {
+
+        return self.deltas.clear();       
 
     }
 
@@ -288,10 +294,9 @@ pub struct MovementTranslation {
  
 #[derive(Clone)]
 pub enum DeltaCommand {
-    ReportLocation { loc: Vector3<f32>   },  //used by clients to tell the server where they THINK they are, and by the server to tell clients where they ACTUALLY are -- rubberband them back
-    ReportVelocity { angle: Vector3< f32 >   } , // used by the server to tell clients the ACTUAL entity velocity (incase an entity gets thrown by explosion ,etc)
+    
+    ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
-    ReportLookVector { angle: Vector3<Deg<f32>>    },//always normalized to magnitude of 1
     TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
     ApplyForce ( AppliedForce ), //used to modify velocity -- typically for gravity and explosions and stuff.  Hitting a wall makes XY velocity go to zero, hitting ground makes Z velocity 0
 
@@ -311,9 +316,8 @@ impl fmt::Display for DeltaCommand {
         
         
         match self {
-            DeltaCommand::ReportLocation { loc } =>write!(f, "ReportLocationVector" ),
-            DeltaCommand::ReportVelocity { angle } => write!(f, "ReportVelocityVector" ),
-            DeltaCommand::ReportLookVector { angle } => write!(f, "SetLookVector" ),
+         
+            DeltaCommand::ReportEntityPhys { .. } => write!(f, "ReportEntityPhys" ),
             DeltaCommand::TranslationMovement {  ..  } =>write!(f, "SetMovementVector" ),
             DeltaCommand::PerformEntityAction { action  } => write!(f, "PerformEntityAction" ),
             DeltaCommand::ApplyForce( .. ) => write!(f, "ApplyForce" ),

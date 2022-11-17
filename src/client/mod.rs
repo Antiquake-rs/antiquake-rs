@@ -269,7 +269,7 @@ pub struct Connection {
     state: ClientState,
     conn_state: ConnectionState,
     kind: ConnectionKind,
-   
+    gamestate_delta_send_pool: GameStateDeltaSendPool
 }
 
 
@@ -382,7 +382,6 @@ impl Connection {
         use ConnectionStatus::*;
 
  
-        //println!("client parsing server msg ");
 
         let (msg, demo_view_angles, track_override) = match self.kind {
             ConnectionKind::Server { ref mut qsock, .. } => {
@@ -578,12 +577,13 @@ impl Connection {
                         _game_type: game_type,
                     };
 
+                    
                     self.state = ClientState::from_server_info(
                         vfs,
                         self.state.mixer.stream(),
                         max_clients,
                         model_precache,
-                        sound_precache,
+                        sound_precache 
                     )?;
 
                     self.state.on_loaded_models();
@@ -858,10 +858,7 @@ impl Connection {
         cmds: &mut CmdRegistry,
         console: &mut Console,
         music_player: &mut MusicPlayer,
-        //idle_vars: IdleVars,
-        //kick_vars: KickVars,
-        //roll_vars: RollVars,
-        //bob_vars: BobVars,
+         
 
         cvars: &CvarRegistry
         //cl_nolerp: f32,
@@ -882,6 +879,9 @@ impl Connection {
         let accum =  self.state.advance_time(frame_time, cvars, is_connected)?;
 
 
+        self.flush_gamestate_send_pool();
+
+
         //why are we passing so much stuff in here... ? 
         match self.parse_server_msg(vfs, gfx_state, cmds, console, music_player, kick_vars)? {
             ConnectionStatus::Maintain => (),
@@ -889,7 +889,7 @@ impl Connection {
             s => return Ok(s),
         };
 
-
+        
  
        
         if let ConnectionKind::Server {
@@ -910,6 +910,20 @@ impl Connection {
 
         Ok(ConnectionStatus::Maintain)
     }
+
+
+    /*
+    
+        Drain all of the deltas in the 'gamestate send pool' resource within 'state' and put them into the qsock buffer so they can be sent to the server 
+
+    */
+    fn flush_gamestate_send_pool(){
+
+        todo!()
+        
+    }
+
+
 }
 
 pub struct Client {
@@ -1108,7 +1122,7 @@ impl Client {
                             demo_file.as_mut().and_then(|df| match DemoServer::new(df) {
                                 Ok(d) => Some(Connection {
                                     kind: ConnectionKind::Demo(d),
-                                    state: ClientState::new(self.output_stream_handle.clone()),
+                                    state: ClientState::new(self.output_stream_handle.clone() ),
                                     conn_state: ConnectionState::SignOn(SignOnStage::Prespawn),
                                 }),
                                 Err(e) => {
@@ -1256,7 +1270,11 @@ impl Client {
         
                                 
                                 //change this to 'report entity data' and make the things be options 
-                                state.push_to_gamestate_deltas(  DeltaCommand::ReportLookVector{  angle:look_angle   }  );
+                                state.push_to_gamestate_deltas(  DeltaCommand::ReportEntityPhys{  
+                                    origin: Some(origin_loc),
+                                    look: Some(look_angle),
+                                    velocity: None 
+                                   }  );
                                
         
                                 let inputs_cmd_vector = Vector3::new(fwd_move  , side_move , up_move).clone();

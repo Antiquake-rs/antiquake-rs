@@ -399,9 +399,10 @@ pub fn update_physics_movement(
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
     mut query: Query<(&mut PhysicsComponent)> 
 ){
+    let mut delta_send_buffer:Vec<GameStateDelta> = Vec::new();
 
     //for each delta buffer, apply it to the corresponding entitys phys component
-    while  !delta_buffer.is_empty(){
+    while !delta_buffer.is_empty(){
         
         let next_delta = delta_buffer.pop();
         
@@ -430,17 +431,21 @@ pub fn update_physics_movement(
                   
                
                  
-
-            }
+                delta_send_buffer.push(delta);
+            }   
             _ => {}
 
         }
      
-
+       
     }
 
     delta_buffer.reset_flags();
 
+
+    for d in delta_send_buffer.drain( .. ){ 
+        delta_buffer.push(d);
+    } 
  
 
 }
@@ -452,9 +457,8 @@ fn apply_gamestate_delta_buffer(
 
 
     match &delta.command {
-        DeltaCommand::ReportLocation { loc } => {},
-        DeltaCommand::ReportVelocity { angle } => {},
-        DeltaCommand::ReportLookVector { angle } => {},
+      
+        DeltaCommand::ReportEntityPhys { .. } => {},
         DeltaCommand::ApplyForce (force) => {
 
             let acceleration = force.get_scaled_force() ;
@@ -505,6 +509,16 @@ fn apply_gamestate_delta_buffer(
     
  }
 
+
+pub fn drain_gamestate_deltas (
+    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+    mut send_pool: ResMut<GameStateSendPool>,
+
+){
+    for delta in delta_buffer.deltas.drain(..){ 
+        send_pool.push( delta )
+    }
+}
 
  /*
  
