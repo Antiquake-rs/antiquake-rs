@@ -48,7 +48,7 @@ impl View {
     pub fn new() -> View {
         View {
             unit_id: 0,
-            view_height: 0.0,
+            view_height: 22.0,
             ideal_pitch: Deg(0.0),
             msg_angles: [Angles::zero(); 2],
             input_angles: Angles::zero(),

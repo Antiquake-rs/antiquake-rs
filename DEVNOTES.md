@@ -31,7 +31,7 @@ gfx pipelines yay!!!
 #### Next Steps 
  
  
- -add jumping 
+ - only allow for 1 jump   (have to see no ground trace then see ground trace again )
  -add swimming 
 
 

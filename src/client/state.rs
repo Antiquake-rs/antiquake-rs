@@ -360,8 +360,9 @@ impl ClientState {
 
 
         self.init_ecs();
+        
 
-
+        self.view .set_view_height( net::DEFAULT_VIEWHEIGHT );
     }
 
 
@@ -994,6 +995,9 @@ impl ClientState {
 
     //this should not happen like this --- do more like ECS 
     pub fn update_player(&mut self, update: PlayerData) {
+
+
+
         self.view
             .set_view_height(update.view_height.unwrap_or(net::DEFAULT_VIEWHEIGHT));
         self.view

@@ -139,14 +139,18 @@ fn get_ground_trace(
     bsp_collision: &Res<BspCollisionResource>   ) -> Trace {
  
 
-        let gravity_accel = Vector3::new(0.0,0.0,-0.9);
+        let vertical_axis = Vector3::new(0.0,0.0,1.0);
 
        // let unit_height = unit_height ;  
+ 
+
+       // + (gravity_accel.normalize() *  -1.0 * extra_trace_dist.abs() )
 
        //flip these ?
-        let start_loc = unit_origin  + (gravity_accel.normalize()   * -5.0 ) + (gravity_accel.normalize() *  -1.0 * extra_trace_dist.abs() ) ;  
-        let proposed_end_loc = unit_origin  + (gravity_accel.normalize()  )    ;
+        let start_loc  = unit_origin  + (vertical_axis  *   1.0  *  extra_trace_dist.abs() ) ;  
+        let proposed_end_loc  = unit_origin + (vertical_axis  * -5.0 ) + (vertical_axis  *  -1.0  *  extra_trace_dist.abs() )     ;
 
+      //  println!("get ground trace {:?} {:?}", start_loc, proposed_end_loc );
         let on_ground_trace = bsp_collision.trace_collision(
             start_loc, proposed_end_loc, 
             CollisionHullLayer::CHARACTER_LAYER );   
@@ -179,7 +183,7 @@ pub fn apply_gravity_system (
         let unit_height = phys_comp.unit_height();  
         let on_ground_trace = get_ground_trace( 
             phys_comp.origin,  
-            0.0,
+            4.0,
             &bsp_collision  );
         
         /*let unit_height = phys_comp.unit_height();  
@@ -206,9 +210,7 @@ pub fn apply_gravity_system (
 
 
             BspLeafPhysMaterial::Solid => {
-                
-
-                        
+                  
                  
                     //pop out of world if under it 
                     let trace_end_point = on_ground_trace.end_point();
@@ -216,8 +218,8 @@ pub fn apply_gravity_system (
                     let ground_z = trace_end_point.z;
 
                     //if units feet are under ground 
-                    if  phys_comp.origin.z  < ground_z +unit_height && !solid_start{            
-                        phys_comp.origin.z = ground_z + unit_height;
+                    if  phys_comp.origin.z  < ground_z  && !solid_start{            
+                        phys_comp.origin.z = ground_z ;
                     }
 
 
@@ -227,9 +229,10 @@ pub fn apply_gravity_system (
 
                         let trace_start_point = on_ground_trace.start_point();
 
+                        //4 is the extra dist 
                         //as far as we know, ground is above the start point so start moving towards there 
-                        if  phys_comp.origin.z  < trace_start_point.z    {            
-                            phys_comp.origin.z = trace_start_point.z  ;
+                        if  phys_comp.origin.z  < trace_start_point.z     {            
+                            phys_comp.origin.z = trace_start_point.z   ;   //this puts the origin right at the collision plane !
                         }
                     }
  
@@ -261,7 +264,7 @@ pub fn apply_gamestate_delta_collisions (
     let unmodified_deltas:Vec<GameStateDelta> = delta_buffer.deltas.drain(..).collect(); 
 
     
-    let unit_height = 40.0; 
+    let unit_height = 22.0; 
     let vertical_vector = Vector3::new(0.0,0.0,1.0);
 
     for state_delta in unmodified_deltas  {
@@ -314,7 +317,10 @@ pub fn apply_gamestate_delta_collisions (
                     DeltaAction::BeginJump {origin} => {
 
                         //let unit_height = 40.0;  
-                        let on_ground_trace = get_ground_trace( origin.clone(),  5.0, &bsp_collision ); 
+                        let on_ground_trace = get_ground_trace( 
+                            origin.clone(),  
+                             8.0, 
+                            &bsp_collision ); 
                         println!("PERF JUMP 1");
                         println!( "jump  trace is {:?}" , on_ground_trace );
                             match on_ground_trace.contents_type() {
