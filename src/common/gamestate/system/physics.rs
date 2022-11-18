@@ -3,7 +3,7 @@ use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
 use crate::{common::{gamestate::{
     component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
-    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce 
+    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect 
 }, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
 #[derive(Clone)]
@@ -255,8 +255,8 @@ pub fn apply_gravity_system (
 
 pub fn apply_gamestate_delta_collisions (
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    bsp_collision: Res<BspCollisionResource>
-     
+    mut effects_buffer: ResMut<GameStateEffectsBuffer>,
+    bsp_collision: Res<BspCollisionResource>     
 ) {
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
@@ -327,16 +327,16 @@ pub fn apply_gamestate_delta_collisions (
 
                                 
                                 BspLeafPhysMaterial::Water => {
-                                    modified_deltas.push( GameStateDelta { 
-                                        command: DeltaCommand::ApplyForce(AppliedForce {
+                                    effects_buffer.push( GameStateEffect { 
+                                        effect: DeltaEffect::ApplyForce(AppliedForce {
                                              origin_loc: origin.clone(),
                                              acceleration: Vector3::new(0.0,0.0,4.0) ,  
                                              phys_move_type: PhysMovementType::Walk as usize ,
                                              unit_mass: 100.0 
                                           }), 
-                                        source_unit_id: state_delta.source_unit_id, 
-                                        source_player_id: state_delta.source_player_id, 
-                                        source_tick_count:state_delta.source_tick_count
+                                        unit_id: state_delta.source_unit_id, 
+                                      
+                                        tick_count:state_delta.source_tick_count
                                      } ); 
                                     
                                 }
@@ -344,16 +344,16 @@ pub fn apply_gamestate_delta_collisions (
                     
                                 BspLeafPhysMaterial::Solid => {
                                     println!("PERF JUMP 2");
-                                    modified_deltas.push( GameStateDelta { 
-                                        command: DeltaCommand::ApplyForce(AppliedForce {
+                                    effects_buffer.push( GameStateEffect { 
+                                        effect: DeltaEffect::ApplyForce(AppliedForce {
                                              origin_loc: origin.clone(),
                                              acceleration: Vector3::new(0.0,0.0,8.0) ,  
                                              phys_move_type: PhysMovementType::Walk as usize,
                                              unit_mass: 100.0 
                                           }), 
-                                        source_unit_id: state_delta.source_unit_id, 
-                                        source_player_id: state_delta.source_player_id, 
-                                        source_tick_count:state_delta.source_tick_count
+                                          unit_id: state_delta.source_unit_id, 
+                                      
+                                          tick_count:state_delta.source_tick_count
                                      } ); 
                                 }
                             // modified_deltas.push( state_delta ); 
@@ -393,7 +393,7 @@ pub fn apply_gamestate_delta_collisions (
 
 
 //applies gamestate delta buffers 
-pub fn update_physics_movement(
+pub fn process_gamestate_deltas_system(
     // unit id registry 
     entity_lookup: Res<BevyEntityLookupRegistry>,
     mut delta_buffer: ResMut<GameStateDeltaBuffer>,
@@ -450,6 +450,8 @@ pub fn update_physics_movement(
 
 }
 
+
+
 fn apply_gamestate_delta_buffer( 
      delta:  &GameStateDelta ,
      physComp: &mut PhysicsComponent
@@ -459,13 +461,7 @@ fn apply_gamestate_delta_buffer(
     match &delta.command {
       
         DeltaCommand::ReportEntityPhys { .. } => {},
-        DeltaCommand::ApplyForce (force) => {
-
-            let acceleration = force.get_scaled_force() ;
-
-            physComp.apply_acceleration_to_velocity(  acceleration  ) ;
-
-        },
+       
         DeltaCommand::TranslationMovement  (translation) => {
             
 
@@ -508,6 +504,32 @@ fn apply_gamestate_delta_buffer(
 
     
  }
+
+
+
+
+fn process_gamestate_effects_system(
+    entity_lookup: Res<BevyEntityLookupRegistry>,
+    mut effects_buffer: ResMut<GameStateEffectsBuffer>,
+    mut query: Query<(&mut PhysicsComponent)> 
+
+) {
+   
+
+
+    match &effect_delta.effect {
+
+        DeltaEffect::ApplyForce (force) => {
+
+            let acceleration = force.get_scaled_force() ;
+
+            physComp.apply_acceleration_to_velocity(  acceleration  ) ;
+
+        },
+
+    }
+
+}
 
 
 pub fn drain_gamestate_deltas (

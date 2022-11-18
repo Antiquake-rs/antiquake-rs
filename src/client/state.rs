@@ -405,7 +405,8 @@ impl ClientState {
         self.ecs_tick_schedule.add_system_to_stage(collision_stage, ecs_systems::physics::apply_gamestate_delta_collisions);
        
         self.ecs_tick_schedule.add_stage_after(collision_stage, movement_stage, SystemStage::single_threaded() );
-        self.ecs_tick_schedule.add_system_to_stage(movement_stage, ecs_systems::physics::update_physics_movement);
+        self.ecs_tick_schedule.add_system_to_stage(movement_stage, ecs_systems::physics::process_gamestate_deltas_system); 
+        self.ecs_tick_schedule.add_system_to_stage(movement_stage, ecs_systems::physics::process_gamestate_effects_system);
         
         self.ecs_tick_schedule.add_stage_after(movement_stage, velocity_stage, SystemStage::single_threaded() );
         self.ecs_tick_schedule.add_system_to_stage(velocity_stage, ecs_systems::physics::apply_phys_velocities_system);

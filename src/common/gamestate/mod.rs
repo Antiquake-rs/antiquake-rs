@@ -27,6 +27,23 @@ use crate::server::world::Trace;
 
 use self::system::physics::{ EntityPostureType, PhysMovementType};
 
+
+
+/*
+These always remain internal to the gamestate VM 
+ */
+#[derive(Clone)]
+pub struct GameStateEffect {
+    pub effect: DeltaEffect,
+    pub unit_id: usize, 
+    pub tick_count: usize, 
+}
+
+
+
+/*
+    These are passed around on the network
+*/
 #[derive(Clone)]
 pub struct GameStateDelta {
 
@@ -51,6 +68,8 @@ impl GameStateDelta{
 
         }
     }
+
+    
 
 
     pub fn modify_via_collision_trace(self , trace:Trace ) -> GameStateDelta{
@@ -114,6 +133,7 @@ impl GameStateDelta{
 
 
 
+
 impl fmt::Display for GameStateDelta {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -132,9 +152,7 @@ impl fmt::Display for GameStateDelta {
 bitflags! {
 pub struct DeltaCommandFlags: u16 {
     const ReportEntityPhys = 1 << 0;
-    const TranslationMovement = 1 << 1;
-    const ReportLocation = 1 << 2;
-    const ReportVelocity = 1 << 3;
+    const TranslationMovement = 1 << 1; 
 }
 }
 
@@ -144,7 +162,7 @@ fn gamestate_delta_to_flag_type( delta:&GameStateDelta ) -> Option<DeltaCommandF
         
         DeltaCommand::ReportEntityPhys { .. } => Some(DeltaCommandFlags::ReportEntityPhys),
         DeltaCommand::TranslationMovement { .. } => Some(DeltaCommandFlags::TranslationMovement),
-        DeltaCommand::ApplyForce { .. } => None,
+         
         DeltaCommand::PerformEntityAction { .. } => None,
     }
 }
@@ -170,6 +188,8 @@ fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<usize,u16> ) 
 
 }
  
+ 
+
 
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
@@ -298,14 +318,20 @@ pub enum DeltaCommand {
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
     TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
-    ApplyForce ( AppliedForce ), //used to modify velocity -- typically for gravity and explosions and stuff.  Hitting a wall makes XY velocity go to zero, hitting ground makes Z velocity 0
-
+   
     PerformEntityAction { action: DeltaAction    },
 } 
 
 impl DeltaCommand {
 
-     
+      
+
+}
+
+#[derive(Clone)]
+pub enum DeltaEffect {
+
+    ApplyForce ( AppliedForce ), //used to modify velocity -- typically for gravity and explosions and stuff.  Hitting a wall makes XY velocity go to zero, hitting ground makes Z velocity 0
 
 
 }
@@ -319,8 +345,7 @@ impl fmt::Display for DeltaCommand {
          
             DeltaCommand::ReportEntityPhys { .. } => write!(f, "ReportEntityPhys" ),
             DeltaCommand::TranslationMovement {  ..  } =>write!(f, "SetMovementVector" ),
-            DeltaCommand::PerformEntityAction { action  } => write!(f, "PerformEntityAction" ),
-            DeltaCommand::ApplyForce( .. ) => write!(f, "ApplyForce" ),
+            DeltaCommand::PerformEntityAction { action  } => write!(f, "PerformEntityAction" ) 
         }
     }
 }
