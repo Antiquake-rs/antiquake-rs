@@ -1073,9 +1073,9 @@ impl ServerCmd {
 
                 //read bytes
                 
-                let source_tick_count = reader.read_i16::<LittleEndian>()?;
-                let source_player_id = reader.read_u8()?;
-                let source_unit_id = reader.read_u8()?;
+                let source_tick_count = reader.read_u16::<LittleEndian>()?;
+                let source_player_id = reader.read_i8()?;
+                let source_unit_id = reader.read_i8()?;
 
                 let command_type_code = reader.read_u8()?;
 
@@ -1783,10 +1783,68 @@ impl ServerCmd {
             }) => {
 
 
-                writer.write_i16::<LittleEndian>(source_tick_count as i16)?; 
+                writer.write_u16::<LittleEndian>(source_tick_count as u16)?; 
                 writer.write_i8(source_player_id as i8)?; 
                 writer.write_i8(source_unit_id as i8)?; 
 
+                let command_type_code:u8 =  match command {
+                    DeltaCommand::ReportEntityPhys { .. } => { 
+                         DeltaCommandType::ReportEntityPhys as u8
+                     },
+                    DeltaCommand::TranslationMovement { .. } => {
+                        DeltaCommandType::TranslationMovement as u8
+                    },
+                    DeltaCommand::PerformEntityAction { .. } => {
+                        DeltaCommandType::PerformEntityAction as u8
+                    }
+                };
+
+                writer.write_u8(command_type_code)?;
+
+                match command {
+                    DeltaCommand::ReportEntityPhys {                         
+                        origin, 
+                        velocity, 
+                        look 
+                    } => {
+
+                        write_coord_vector3(writer, origin);
+                        write_coord_vector3(writer, velocity);
+                        write_angle_vector3(writer, look);
+
+                    }
+                    DeltaCommand::TranslationMovement { 
+                        translation 
+                    } => {
+
+                        write_coord_vector3(writer, translation.origin_loc);
+                        write_coord_vector3(writer, translation.vector);
+                        writer.write_f32(translation.speed);
+                        writer.write_u8(translation.phys_move_type as u8);
+
+                    },
+                    DeltaCommand::PerformEntityAction {
+                         action 
+                    } =>  {
+
+                        match action {
+                            DeltaAction::BeginJump { origin } => todo!(),
+                            DeltaAction::Interact { targetId } => todo!(),
+                            DeltaAction::EquipWeapon { slotId, weaponId } => todo!(),
+                            DeltaAction::SetUseWeapon { weaponId, active } => todo!(),
+                            DeltaAction::ReloadWeapon => todo!(),
+                            DeltaAction::EquipAbility { slotId, abilityId } => todo!(),
+                            DeltaAction::SetUseAbility { abilityId, active } => todo!(),
+                            DeltaAction::SetPosture(_) => todo!(),
+                            DeltaAction::SetZoomState { zoomed } => todo!(),
+                            DeltaAction::SetPhysMovementType(_) => todo!(),
+                        }
+
+
+
+
+                    },
+                }
                 //then write the command -- use flags 
             }
 
