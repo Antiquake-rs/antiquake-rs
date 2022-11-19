@@ -259,11 +259,14 @@ pub fn apply_gamestate_delta_collisions (
     bsp_collision: Res<BspCollisionResource>     
 ) {
 
-    let mut command_buffer = &mut delta_resource.command_buffer;
-    let mut effects_buffer = &mut delta_resource.effect_buffer;
+   
+    let mut effects_produced: Vec<GameStateEffect> = Vec::new();
+  
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
+    let mut command_buffer = &mut delta_resource.command_buffer;
+    
     let unmodified_deltas:Vec<GameStateDelta> = command_buffer.deltas.drain(..).collect(); 
 
     
@@ -330,7 +333,7 @@ pub fn apply_gamestate_delta_collisions (
 
                                 
                                 BspLeafPhysMaterial::Water => {
-                                    effects_buffer.push( GameStateEffect { 
+                                    effects_produced.push( GameStateEffect { 
                                         effect: DeltaEffect::ApplyForce(AppliedForce {
                                              origin_loc: origin.clone(),
                                              acceleration: Vector3::new(0.0,0.0,4.0) ,  
@@ -347,7 +350,7 @@ pub fn apply_gamestate_delta_collisions (
                     
                                 BspLeafPhysMaterial::Solid => {
                                     println!("PERF JUMP 2");
-                                    effects_buffer.push( GameStateEffect { 
+                                    effects_produced.push( GameStateEffect { 
                                         effect: DeltaEffect::ApplyForce(AppliedForce {
                                              origin_loc: origin.clone(),
                                              acceleration: Vector3::new(0.0,0.0,8.0) ,  
@@ -387,7 +390,20 @@ pub fn apply_gamestate_delta_collisions (
     }
  
 
+    
+
     command_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
+
+
+
+    let mut effects_buffer = &mut delta_resource.effect_buffer;
+
+    effects_buffer.effects = Box::new( effects_produced.drain( .. ).collect() );
+
+
+   /*for gs_effect in effects_produced.drain( .. ) {
+        effects_buffer.push( gs_effect );
+    } */
      
 
 }
