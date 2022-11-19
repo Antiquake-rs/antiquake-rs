@@ -194,7 +194,7 @@ pub struct GameStateDeltaResource {
 
     pub command_buffer: GameStateDeltaBuffer, 
 
-    pub effect_buffer: GameStateDeltaBuffer, 
+    pub effect_buffer: GameStateEffectsBuffer, 
 
     pub send_buffer: GameStateDeltaBuffer,
 
@@ -203,20 +203,56 @@ pub struct GameStateDeltaResource {
 
 }
 
-impl GameStateDeltaResource(){
-
+impl GameStateDeltaResource {
     
     pub fn new_for_client() -> GameStateDeltaResource {
 
         GameStateDeltaResource {
             command_buffer: GameStateDeltaBuffer::new(),
-            effect_buffer: GameStateDeltaBuffer::new(),
+            effect_buffer: GameStateEffectsBuffer::new(),
             send_buffer: GameStateDeltaBuffer::new(),
 
         }
-
     }
 }
+
+pub struct GameStateEffectsBuffer {
+    //put big arrays in a box so they dont overflow our stack 
+    effects: Box<Vec<GameStateEffect>>,  
+
+}
+
+impl GameStateEffectsBuffer {  
+
+    pub fn new() -> GameStateEffectsBuffer{
+        GameStateEffectsBuffer {
+            effects: Box::new( Vec::new() ) 
+        }
+    }
+
+    pub fn push( &mut self, d: GameStateEffect  ){ 
+        self.effects.push(d);  
+    }
+
+    pub fn pop( &mut self ) -> Option<GameStateEffect> { 
+        return self.effects.pop();        
+    }
+
+    pub fn iter_mut( &mut self ) -> IterMut< GameStateEffect> { 
+        return self.effects.iter_mut();        
+    }
+
+    pub fn clear( &mut self )  { 
+        return self.effects.clear();        
+    }
+
+
+    pub fn is_empty(&self) -> bool {
+        return self.effects.is_empty()
+    }
+
+}
+
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
     deltas: Box<Vec<GameStateDelta>>,

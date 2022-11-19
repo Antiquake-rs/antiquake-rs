@@ -254,10 +254,13 @@ pub fn apply_gravity_system (
 
 
 pub fn apply_gamestate_delta_collisions (
-    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    mut effects_buffer: ResMut<GameStateEffectsBuffer>,
+    mut delta_resource: ResMut<GameStateDeltaResource>,
+   
     bsp_collision: Res<BspCollisionResource>     
 ) {
+
+    let mut delta_buffer = delta_resource.delta_buffer;
+    let mut effects_buffer = delta_resource.effects_buffer;
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
@@ -396,9 +399,10 @@ pub fn apply_gamestate_delta_collisions (
 pub fn process_gamestate_deltas_system(
     // unit id registry 
     entity_lookup: Res<BevyEntityLookupRegistry>,
-    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
+    mut delta_resource: ResMut<GameStateDeltaResource>,
     mut query: Query<(&mut PhysicsComponent)> 
-){
+){  
+    let mut delta_buffer = delta_resource.command_buffer;
     let mut delta_send_buffer:Vec<GameStateDelta> = Vec::new();
 
     //for each delta buffer, apply it to the corresponding entitys phys component
@@ -510,11 +514,12 @@ fn apply_gamestate_delta_buffer(
 
 fn process_gamestate_effects_system(
     entity_lookup: Res<BevyEntityLookupRegistry>,
-    mut effects_buffer: ResMut<GameStateEffectsBuffer>,
+    mut delta_resource: ResMut<GameStateDeltaResource>,
     mut query: Query<(&mut PhysicsComponent)> 
 
 ) {
-   
+
+    let effects_buffer = delta_resource.effects_buffer;
 
 
     match &effect_delta.effect {
@@ -533,12 +538,11 @@ fn process_gamestate_effects_system(
 
 
 pub fn drain_gamestate_deltas (
-    mut delta_buffer: ResMut<GameStateDeltaBuffer>,
-    mut send_pool: ResMut<GameStateSendPool>,
+    mut delta_resource: ResMut<GameStateDeltaResource> 
 
 ){
-    for delta in delta_buffer.deltas.drain(..){ 
-        send_pool.push( delta )
+    for delta in delta_resource.command_buffer.deltas.drain(..){ 
+        delta_resource.send_buffer.push( delta )
     }
 }
 

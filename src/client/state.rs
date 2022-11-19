@@ -416,7 +416,7 @@ impl ClientState {
         //send gamestate deltas to server 
 
         self.ecs_tick_schedule.add_stage_after(velocity_stage, end_phys_stage, SystemStage::single_threaded() );
-        self.ecs_tick_schedule.add_system_to_stage(end_phys_stage, ecs_systems::physics::cleanup_gamestate_deltas);
+        self.ecs_tick_schedule.add_system_to_stage(end_phys_stage, ecs_systems::physics::drain_gamestate_deltas);
         
         
         self.ecs_world.insert_resource(GameStateDeltaResource::new_for_client());
