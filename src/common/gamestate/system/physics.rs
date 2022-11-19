@@ -259,8 +259,8 @@ pub fn apply_gamestate_delta_collisions (
     bsp_collision: Res<BspCollisionResource>     
 ) {
 
-    let mut command_buffer = delta_resource.command_buffer;
-    let mut effects_buffer = delta_resource.effect_buffer;
+    let mut command_buffer = &mut delta_resource.command_buffer;
+    let mut effects_buffer = &mut delta_resource.effect_buffer;
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
@@ -402,7 +402,7 @@ pub fn process_gamestate_deltas_system(
     mut delta_resource: ResMut<GameStateDeltaResource>,
     mut query: Query<(&mut PhysicsComponent)> 
 ){  
-    let mut delta_buffer = delta_resource.command_buffer;
+    let mut delta_buffer = &mut delta_resource.command_buffer;
     let mut delta_send_buffer:Vec<GameStateDelta> = Vec::new();
 
     //for each delta buffer, apply it to the corresponding entitys phys component
@@ -519,11 +519,59 @@ pub fn process_gamestate_effects_system(
 
 ) {
 
-    let effects_buffer = delta_resource.effect_buffer;
+    let effects_buffer = &mut delta_resource.effect_buffer;
 
-    for effect_delta in effects_buffer.iter_mut() {
+    
 
-        match &effect_delta.effect {
+
+    while !effects_buffer.is_empty(){
+
+        let next_effect = effects_buffer.pop();
+        
+        //let next_delta = delta_buffer.pop();
+        
+        match next_effect {
+            Some(effect) => {
+
+                let unit_id = effect.unit_id;  
+
+                let bevy_entity_id = entity_lookup.get( unit_id );
+
+                match bevy_entity_id {
+                    Some(ent_id) => {
+
+                        match query.get_mut(*ent_id) {
+
+                            Ok(mut phys_comp) => {
+                                self::apply_gamestate_effect_delta(   &effect,  phys_comp.as_mut()  );
+                            }
+                            _ => {}
+
+                        }
+
+                    }
+                    _ => {}
+                }
+                    
+            }   
+            _ => {}
+
+        }
+     
+       
+    }
+ 
+ 
+}
+
+
+fn apply_gamestate_effect_delta(
+    gs_effect:  &GameStateEffect ,
+    physComp: &mut PhysicsComponent
+
+){
+ 
+        match &gs_effect.effect {
 
             DeltaEffect::ApplyForce (force) => {
     
@@ -533,22 +581,19 @@ pub fn process_gamestate_effects_system(
     
             },
     
-        }
+        } 
 
-        
-    }   
-
-   
 }
-
 
 pub fn drain_gamestate_deltas (
     mut delta_resource: ResMut<GameStateDeltaResource> 
 
 ){
+    //need to fix borrows 
     for delta in delta_resource.command_buffer.deltas.drain(..){ 
         delta_resource.send_buffer.push( delta )
     }
+
 }
 
  /*

@@ -63,7 +63,7 @@ use crate::{
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation, DeltaAction}
+            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation, DeltaAction, GameStateDeltaResource}
     },
     server::{GameServer}
 };
@@ -916,9 +916,9 @@ impl Connection {
         Drain all of the deltas in the 'gamestate send pool' resource within 'state' and put them into the qsock buffer so they can be sent to the server 
 
     */
-    fn flush_gamestate_send_pool(){
+    fn flush_gamestate_send_pool(&mut self){
 
-        todo!()
+        let gamestate_resource = self.state.get_resource_mut::<GameStateDeltaResource>();
         
     }
 
