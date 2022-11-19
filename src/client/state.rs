@@ -26,7 +26,7 @@ use crate::{
          gamestate::{GameStateDeltaBuffer, DeltaCommand, GameStateDelta, 
          system as ecs_systems,
          component::{self as ecs_components, physics::PhysicsComponent},
-         entity::{BevyEntityLookupRegistry}, resource::bspcollision::BspCollisionResource
+         entity::{BevyEntityLookupRegistry}, resource::bspcollision::BspCollisionResource, GameStateDeltaResource
         },
     },
 };

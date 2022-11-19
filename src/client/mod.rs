@@ -268,8 +268,7 @@ impl Client {
 pub struct Connection {
     state: ClientState,
     conn_state: ConnectionState,
-    kind: ConnectionKind,
-    gamestate_delta_send_pool: GameStateDeltaSendPool
+    kind: ConnectionKind 
 }
 
 
