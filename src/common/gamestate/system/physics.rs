@@ -588,9 +588,11 @@ fn apply_gamestate_effect_delta(
 pub fn drain_gamestate_deltas (
     mut delta_resource: ResMut<GameStateDeltaResource> 
 
-){
-    //need to fix borrows 
-    for delta in delta_resource.command_buffer.deltas.drain(..){ 
+){  
+
+    let mut deltas_to_send:Vec<GameStateDelta> = delta_resource.command_buffer.deltas.drain(..).collect();
+         
+    for delta in deltas_to_send.drain(..){ 
         delta_resource.send_buffer.push( delta )
     }
 
