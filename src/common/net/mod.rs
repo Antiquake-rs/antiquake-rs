@@ -1079,28 +1079,50 @@ impl ServerCmd {
 
                 let command_type_code = reader.read_u8()?;
 
-                let command_type:DeltaCommandType = DeltaCommandType::from_u8(command_type_code).ok_or( 
-                   Err(NetError::Other(format!("Could not parse Delta Command Type"))) 
+                let command_type:DeltaCommandType = DeltaCommandType::from_u8(command_type_code).ok_or_else( 
+                  || { NetError::Other(format!("Could not parse Delta Command Type"))  }
                  )?;
 
                 let command:DeltaCommand = match command_type {
                     DeltaCommandType::ReportEntityPhys  => {
 
-                        //read stuff -- flags ? 
+                        //  add flags for more efficiency ? 
+                        let origin = read_coord_vector3(reader)?;
+                        let velocity = read_coord_vector3(reader)?;
+                        let look = read_angle_vector3(reader)?; 
 
-                        DeltaCommand::ReportEntityPhys { origin, velocity, look }  
+                        DeltaCommand::ReportEntityPhys { 
+                            origin:Some(origin), 
+                            velocity:Some(velocity), 
+                            look:Some(look) 
+                        }  
                     }
-                    DeltaCommandType::TranslationMovement => {
+                    DeltaCommandType::TranslationMovement => { 
 
-                        let translation:MovementTranslation ;
+                        let origin_loc = read_coord_vector3(reader)?;
+                        let vector = read_coord_vector3(reader)?;
+                        let speed = reader.read_f32()?;
+                        let phys_move_type = reader.read_u8()?;  
+
+                        let translation:MovementTranslation = MovementTranslation {
+                            origin_loc,
+                            vector,
+                            speed,
+                            phys_move_type:phys_move_type as usize 
+                        };
 
                         DeltaCommand::TranslationMovement  { translation }
 
                     },
                     DeltaCommandType::PerformEntityAction => {
 
+                        let action_type_code = reader.read_u8()?;
 
-                        
+                        let action_type:DeltaCommandType = DeltaCommandType::from_u8(command_type_code).ok_or_else( 
+                          || { NetError::Other(format!("Could not parse Delta Command Type"))  }
+                         )?;
+
+
 
                         DeltaCommand::PerformEntityAction { action }
 

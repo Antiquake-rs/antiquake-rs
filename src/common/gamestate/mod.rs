@@ -79,7 +79,7 @@ impl GameStateDelta{
 
         match command_type {
 
-            DeltaCommand::TranslationMovement (translation)=>  { 
+            DeltaCommand::TranslationMovement  { translation } =>  { 
                       
                     let trace_end = trace.end();
 
@@ -93,7 +93,7 @@ impl GameStateDelta{
 
                             result_translation.speed = 0.0; //-1.0 * result_translation.speed.abs();
 
-                            result_delta.command = DeltaCommand::TranslationMovement( result_translation );                            
+                            result_delta.command = DeltaCommand::TranslationMovement { translation:result_translation };                            
                             return result_delta;
 
                           } 
@@ -110,7 +110,7 @@ impl GameStateDelta{
                             let mut result_delta = self.clone();
                             let mut result_translation = translation.clone();
                             result_translation.speed = 0.0;
-                            result_delta.command = DeltaCommand::TranslationMovement( result_translation );  
+                            result_delta.command = DeltaCommand::TranslationMovement { translation: result_translation };  
                             return result_delta;
 
 
@@ -394,9 +394,9 @@ pub enum DeltaCommandType   {
 pub enum DeltaCommand {    
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
-    TranslationMovement {translation: MovementTranslation}, //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
+    TranslationMovement { translation: MovementTranslation }, //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
    
-    PerformEntityAction { action: DeltaAction    },
+    PerformEntityAction { action: DeltaAction },
 } 
 
 impl DeltaCommand {
@@ -425,6 +425,22 @@ impl fmt::Display for DeltaCommand {
             DeltaCommand::PerformEntityAction { action  } => write!(f, "PerformEntityAction" ) 
         }
     }
+}
+
+#[derive(FromPrimitive)]
+pub enum DeltaActionType {
+
+    BeginJump = 0,
+    Interact = 1,
+    EquipWeapon = 2,
+    SetUseWeapon = 3,
+    ReloadWeapon = 4, 
+    EquipAbility = 5,
+    SetUseAbility = 6,
+    SetPosture = 7,
+    SetZoomState = 8,
+    SetPhysMovementType = 9 
+
 }
 
 
