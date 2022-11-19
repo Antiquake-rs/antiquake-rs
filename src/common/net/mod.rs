@@ -37,7 +37,7 @@ use cgmath::{Deg, Vector3, Zero};
 use chrono::Duration;
 use num::FromPrimitive;
 
-use super::gamestate::{GameStateDelta, DeltaCommand, DeltaCommandType, MovementTranslation};
+use super::gamestate::{GameStateDelta, DeltaCommand, DeltaCommandType, MovementTranslation, DeltaAction, DeltaActionType, system::physics::{EntityPostureType, PhysMovementType}};
 
 pub const MAX_MESSAGE: usize = 8192;
 const MAX_DATAGRAM: usize = 1024;
@@ -1101,7 +1101,7 @@ impl ServerCmd {
 
                         let origin_loc = read_coord_vector3(reader)?;
                         let vector = read_coord_vector3(reader)?;
-                        let speed = reader.read_f32()?;
+                        let speed = reader.read_f32::<LittleEndian>()?;
                         let phys_move_type = reader.read_u8()?;  
 
                         let translation:MovementTranslation = MovementTranslation {
@@ -1118,11 +1118,58 @@ impl ServerCmd {
 
                         let action_type_code = reader.read_u8()?;
 
-                        let action_type:DeltaCommandType = DeltaCommandType::from_u8(command_type_code).ok_or_else( 
-                          || { NetError::Other(format!("Could not parse Delta Command Type"))  }
+                        let action_type:DeltaActionType = DeltaActionType::from_u8(command_type_code).ok_or_else( 
+                          || { NetError::Other(format!("Could not parse Action Type"))  }
                          )?;
 
-
+                        let action:DeltaAction = match action_type {
+                            DeltaActionType::BeginJump => {
+                                let origin = read_coord_vector3(reader)?;
+                                DeltaAction::BeginJump { origin }
+                            },
+                            DeltaActionType::Interact => {
+                                let targetId = reader.read_u32::<LittleEndian>()?;
+                                DeltaAction::Interact { targetId }
+                            },
+                            DeltaActionType::EquipWeapon => {
+                                let slotId = reader.read_u32::<LittleEndian>()?;
+                                let weaponId = reader.read_u32::<LittleEndian>()?;
+                                DeltaAction::EquipWeapon { slotId, weaponId }
+                            },
+                            DeltaActionType::SetUseWeapon => {
+                                let weaponId = reader.read_u32::<LittleEndian>()?;
+                                let weaponState = reader.read_u8()?;
+                                let active = weaponState & 0x1 == 0x1;
+                                DeltaAction::SetUseWeapon { weaponId, active }
+                            },
+                            DeltaActionType::ReloadWeapon => {
+                                DeltaAction::ReloadWeapon
+                            },
+                            DeltaActionType::EquipAbility => {
+                                let slotId = reader.read_u32::<LittleEndian>()?;
+                                let abilityId = reader.read_u32::<LittleEndian>()?;
+                                DeltaAction::EquipAbility { slotId, abilityId }
+                            },
+                            DeltaActionType::SetUseAbility => {
+                                let abilityId = reader.read_u32::<LittleEndian>()?;
+                                let abilityState = reader.read_u8()?;
+                                let active = abilityState & 0x1 == 0x1;
+                                DeltaAction::SetUseAbility { abilityId, active }
+                            },
+                            DeltaActionType::SetPosture => {
+                                let posture_type = reader.read_u8()?; 
+                                DeltaAction::SetPosture( EntityPostureType::from_u8(posture_type) )
+                            },
+                            DeltaActionType::SetZoomState => {
+                                let zoomState = reader.read_u8()?;
+                                let zoomed = zoomState & 0x1 == 0x1;
+                                DeltaAction::SetZoomState{zoomed}
+                            },
+                            DeltaActionType::SetPhysMovementType => { 
+                                let phys_move_type = reader.read_u8()?; 
+                                DeltaAction::SetPhysMovementType( PhysMovementType::from_u8(phys_move_type) )
+                            },
+                        };
 
                         DeltaCommand::PerformEntityAction { action }
 

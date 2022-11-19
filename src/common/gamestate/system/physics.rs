@@ -6,14 +6,14 @@ use crate::{common::{gamestate::{
     entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect, GameStateDeltaResource 
 }, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromPrimitive)]
 pub enum EntityPostureType {
     Stand,
     Crouch,
     Prone 
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, FromPrimitive)]
 pub enum PhysMovementType {
     Walk = 0,
     Hover = 1,

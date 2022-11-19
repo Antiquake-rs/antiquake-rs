@@ -447,7 +447,7 @@ pub enum DeltaActionType {
 #[derive(Clone, Debug, PartialEq)]
 pub enum DeltaAction {
 
-    BeginJump {origin: Vector3<f32> }, //put this here ?  
+    BeginJump { origin: Vector3<f32> }, //put this here ?  
 
     Interact { targetId: u32  }, //trigger 
 
