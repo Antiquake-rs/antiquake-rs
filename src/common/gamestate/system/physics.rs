@@ -278,7 +278,7 @@ pub fn apply_gamestate_delta_collisions (
         
         match &state_delta.command {
             
-            DeltaCommand::TranslationMovement (translation) =>  {
+            DeltaCommand::TranslationMovement { translation } =>  {
 
                 if body_has_collision( translation.phys_move_type.into()) {
 
@@ -482,7 +482,7 @@ fn apply_gamestate_delta_buffer(
       
         DeltaCommand::ReportEntityPhys { .. } => {},
        
-        DeltaCommand::TranslationMovement  (translation) => {
+        DeltaCommand::TranslationMovement  {translation} => {
             
 
             //if the suggest origin_loc is way off the past_origin , maybe we do something  -- ? 

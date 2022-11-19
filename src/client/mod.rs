@@ -1309,12 +1309,12 @@ impl Client {
                                 
                                 match movement_vector {
                                     Some(mov_vec) => {
-                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement (MovementTranslation { 
+                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { translation: MovementTranslation { 
                                               origin_loc,
                                               vector: mov_vec,
                                               speed: movement_speed, 
                                               phys_move_type: unit_phys_move_type as usize // always walk type for now 
-                                             } )) ;
+                                             }} ) ;
                                     },
                                     _ => {}
                                 }
