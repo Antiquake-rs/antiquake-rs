@@ -13,7 +13,7 @@
 
 
 */
-use std::{fmt, rc::Rc, collections::HashMap, slice::IterMut};
+use std::{fmt, rc::Rc, collections::HashMap, slice::IterMut, ops::RangeBounds};
 use cgmath::{Deg, Vector3, Angle,InnerSpace};
 
 pub mod resource;
@@ -296,6 +296,12 @@ impl GameStateDeltaBuffer {
 
         return self.deltas.iter_mut();       
 
+    }
+
+    pub fn drain<R>( &mut self, rng: R ) -> std::vec::Drain<'_, GameStateDelta>
+    where   R: RangeBounds<usize>
+     { 
+        return self.deltas.drain(rng);
     }
 
     pub fn clear( &mut self )  {

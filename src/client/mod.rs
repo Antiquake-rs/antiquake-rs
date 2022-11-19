@@ -63,7 +63,7 @@ use crate::{
         vfs::{Vfs, VfsError},
         tickcounter::{TickCounter},
         gamestate::{ DeltaCommand, 
-            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation, DeltaAction, GameStateDeltaResource}
+            system::physics::{ calc_movement_vector, PhysMovementType}, component::physics::PhysicsComponent, MovementTranslation, DeltaAction, GameStateDeltaResource, GameStateDelta}
     },
     server::{GameServer}
 };
@@ -913,13 +913,25 @@ impl Connection {
 
     /*
     
-        Drain all of the deltas in the 'gamestate send pool' resource within 'state' and put them into the qsock buffer so they can be sent to the server 
+        Drain all of the deltas in the 'gamestate send pool' resource within 'state' 
+        and put them into the qsock buffer so they can be sent to the server 
 
     */
     fn flush_gamestate_send_pool(&mut self){
 
         let gamestate_resource = self.state.get_resource_mut::<GameStateDeltaResource>();
-        
+
+        let mut delta_send_buffer:Vec<GameStateDelta> = gamestate_resource.send_buffer.drain(..).collect();
+
+       
+
+        for delta in delta_send_buffer { 
+            let mut msg:Vec<GameStateDelta> = Vec::new();
+            delta.serialize(&mut msg)?;
+            self.conn_state.qsock.send_msg_unreliable(&msg)?;
+        }
+
+     
     }
 
 
@@ -1329,8 +1341,8 @@ impl Client {
 
               
                 // TODO: arrayvec here
-                let mut msg = Vec::new();
-                move_cmd.serialize(&mut msg)?;
+              //  let mut msg = Vec::new();
+              //  move_cmd.serialize(&mut msg)?;
               //  qsock.send_msg_unreliable(&msg)?;
 
                 // clear mouse and impulse
