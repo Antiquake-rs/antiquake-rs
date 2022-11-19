@@ -558,31 +558,31 @@ impl ClientState {
 
  
 
-    pub fn get_resource<T>(&self) -> &T
+    pub fn get_resource<T>(&self) -> Option<&T>
     where 
     T: Resource
     {
-        let resource = self.ecs_world.get_resource::<T >().unwrap();
+        let resource = self.ecs_world.get_resource::<T >();
 
         return resource;
     }
 
-    pub fn get_resource_mut<T>(&mut self) -> Mut<T>
+    pub fn get_resource_mut<T>(&mut self) -> Option<Mut<T>>
     where  T: Resource
     {
        
 
-        let resource = self.ecs_world.get_resource_mut::<T>().unwrap();
+        let resource = self.ecs_world.get_resource_mut::<T>();
 
         return resource
        
     }
     
-    pub fn get_entity(&self, unit_id:usize) -> Option< &Entity>
-  
+    pub fn get_entity(&self, unit_id:usize) -> Option<&Entity>
      {
 
-        let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>();
+        let lookup_registry = self.get_resource::<BevyEntityLookupRegistry>().unwrap();
+        
 
         let ent = lookup_registry.get( unit_id ) ;
  
@@ -618,7 +618,7 @@ impl ClientState {
 
         let ent = self.get_entity( unit_id )?;
 
-        let mut component = self.ecs_world.get_mut::<T>(*ent) ;
+        let component = self.ecs_world.get_mut::<T>(*ent) ;
 
         return component
       
@@ -639,12 +639,14 @@ impl ClientState {
 
             ) ;
 
-            let mut delta_buffer = self.get_resource_mut::<GameStateDeltaBuffer>();
-
-           
-            delta_buffer.push( new_delta );
-                
+            let delta_resource = self.get_resource_mut::<GameStateDeltaResource>();
             
+            match delta_resource {
+                Some(mut resource) => {
+                    resource.command_buffer.push( new_delta );
+                },
+                None => {debug!("WARNING - trying to push to null gamestate delta buffer");} 
+            } 
            
     }
 
@@ -1294,10 +1296,10 @@ impl ClientState {
                     .id();
                   
 
-                let mut lookup_registry = self.get_resource_mut::<BevyEntityLookupRegistry>();
+                let mut lookup_registry = self.get_resource_mut::<BevyEntityLookupRegistry>().unwrap();
 
 
-                lookup_registry.insert( id, bevy_id   );
+                lookup_registry.insert( id, bevy_id);
 
 
               
@@ -2008,7 +2010,7 @@ impl ClientState {
 
     pub fn insert_lightstyle( &mut self, id:u8, value: String ) {
 
-        let mut scene_render_constants = self.get_resource_mut::<RenderSceneConstants>();
+        let mut scene_render_constants = self.get_resource_mut::<RenderSceneConstants>().unwrap();
 
         scene_render_constants.light_styles.insert(id, value);
 
@@ -2018,7 +2020,7 @@ impl ClientState {
     pub fn lightstyle_values(&self) -> Result<ArrayVec<f32, 64>, ClientError> {
         let mut values = ArrayVec::new();
 
-        let scene_render_constants = self.get_resource::<RenderSceneConstants>();
+        let scene_render_constants = self.get_resource::<RenderSceneConstants>().unwrap();
 
         let light_styles = &scene_render_constants.light_styles;
 

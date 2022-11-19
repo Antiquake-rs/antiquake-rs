@@ -6,7 +6,7 @@ use crate::{common::{gamestate::{
     entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect, GameStateDeltaResource 
 }, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
-#[derive(Clone, Debug, PartialEq, FromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, FromPrimitive)]
 pub enum EntityPostureType {
     Stand,
     Crouch,
@@ -476,7 +476,8 @@ fn apply_gamestate_delta_buffer(
      delta:  &GameStateDelta ,
      physComp: &mut PhysicsComponent
  ){
-
+    
+    println!("Apply Gamestate Delta {:?}", delta);
 
     match &delta.command {
       

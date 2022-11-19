@@ -359,7 +359,7 @@ impl AppliedForce {
 
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MovementTranslation {
     pub origin_loc: Vector3<f32>,
     pub vector: Vector3<f32> ,
@@ -390,7 +390,7 @@ pub enum DeltaCommandType   {
 
  */
  
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeltaCommand {    
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
@@ -444,7 +444,7 @@ pub enum DeltaActionType {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeltaAction {
 
     BeginJump { origin: Vector3<f32> }, //put this here ?  
