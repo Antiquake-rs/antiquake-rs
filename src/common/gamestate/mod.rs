@@ -44,7 +44,7 @@ pub struct GameStateEffect {
 /*
     These are passed around on the network
 */
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GameStateDelta {
 
     pub command: DeltaCommand,
@@ -359,7 +359,7 @@ impl AppliedForce {
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MovementTranslation {
     pub origin_loc: Vector3<f32>,
     pub vector: Vector3<f32> ,
@@ -380,7 +380,7 @@ pub struct MovementTranslation {
 
  */
  
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DeltaCommand {
     
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
@@ -419,7 +419,7 @@ impl fmt::Display for DeltaCommand {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum DeltaAction {
 
     BeginJump {origin: Vector3<f32> }, //put this here ?  

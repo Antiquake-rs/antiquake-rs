@@ -913,11 +913,11 @@ impl Connection {
 
     /*
     
-        Drain all of the deltas in the 'gamestate send pool' resource within 'state' 
-        and put them into the qsock buffer so they can be sent to the server 
+        Drain all of the deltas in the 'gamestate delta send pool' resource within 'state' GameStateDeltaResource (part of ECS)
+        and serialize them and give them to the qsock buffer so they can be sent to the server 
 
     */
-    fn flush_gamestate_send_pool(&mut self) -> Result<_, ClientError>{
+    fn flush_gamestate_send_pool(&mut self) -> Result<(), ClientError>{
 
         let gamestate_resource = self.state.get_resource_mut::<GameStateDeltaResource>();
 
@@ -930,8 +930,10 @@ impl Connection {
         } = self.kind { 
 
             for delta in delta_send_buffer { 
+                let cmd = ServerCmd::GameStateDelta(delta);
+
                 let mut msg: Vec<u8> = Vec::new();
-                delta.serialize(&mut msg)?;
+                cmd.serialize(&mut msg)?;
                 qsock.send_msg_unreliable(&msg)?;
             }
 

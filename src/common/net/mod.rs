@@ -37,6 +37,8 @@ use cgmath::{Deg, Vector3, Zero};
 use chrono::Duration;
 use num::FromPrimitive;
 
+use super::gamestate::GameStateDelta;
+
 pub const MAX_MESSAGE: usize = 8192;
 const MAX_DATAGRAM: usize = 1024;
 const HEADER_SIZE: usize = 8;
@@ -663,9 +665,9 @@ pub enum ServerCmdCode {
     CdTrack = 32,
     SellScreen = 33,
     Cutscene = 34,
+    GameStateDelta = 35,
 
-
-    FastUpdate = 128 //all sports beyond 128 are reserved for fast update and its flags ! 
+    FastUpdate = 128 //all spots beyond 128 are reserved for fast update and its flags ! 
 }
 
 #[derive(Copy, Clone, Debug, Eq, FromPrimitive, PartialEq)]
@@ -801,6 +803,7 @@ pub enum ServerCmd {
         text: String,
     },
     FastUpdate(EntityUpdate),
+    GameStateDelta(GameStateDelta), 
 }
 
 
@@ -850,7 +853,8 @@ impl ServerCmd {
             ServerCmd::CdTrack { .. } => ServerCmdCode::CdTrack,
             ServerCmd::SellScreen => ServerCmdCode::SellScreen,
             ServerCmd::Cutscene { .. } => ServerCmdCode::Cutscene, 
-            ServerCmd::FastUpdate( ..) => ServerCmdCode::FastUpdate,
+            ServerCmd::FastUpdate( ..) => ServerCmdCode::FastUpdate, //deprecated 
+            ServerCmd::GameStateDelta( ..) => ServerCmdCode::GameStateDelta,
         };
 
         code as u8
@@ -1062,6 +1066,19 @@ impl ServerCmd {
                     player_id,
                     new_frags,
                 }
+            }
+
+
+            ServerCmdCode::GameStateDelta => {
+
+                //read bytes
+
+                todo();
+
+                ServerCmd::GameStateDelta(GameStateDelta {
+
+              
+                })
             }
 
             ServerCmdCode::PlayerData => {
@@ -1645,6 +1662,17 @@ impl ServerCmd {
             } => {
                 writer.write_u8(player_id)?;
                 writer.write_i16::<LittleEndian>(new_frags)?;
+            }
+
+            ServerCmd::GameStateDelta( GameStateDelta { 
+                command, 
+                source_unit_id, 
+                source_player_id, 
+                source_tick_count 
+            }) => {
+
+
+                writer.write //todo() 
             }
 
             ServerCmd::PlayerData(PlayerData {

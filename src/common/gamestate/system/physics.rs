@@ -6,14 +6,14 @@ use crate::{common::{gamestate::{
     entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect, GameStateDeltaResource 
 }, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EntityPostureType {
     Stand,
     Crouch,
     Prone 
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum PhysMovementType {
     Walk = 0,
     Hover = 1,
@@ -266,7 +266,7 @@ pub fn apply_gamestate_delta_collisions (
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
     let mut command_buffer = &mut delta_resource.command_buffer;
-    
+
     let unmodified_deltas:Vec<GameStateDelta> = command_buffer.deltas.drain(..).collect(); 
 
     
