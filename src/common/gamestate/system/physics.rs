@@ -3,7 +3,7 @@ use cgmath::{Vector3, Deg, Angle, InnerSpace};
 
 use crate::{common::{gamestate::{
     component::physics::{PhysicsComponent}, GameStateDeltaBuffer, GameStateDelta, DeltaCommand,
-    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect 
+    entity::{BevyEntityLookupRegistry}, resource::bspcollision::{BspCollisionResource, CollisionHullLayer}, DeltaAction, AppliedForce, GameStateEffect, DeltaEffect, GameStateDeltaResource 
 }, bsp::BspLeafPhysMaterial}, server::world::Trace};
  
 #[derive(Clone)]
@@ -259,12 +259,12 @@ pub fn apply_gamestate_delta_collisions (
     bsp_collision: Res<BspCollisionResource>     
 ) {
 
-    let mut delta_buffer = delta_resource.delta_buffer;
-    let mut effects_buffer = delta_resource.effects_buffer;
+    let mut command_buffer = delta_resource.command_buffer;
+    let mut effects_buffer = delta_resource.effect_buffer;
 
     let mut modified_deltas:Vec<GameStateDelta> = Vec::new();
 
-    let unmodified_deltas:Vec<GameStateDelta> = delta_buffer.deltas.drain(..).collect(); 
+    let unmodified_deltas:Vec<GameStateDelta> = command_buffer.deltas.drain(..).collect(); 
 
     
     let unit_height = 22.0; 
@@ -387,7 +387,7 @@ pub fn apply_gamestate_delta_collisions (
     }
  
 
-    delta_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
+    command_buffer.deltas = Box::new(modified_deltas.drain(..).collect());
      
 
 }
@@ -512,28 +512,33 @@ fn apply_gamestate_delta_buffer(
 
 
 
-fn process_gamestate_effects_system(
+pub fn process_gamestate_effects_system(
     entity_lookup: Res<BevyEntityLookupRegistry>,
     mut delta_resource: ResMut<GameStateDeltaResource>,
     mut query: Query<(&mut PhysicsComponent)> 
 
 ) {
 
-    let effects_buffer = delta_resource.effects_buffer;
+    let effects_buffer = delta_resource.effect_buffer;
 
+    for effect_delta in effects_buffer.iter_mut() {
 
-    match &effect_delta.effect {
+        match &effect_delta.effect {
 
-        DeltaEffect::ApplyForce (force) => {
+            DeltaEffect::ApplyForce (force) => {
+    
+                let acceleration = force.get_scaled_force() ;
+    
+                physComp.apply_acceleration_to_velocity(  acceleration  ) ;
+    
+            },
+    
+        }
 
-            let acceleration = force.get_scaled_force() ;
+        
+    }   
 
-            physComp.apply_acceleration_to_velocity(  acceleration  ) ;
-
-        },
-
-    }
-
+   
 }
 
 
