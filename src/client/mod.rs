@@ -917,20 +917,28 @@ impl Connection {
         and put them into the qsock buffer so they can be sent to the server 
 
     */
-    fn flush_gamestate_send_pool(&mut self){
+    fn flush_gamestate_send_pool(&mut self) -> Result<_, ClientError>{
 
         let gamestate_resource = self.state.get_resource_mut::<GameStateDeltaResource>();
 
         let mut delta_send_buffer:Vec<GameStateDelta> = gamestate_resource.send_buffer.drain(..).collect();
 
-       
+               
+        if let ConnectionKind::Server {
+            ref mut qsock,
+            ref mut compose,
+        } = self.kind { 
 
-        for delta in delta_send_buffer { 
-            let mut msg:Vec<GameStateDelta> = Vec::new();
-            delta.serialize(&mut msg)?;
-            self.conn_state.qsock.send_msg_unreliable(&msg)?;
+            for delta in delta_send_buffer { 
+                let mut msg: Vec<u8> = Vec::new();
+                delta.serialize(&mut msg)?;
+                qsock.send_msg_unreliable(&msg)?;
+            }
+
         }
 
+
+        Ok(())  
      
     }
 
@@ -1326,8 +1334,6 @@ impl Client {
                             None => {} 
 
                         } 
-                       
-                        
                     
                     },
                     _ => { 
@@ -1336,8 +1342,6 @@ impl Client {
                     }
 
                 }
-               
-              
 
               
                 // TODO: arrayvec here
