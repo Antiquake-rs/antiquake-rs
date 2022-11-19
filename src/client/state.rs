@@ -419,12 +419,12 @@ impl ClientState {
         self.ecs_tick_schedule.add_system_to_stage(end_phys_stage, ecs_systems::physics::cleanup_gamestate_deltas);
         
         
-        
+        self.ecs_world.insert_resource(GameStateDeltaResource::new_for_client());
 
-        self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
+        //self.ecs_world.insert_resource(GameStateDeltaBuffer::new());
           
         //holds deltas that will be sent to the main server 
-        self.ecs_world.insert_resource(GameStateDeltaSendPool::new());
+        //self.ecs_world.insert_resource(GameStateDeltaSendPool::new());
 
 
         self.ecs_world.insert_resource(RenderSceneConstants::new());

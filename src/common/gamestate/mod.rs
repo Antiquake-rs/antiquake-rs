@@ -190,7 +190,33 @@ fn should_append_delta(d:&GameStateDelta, unit_cmd_flags: &HashMap<usize,u16> ) 
  
  
 
+pub struct GameStateDeltaResource {
 
+    pub command_buffer: GameStateDeltaBuffer, 
+
+    pub effect_buffer: GameStateDeltaBuffer, 
+
+    pub send_buffer: GameStateDeltaBuffer,
+
+    //receive buffer ? 
+
+
+}
+
+impl GameStateDeltaResource(){
+
+    
+    pub fn new_for_client() -> GameStateDeltaResource {
+
+        GameStateDeltaResource {
+            command_buffer: GameStateDeltaBuffer::new(),
+            effect_buffer: GameStateDeltaBuffer::new(),
+            send_buffer: GameStateDeltaBuffer::new(),
+
+        }
+
+    }
+}
 pub struct GameStateDeltaBuffer {
     //put big arrays in a box so they dont overflow our stack 
     deltas: Box<Vec<GameStateDelta>>,
