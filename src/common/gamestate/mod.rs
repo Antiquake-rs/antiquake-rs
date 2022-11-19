@@ -366,6 +366,16 @@ pub struct MovementTranslation {
     pub speed: f32,
     pub phys_move_type: usize 
 }
+
+
+#[derive(FromPrimitive)]
+pub enum DeltaCommandType   {
+    ReportEntityPhys = 0,
+    TranslationMovement = 1,
+    PerformEntityAction = 2
+}
+ 
+
 /*
     Each 'tick', a client is building an array of entity commands (every 33 ms).  At the end of that tick, 
     the client predictively applies that array of UserCommands to their local physical gamestate
@@ -381,11 +391,10 @@ pub struct MovementTranslation {
  */
  
 #[derive(Clone, Debug, PartialEq)]
-pub enum DeltaCommand {
-    
+pub enum DeltaCommand {    
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
-    TranslationMovement (MovementTranslation), //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
+    TranslationMovement {translation: MovementTranslation}, //vector always normalized to magnitude of 1.  Z is ignored unless you can fly 
    
     PerformEntityAction { action: DeltaAction    },
 } 

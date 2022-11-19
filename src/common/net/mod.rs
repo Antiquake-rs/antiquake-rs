@@ -37,7 +37,7 @@ use cgmath::{Deg, Vector3, Zero};
 use chrono::Duration;
 use num::FromPrimitive;
 
-use super::gamestate::GameStateDelta;
+use super::gamestate::{GameStateDelta, DeltaCommand, DeltaCommandType, MovementTranslation};
 
 pub const MAX_MESSAGE: usize = 8192;
 const MAX_DATAGRAM: usize = 1024;
@@ -1072,12 +1072,50 @@ impl ServerCmd {
             ServerCmdCode::GameStateDelta => {
 
                 //read bytes
+                
+                let source_tick_count = reader.read_i16::<LittleEndian>()?;
+                let source_player_id = reader.read_u8()?;
+                let source_unit_id = reader.read_u8()?;
 
-                todo();
+                let command_type_code = reader.read_u8()?;
 
-                ServerCmd::GameStateDelta(GameStateDelta {
+                let command_type:DeltaCommandType = DeltaCommandType::from_u8(command_type_code).ok_or( 
+                   Err(NetError::Other(format!("Could not parse Delta Command Type"))) 
+                 )?;
 
-              
+                let command:DeltaCommand = match command_type {
+                    DeltaCommandType::ReportEntityPhys  => {
+
+                        //read stuff -- flags ? 
+
+                        DeltaCommand::ReportEntityPhys { origin, velocity, look }  
+                    }
+                    DeltaCommandType::TranslationMovement => {
+
+                        let translation:MovementTranslation ;
+
+                        DeltaCommand::TranslationMovement  { translation }
+
+                    },
+                    DeltaCommandType::PerformEntityAction => {
+
+
+                        
+
+                        DeltaCommand::PerformEntityAction { action }
+
+                    },
+                    
+                }
+
+                //let command = DeltaCommand::new();
+                
+
+                ServerCmd::GameStateDelta(GameStateDelta { 
+                    source_unit_id: source_unit_id as usize,
+                    source_player_id: source_player_id as usize, 
+                    source_tick_count: source_tick_count as usize,
+                    command,
                 })
             }
 
@@ -1672,7 +1710,11 @@ impl ServerCmd {
             }) => {
 
 
-                writer.write //todo() 
+                writer.write_i16::<LittleEndian>(source_tick_count as i16)?; 
+                writer.write_i8(source_player_id as i8)?; 
+                writer.write_i8(source_unit_id as i8)?; 
+
+                //then write the command -- use flags 
             }
 
             ServerCmd::PlayerData(PlayerData {
