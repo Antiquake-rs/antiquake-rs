@@ -1787,17 +1787,7 @@ impl ServerCmd {
                 writer.write_i8(source_player_id as i8)?; 
                 writer.write_i8(source_unit_id as i8)?; 
 
-                let command_type_code:u8 =  match command {
-                    DeltaCommand::ReportEntityPhys { .. } => { 
-                         DeltaCommandType::ReportEntityPhys as u8
-                     },
-                    DeltaCommand::TranslationMovement { .. } => {
-                        DeltaCommandType::TranslationMovement as u8
-                    },
-                    DeltaCommand::PerformEntityAction { .. } => {
-                        DeltaCommandType::PerformEntityAction as u8
-                    }
-                };
+                let command_type_code:u8 = DeltaCommandType::from_command(command) as u8;
 
                 writer.write_u8(command_type_code)?;
 
@@ -1827,17 +1817,49 @@ impl ServerCmd {
                          action 
                     } =>  {
 
+                        let action_type_code = DeltaActionType::from_action(action) as u8;
+
+                        //write the action type 
+                        writer.write_u8(action_type_code)?;
+
                         match action {
-                            DeltaAction::BeginJump { origin } => todo!(),
-                            DeltaAction::Interact { targetId } => todo!(),
-                            DeltaAction::EquipWeapon { slotId, weaponId } => todo!(),
-                            DeltaAction::SetUseWeapon { weaponId, active } => todo!(),
-                            DeltaAction::ReloadWeapon => todo!(),
-                            DeltaAction::EquipAbility { slotId, abilityId } => todo!(),
-                            DeltaAction::SetUseAbility { abilityId, active } => todo!(),
-                            DeltaAction::SetPosture(_) => todo!(),
-                            DeltaAction::SetZoomState { zoomed } => todo!(),
-                            DeltaAction::SetPhysMovementType(_) => todo!(),
+                            DeltaAction::BeginJump { origin } => {
+                                write_coord_vector3(writer, origin);
+                            },
+                            DeltaAction::Interact { targetId } => {
+                                writer.write_u32(targetId);
+                            },
+                            DeltaAction::EquipWeapon { slotId, weaponId } => {
+                                writer.write_u32(slotId);
+                                writer.write_u32(weaponId);
+                            },
+                            DeltaAction::SetUseWeapon { weaponId, active } => {
+                                writer.write_u32(weaponId);
+                                writer.write_u8(active);
+                            },
+                            DeltaAction::ReloadWeapon => {
+
+                            },
+                            DeltaAction::EquipAbility { slotId, abilityId } => {
+
+
+
+                            },
+                            DeltaAction::SetUseAbility { abilityId, active } => {
+
+
+                            },
+                            DeltaAction::SetPosture(_) => {
+
+                            },
+                            DeltaAction::SetZoomState { zoomed } => {
+
+
+                            },
+                            DeltaAction::SetPhysMovementType(_) => {
+
+                                
+                            },
                         }
 
 
