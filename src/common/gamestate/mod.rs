@@ -380,13 +380,13 @@ impl DeltaCommandType {
         
         match cmd {
             DeltaCommand::ReportEntityPhys { .. } => { 
-                 DeltaCommandType::ReportEntityPhys as u8
+                 return DeltaCommandType::ReportEntityPhys
              },
             DeltaCommand::TranslationMovement { .. } => {
-                DeltaCommandType::TranslationMovement as u8
+                return DeltaCommandType::TranslationMovement
             },
             DeltaCommand::PerformEntityAction { .. } => {
-                DeltaCommandType::PerformEntityAction as u8
+                return DeltaCommandType::PerformEntityAction
             }
         };
 
@@ -450,10 +450,10 @@ pub enum DeltaActionType {
     BeginJump = 0,
     Interact = 1,
     EquipWeapon = 2,
-    SetUseWeapon = 3,
+    UseWeapon = 3,
     ReloadWeapon = 4, 
     EquipAbility = 5,
-    SetUseAbility = 6,
+    UseAbility = 6,
     SetPosture = 7,
     SetZoomState = 8,
     SetPhysMovementType = 9 
@@ -468,10 +468,10 @@ impl DeltaActionType {
             DeltaAction::BeginJump { ..} => { DeltaActionType::BeginJump },
             DeltaAction::Interact { .. } => { DeltaActionType::Interact },
             DeltaAction::EquipWeapon { .. } => { DeltaActionType::EquipWeapon },
-            DeltaAction::SetUseWeapon { .. } => { DeltaActionType::SetUseWeapon },
+            DeltaAction::UseWeapon { .. } => { DeltaActionType::UseWeapon },
             DeltaAction::ReloadWeapon => { DeltaActionType::ReloadWeapon },
             DeltaAction::EquipAbility { .. } => { DeltaActionType::EquipAbility },
-            DeltaAction::SetUseAbility { .. } => { DeltaActionType::SetUseAbility },
+            DeltaAction::UseAbility { .. } => { DeltaActionType::UseAbility },
             DeltaAction::SetPosture(_) => { DeltaActionType::SetPosture },
             DeltaAction::SetZoomState { .. } =>{ DeltaActionType::SetZoomState },
             DeltaAction::SetPhysMovementType(_) => { DeltaActionType::SetPhysMovementType },

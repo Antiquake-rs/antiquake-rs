@@ -1166,7 +1166,7 @@ impl ServerCmd {
                                 let weaponId = reader.read_u32::<LittleEndian>()?;
                                 DeltaAction::EquipWeapon { slotId, weaponId }
                             },
-                            DeltaActionType::SetUseWeapon => {
+                            DeltaActionType::UseWeapon => {
                                 let weaponId = reader.read_u32::<LittleEndian>()?;
                                  
                                 DeltaAction::UseWeapon { weaponId }
@@ -1179,7 +1179,7 @@ impl ServerCmd {
                                 let abilityId = reader.read_u32::<LittleEndian>()?;
                                 DeltaAction::EquipAbility { slotId, abilityId }
                             },
-                            DeltaActionType::SetUseAbility => {
+                            DeltaActionType::UseAbility => {
                                 let abilityId = reader.read_u32::<LittleEndian>()?;
 
                                 DeltaAction::UseAbility { abilityId }
@@ -1858,10 +1858,10 @@ impl ServerCmd {
                         translation 
                     } => {
 
-                        write_coord_vector3(writer, translation.origin_loc);
-                        write_coord_vector3(writer, translation.vector);
-                        writer.write_f32::<LittleEndian>(translation.speed);
-                        writer.write_u8(translation.phys_move_type as u8);
+                        write_coord_vector3(writer, translation.origin_loc)?;
+                        write_coord_vector3(writer, translation.vector)?;
+                        writer.write_f32::<LittleEndian>(translation.speed)?;
+                        writer.write_u8(translation.phys_move_type as u8)?;
 
                     },
                     DeltaCommand::PerformEntityAction {
@@ -1875,37 +1875,37 @@ impl ServerCmd {
 
                         match action {
                             DeltaAction::BeginJump { origin } => {
-                                write_coord_vector3(writer, origin);
+                                write_coord_vector3(writer, origin)?;
                             },
                             DeltaAction::Interact { targetId } => {
-                                writer.write_u32(targetId);
+                                writer.write_u32::<LittleEndian>(targetId)?;
                             },
                             DeltaAction::EquipWeapon { slotId, weaponId } => {
-                                writer.write_u32(slotId);
-                                writer.write_u32(weaponId);
+                                writer.write_u32::<LittleEndian>(slotId)?;
+                                writer.write_u32::<LittleEndian>(weaponId)?;
                             },
                             DeltaAction::UseWeapon { weaponId } => {
-                                writer.write_u32(weaponId);                               
+                                writer.write_u32::<LittleEndian>(weaponId)?;                               
                             },
                             DeltaAction::ReloadWeapon => {
 
                             },
                             DeltaAction::EquipAbility { slotId, abilityId } => {
-                                writer.write_u32(slotId);
-                                writer.write_u32(abilityId);
+                                writer.write_u32::<LittleEndian>(slotId)?;
+                                writer.write_u32::<LittleEndian>(abilityId)?;
                             },
                             DeltaAction::UseAbility { abilityId } => {
-                                writer.write_u32(abilityId);    
+                                writer.write_u32::<LittleEndian>(abilityId)?;    
 
                             },
                             DeltaAction::SetPosture( posture_type ) => {
-                                writer.write_u8(posture_type as u8);
+                                writer.write_u8(posture_type as u8)?;
                             },
                             DeltaAction::SetZoomState { zoomed } => {
-                                write_bool(writer, zoomed);                               
+                                write_bool(writer, zoomed)?;                               
                             },
                             DeltaAction::SetPhysMovementType( movement_type ) => {
-                                writer.write_u8(movement_type as u8);                                
+                                writer.write_u8(movement_type as u8)?;                                
                             },
                         }
 
