@@ -359,7 +359,7 @@ impl AppliedForce {
 
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MovementTranslation {
     pub origin_loc: Vector3<f32>,
     pub vector: Vector3<f32> ,
@@ -374,6 +374,25 @@ pub enum DeltaCommandType   {
     TranslationMovement = 1,
     PerformEntityAction = 2
 }
+
+impl DeltaCommandType {
+    pub fn from_command(cmd:DeltaCommand) -> DeltaCommandType {
+        
+        match cmd {
+            DeltaCommand::ReportEntityPhys { .. } => { 
+                 DeltaCommandType::ReportEntityPhys as u8
+             },
+            DeltaCommand::TranslationMovement { .. } => {
+                DeltaCommandType::TranslationMovement as u8
+            },
+            DeltaCommand::PerformEntityAction { .. } => {
+                DeltaCommandType::PerformEntityAction as u8
+            }
+        };
+
+    }
+}
+
  
 
 /*
@@ -390,7 +409,7 @@ pub enum DeltaCommandType   {
 
  */
  
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeltaCommand {    
     ReportEntityPhys { origin: Option<Vector3<f32>> ,velocity: Option<Vector3<f32>>, look: Option<Vector3<Deg<f32>>>   },
 
@@ -415,9 +434,7 @@ pub enum DeltaEffect {
 
 impl fmt::Display for DeltaCommand {
     // This trait requires `fmt` with this exact signature.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        
-        
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {       
         match self {
          
             DeltaCommand::ReportEntityPhys { .. } => write!(f, "ReportEntityPhys" ),
@@ -443,8 +460,28 @@ pub enum DeltaActionType {
 
 }
 
+impl DeltaActionType {
 
-#[derive(Clone, Debug, PartialEq)]
+    pub fn from_action(action:DeltaAction) -> DeltaActionType {
+
+        match action {
+            DeltaAction::BeginJump { ..} => { DeltaActionType::BeginJump },
+            DeltaAction::Interact { .. } => { DeltaActionType::Interact },
+            DeltaAction::EquipWeapon { .. } => { DeltaActionType::EquipWeapon },
+            DeltaAction::SetUseWeapon { .. } => { DeltaActionType::SetUseWeapon },
+            DeltaAction::ReloadWeapon => { DeltaActionType::ReloadWeapon },
+            DeltaAction::EquipAbility { .. } => { DeltaActionType::EquipAbility },
+            DeltaAction::SetUseAbility { .. } => { DeltaActionType::SetUseAbility },
+            DeltaAction::SetPosture(_) => { DeltaActionType::SetPosture },
+            DeltaAction::SetZoomState { .. } =>{ DeltaActionType::SetZoomState },
+            DeltaAction::SetPhysMovementType(_) => { DeltaActionType::SetPhysMovementType },
+        }
+
+    }
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeltaAction {
 
     BeginJump { origin: Vector3<f32> }, //put this here ?  

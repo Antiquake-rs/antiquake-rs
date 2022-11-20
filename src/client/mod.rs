@@ -877,8 +877,8 @@ impl Connection {
         
         let accum =  self.state.advance_time(frame_time, cvars, is_connected)?;
 
-
-        self.flush_gamestate_send_pool();
+        // send our gamestate deltas to the server so they know what inputs we are producing for the gamestate virtual machine state 
+        let flush_result = self.flush_gamestate_send_pool();
 
 
         //why are we passing so much stuff in here... ? 
@@ -919,25 +919,33 @@ impl Connection {
     */
     fn flush_gamestate_send_pool(&mut self) -> Result<(), ClientError>{
 
-        let gamestate_resource = self.state.get_resource_mut::<GameStateDeltaResource>();
+        let mut gamestate_resource_option = self.state.get_resource_mut::<GameStateDeltaResource>();
 
-        let mut delta_send_buffer:Vec<GameStateDelta> = gamestate_resource.send_buffer.drain(..).collect();
+        match gamestate_resource_option {
+            Some(mut gamestate_resource) => {
+
+                let delta_send_buffer:Vec<GameStateDelta> = gamestate_resource.send_buffer.drain(..).collect();
 
                
-        if let ConnectionKind::Server {
-            ref mut qsock,
-            ref mut compose,
-        } = self.kind { 
-
-            for delta in delta_send_buffer { 
-                let cmd = ServerCmd::GameStateDelta(delta);
-
-                let mut msg: Vec<u8> = Vec::new();
-                cmd.serialize(&mut msg)?;
-                qsock.send_msg_unreliable(&msg)?;
-            }
-
+                if let ConnectionKind::Server {
+                    ref mut qsock,
+                    ref mut compose,
+                } = self.kind { 
+        
+                    for delta in delta_send_buffer { 
+                        let cmd = ServerCmd::GameStateDelta(delta);
+        
+                        let mut msg: Vec<u8> = Vec::new();
+                        cmd.serialize(&mut msg)?;
+                        qsock.send_msg_unreliable(&msg)?;
+                    }
+        
+                }
+                
+            }, None => {}
         }
+
+       
 
 
         Ok(())  
@@ -1309,12 +1317,12 @@ impl Client {
                                 
                                 match movement_vector {
                                     Some(mov_vec) => {
-                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement (MovementTranslation { 
+                                        state.push_to_gamestate_deltas(  DeltaCommand::TranslationMovement { translation: MovementTranslation { 
                                               origin_loc,
                                               vector: mov_vec,
                                               speed: movement_speed, 
                                               phys_move_type: unit_phys_move_type as usize // always walk type for now 
-                                             } )) ;
+                                             }} ) ;
                                     },
                                     _ => {}
                                 }

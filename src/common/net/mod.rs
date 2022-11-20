@@ -1073,9 +1073,9 @@ impl ServerCmd {
 
                 //read bytes
                 
-                let source_tick_count = reader.read_i16::<LittleEndian>()?;
-                let source_player_id = reader.read_u8()?;
-                let source_unit_id = reader.read_u8()?;
+                let source_tick_count = reader.read_u16::<LittleEndian>()?;
+                let source_player_id = reader.read_i8()?;
+                let source_unit_id = reader.read_i8()?;
 
                 let command_type_code = reader.read_u8()?;
 
@@ -1783,10 +1783,90 @@ impl ServerCmd {
             }) => {
 
 
-                writer.write_i16::<LittleEndian>(source_tick_count as i16)?; 
+                writer.write_u16::<LittleEndian>(source_tick_count as u16)?; 
                 writer.write_i8(source_player_id as i8)?; 
                 writer.write_i8(source_unit_id as i8)?; 
 
+                let command_type_code:u8 = DeltaCommandType::from_command(command) as u8;
+
+                writer.write_u8(command_type_code)?;
+
+                match command {
+                    DeltaCommand::ReportEntityPhys {                         
+                        origin, 
+                        velocity, 
+                        look 
+                    } => {
+
+                        write_coord_vector3(writer, origin);
+                        write_coord_vector3(writer, velocity);
+                        write_angle_vector3(writer, look);
+
+                    }
+                    DeltaCommand::TranslationMovement { 
+                        translation 
+                    } => {
+
+                        write_coord_vector3(writer, translation.origin_loc);
+                        write_coord_vector3(writer, translation.vector);
+                        writer.write_f32(translation.speed);
+                        writer.write_u8(translation.phys_move_type as u8);
+
+                    },
+                    DeltaCommand::PerformEntityAction {
+                         action 
+                    } =>  {
+
+                        let action_type_code = DeltaActionType::from_action(action) as u8;
+
+                        //write the action type 
+                        writer.write_u8(action_type_code)?;
+
+                        match action {
+                            DeltaAction::BeginJump { origin } => {
+                                write_coord_vector3(writer, origin);
+                            },
+                            DeltaAction::Interact { targetId } => {
+                                writer.write_u32(targetId);
+                            },
+                            DeltaAction::EquipWeapon { slotId, weaponId } => {
+                                writer.write_u32(slotId);
+                                writer.write_u32(weaponId);
+                            },
+                            DeltaAction::SetUseWeapon { weaponId, active } => {
+                                writer.write_u32(weaponId);
+                                writer.write_u8(active);
+                            },
+                            DeltaAction::ReloadWeapon => {
+
+                            },
+                            DeltaAction::EquipAbility { slotId, abilityId } => {
+
+
+
+                            },
+                            DeltaAction::SetUseAbility { abilityId, active } => {
+
+
+                            },
+                            DeltaAction::SetPosture(_) => {
+
+                            },
+                            DeltaAction::SetZoomState { zoomed } => {
+
+
+                            },
+                            DeltaAction::SetPhysMovementType(_) => {
+
+                                
+                            },
+                        }
+
+
+
+
+                    },
+                }
                 //then write the command -- use flags 
             }
 
