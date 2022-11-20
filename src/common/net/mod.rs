@@ -185,6 +185,14 @@ bitflags! {
 }
 
 bitflags! {
+    pub struct EntityPhysFlags: u8 {
+        const ORIGIN = 1 << 0;
+        const VELOCITY = 1 << 1;
+        const LOOK = 1 << 2;
+    }
+}
+
+bitflags! {
     pub struct ItemFlags: u32 {
         const SHOTGUN          = 0x00000001;
         const SUPER_SHOTGUN    = 0x00000002;
@@ -1086,15 +1094,37 @@ impl ServerCmd {
                 let command:DeltaCommand = match command_type {
                     DeltaCommandType::ReportEntityPhys  => {
 
-                        //  add flags for more efficiency ? 
-                        let origin = read_coord_vector3(reader)?;
-                        let velocity = read_coord_vector3(reader)?;
-                        let look = read_angle_vector3(reader)?; 
+                        //read flags
+                        let flags_bits = reader.read_u8()?;
+                        let flags = match EntityPhysFlags::from_bits(flags_bits) {
+                            Some(f) => f,
+                            None => {
+                                return Err(NetError::InvalidData(format!(
+                                    "EntityPhysFlags: {:b}",
+                                    flags_bits
+                                )))
+                            }
+                        };
+        
+                        let origin = match flags.contains(EntityPhysFlags::ORIGIN) {
+                            true => Some(read_coord_vector3(reader)?),
+                            false => None,
+                        };
+
+                        let velocity = match flags.contains(EntityPhysFlags::VELOCITY) {
+                            true => Some(read_coord_vector3(reader)?),
+                            false => None,
+                        };
+
+                        let look = match flags.contains(EntityPhysFlags::LOOK) {
+                            true => Some(read_angle_vector3(reader)?),
+                            false => None,
+                        };                       
 
                         DeltaCommand::ReportEntityPhys { 
-                            origin:Some(origin), 
-                            velocity:Some(velocity), 
-                            look:Some(look) 
+                            origin, 
+                            velocity, 
+                            look
                         }  
                     }
                     DeltaCommandType::TranslationMovement => { 
@@ -1138,9 +1168,8 @@ impl ServerCmd {
                             },
                             DeltaActionType::SetUseWeapon => {
                                 let weaponId = reader.read_u32::<LittleEndian>()?;
-                                let weaponState = reader.read_u8()?;
-                                let active = weaponState & 0x1 == 0x1;
-                                DeltaAction::SetUseWeapon { weaponId, active }
+                                 
+                                DeltaAction::UseWeapon { weaponId }
                             },
                             DeltaActionType::ReloadWeapon => {
                                 DeltaAction::ReloadWeapon
@@ -1152,9 +1181,8 @@ impl ServerCmd {
                             },
                             DeltaActionType::SetUseAbility => {
                                 let abilityId = reader.read_u32::<LittleEndian>()?;
-                                let abilityState = reader.read_u8()?;
-                                let active = abilityState & 0x1 == 0x1;
-                                DeltaAction::SetUseAbility { abilityId, active }
+
+                                DeltaAction::UseAbility { abilityId }
                             },
                             DeltaActionType::SetPosture => {
                                 let posture_type = reader.read_u8()?; 
@@ -1797,10 +1825,33 @@ impl ServerCmd {
                         velocity, 
                         look 
                     } => {
+                        //write flags 
+                        let mut phys_flags = EntityPhysFlags::empty();
 
-                        write_coord_vector3(writer, origin);
-                        write_coord_vector3(writer, velocity);
-                        write_angle_vector3(writer, look);
+                        if origin.is_some() {
+                            phys_flags |= EntityPhysFlags::ORIGIN;
+                        }
+                        if velocity.is_some() {
+                            phys_flags |= EntityPhysFlags::VELOCITY;
+                        }
+                        if look.is_some() {
+                            phys_flags |= EntityPhysFlags::LOOK;
+                        }
+
+                        writer.write_u8(phys_flags.bits())?;
+
+                        if let Some(v) = origin {
+                            write_coord_vector3(writer,v)?;
+                        }
+
+                        if let Some(v) = velocity {
+                            write_coord_vector3(writer,v)?;
+                        }
+
+                        if let Some(v) = look {
+                            write_angle_vector3(writer,v)?;
+                        }
+
 
                     }
                     DeltaCommand::TranslationMovement { 
@@ -1809,7 +1860,7 @@ impl ServerCmd {
 
                         write_coord_vector3(writer, translation.origin_loc);
                         write_coord_vector3(writer, translation.vector);
-                        writer.write_f32(translation.speed);
+                        writer.write_f32::<LittleEndian>(translation.speed);
                         writer.write_u8(translation.phys_move_type as u8);
 
                     },
@@ -1833,32 +1884,28 @@ impl ServerCmd {
                                 writer.write_u32(slotId);
                                 writer.write_u32(weaponId);
                             },
-                            DeltaAction::SetUseWeapon { weaponId, active } => {
-                                writer.write_u32(weaponId);
-                                writer.write_u8(active);
+                            DeltaAction::UseWeapon { weaponId } => {
+                                writer.write_u32(weaponId);                               
                             },
                             DeltaAction::ReloadWeapon => {
 
                             },
                             DeltaAction::EquipAbility { slotId, abilityId } => {
-
-
+                                writer.write_u32(slotId);
+                                writer.write_u32(abilityId);
+                            },
+                            DeltaAction::UseAbility { abilityId } => {
+                                writer.write_u32(abilityId);    
 
                             },
-                            DeltaAction::SetUseAbility { abilityId, active } => {
-
-
-                            },
-                            DeltaAction::SetPosture(_) => {
-
+                            DeltaAction::SetPosture( posture_type ) => {
+                                writer.write_u8(posture_type as u8);
                             },
                             DeltaAction::SetZoomState { zoomed } => {
-
-
+                                write_bool(writer, zoomed);                               
                             },
-                            DeltaAction::SetPhysMovementType(_) => {
-
-                                
+                            DeltaAction::SetPhysMovementType( movement_type ) => {
+                                writer.write_u8(movement_type as u8);                                
                             },
                         }
 
@@ -2779,6 +2826,17 @@ where
         read_angle(reader)?,
         read_angle(reader)?,
     ))
+}
+
+fn write_bool<W>(writer: &mut W, b:bool) -> Result<(), NetError>
+where W:WriteBytesExt,
+{
+    if b {
+        writer.write_u8(0x1)?;   
+    }else{
+        writer.write_u8(0x0)?;  
+    }
+    Ok(())
 }
 
 fn write_angle<W>(writer: &mut W, angle: Deg<f32>) -> Result<(), NetError>

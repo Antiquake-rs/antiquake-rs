@@ -490,12 +490,15 @@ pub enum DeltaAction {
 
     EquipWeapon { slotId: u32, weaponId: u32 },  //this can affect an entities equipped abilities! But of course in a totally deterministic way.  Usually the slot is always 0 but having 1 would allow dual wield! 
 
-    SetUseWeapon{ weaponId:u32, active:bool }, // 0 for left client, 1 for right click  typically 
+    //using it this tick 
+    UseWeapon{ weaponId:u32 }, // 0 for left client, 1 for right click  typically 
    
     ReloadWeapon ,
 
     EquipAbility {slotId:u32, abilityId:u32},  //kind of vague  --maybe not used at all 
-    SetUseAbility {abilityId:u32, active:bool},  //kind of open-ended on purpose 
+    
+    //using it this tick 
+    UseAbility {abilityId:u32},  //kind of open-ended on purpose 
 
 
     SetPosture( EntityPostureType ),
