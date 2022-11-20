@@ -1158,7 +1158,9 @@ impl ServerCmd {
                             },
                             DeltaActionType::SetPosture => {
                                 let posture_type = reader.read_u8()?; 
-                                DeltaAction::SetPosture( EntityPostureType::from_u8(posture_type) )
+                                DeltaAction::SetPosture( EntityPostureType::from_u8(posture_type).ok_or_else( 
+                                    || { NetError::Other(format!("Could not parse Posture Type"))  }
+                                   )? )
                             },
                             DeltaActionType::SetZoomState => {
                                 let zoomState = reader.read_u8()?;
@@ -1167,7 +1169,9 @@ impl ServerCmd {
                             },
                             DeltaActionType::SetPhysMovementType => { 
                                 let phys_move_type = reader.read_u8()?; 
-                                DeltaAction::SetPhysMovementType( PhysMovementType::from_u8(phys_move_type) )
+                                DeltaAction::SetPhysMovementType( PhysMovementType::from_u8(phys_move_type).ok_or_else( 
+                                    || { NetError::Other(format!("Could not parse Phys Movement Type"))  }
+                                   )? )
                             },
                         };
 
@@ -1175,7 +1179,7 @@ impl ServerCmd {
 
                     },
                     
-                }
+                };
 
                 //let command = DeltaCommand::new();
                 

@@ -463,7 +463,7 @@ pub enum DeltaAction {
 
     SetPosture( EntityPostureType ),
 
-    SetZoomState (bool), //zoomed is true 
+    SetZoomState {zoomed: bool}, //zoomed is true 
 
     SetPhysMovementType( PhysMovementType )  //only admins can do this ! -- for setting to noclip 
 
